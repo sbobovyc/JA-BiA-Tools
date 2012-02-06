@@ -22,6 +22,7 @@ Created on February 2, 2012
 
 import struct 
 import os
+import zlib
 
 class PAK_data:
     def __init_(self, dir):  
@@ -33,7 +34,7 @@ class PAK_data:
                 
         self.data = None
     
-    def unpack(self, dir, file_pointer, dest_filepath):
+    def unpack(self, dir, file_pointer, dest_filepath, verbose=False):
         self.file_directory = dir
         self.file_name_length, self.file_size, self.file_offset, self.unknown_long = struct.unpack('<IQQQ', file_pointer.read(28))
         
@@ -44,6 +45,15 @@ class PAK_data:
         saved_pointer = file_pointer.tell()
         file_pointer.seek(self.file_offset)
         self.data = file_pointer.read(self.file_size)
+        
+        if verbose:
+            print "File name: %s" % os.path.join(self.file_directory,self.file_name)
+            print "File offset: %s" % hex(self.file_offset)
+            print "File Size: %s bytes" % hex(self.file_size)
+            print "File unknown data: %s" % hex(self.unknown_long)
+            print "File Adler32 %s" % hex(zlib.adler32(self.data) & 0xffffffff )
+            print "File CRC32 %s" % hex(zlib.crc32(self.data) & 0xffffffff )
+            print 
         
         path = os.path.join(dest_filepath, self.file_directory)
         if not os.path.exists(path):
@@ -65,7 +75,7 @@ class PAK_dir:
                 
             
     
-    def unpack(self, file_pointer, dest_filepath):        
+    def unpack(self, file_pointer, dest_filepath, verbose=False):        
         self.dir_index, self.dir_name_length, self.dir_number_files = struct.unpack('<IIQ', file_pointer.read(16))
         self.dir_name = file_pointer.read(self.dir_name_length)
         
@@ -75,7 +85,7 @@ class PAK_dir:
         if self.dir_number_files != 0:
             for i in range(0, self.dir_number_files):
                 pF = PAK_data()
-                pF.unpack(self.dir_name, file_pointer, dest_filepath)
+                pF.unpack(self.dir_name, file_pointer, dest_filepath, verbose)
         else:            
             return 
         
@@ -85,7 +95,7 @@ class PAK_header:
         self.descriptor_size = None # in bytes
         self.num_dirs = None
     
-    def unpack(self, file_pointer, dest_filepath):    
+    def unpack(self, file_pointer, dest_filepath, verbose=False):    
         self.magic, = struct.unpack(">Q", file_pointer.read(8))
         
         if self.magic != 0x504B4C4501000000:
@@ -94,10 +104,14 @@ class PAK_header:
             return
         
         self.descriptor_size, self.num_dirs = struct.unpack("<QQ", file_pointer.read(16))        
-           
+        
+        if verbose:
+            print "Descriptor size: %i bytes" % self.descriptor_size
+            print "Number of directories in archive: %i" % self.num_dirs
+            
         for i in range(0, self.num_dirs):
             pD = PAK_dir()
-            pD.unpack(file_pointer, dest_filepath)
+            pD.unpack(file_pointer, dest_filepath, verbose)
             
 class PAK_file:
     def __init__(self, filepath=None):
@@ -115,9 +129,9 @@ class PAK_file:
         
         self.header = PAK_header()
 
-    def dump(self, dest_filepath=os.getcwd()):
+    def dump(self, dest_filepath=os.getcwd(), verbose=False):
         with open(self.filepath, "rb") as f:            
-            self.header.unpack(f, dest_filepath)
+            self.header.unpack(f, dest_filepath, verbose)
         
 if __name__ == "__main__":
     pF = PAK_file("C:\Program Files (x86)\Jagged Alliance Back in Action Demo\\voices_win32.pak")

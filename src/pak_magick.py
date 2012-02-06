@@ -29,13 +29,14 @@ parser = argparse.ArgumentParser(description='Tool that can unpack Jagged Allian
 parser.add_argument('file', nargs='?', help='Input file')
 parser.add_argument('outdir', nargs='?', help='Output directory')
 parser.add_argument('-i', '--info', default=False, action='store_true', help='Output information about pak file')
+parser.add_argument('-d', '--debug', default=False, action='store_true', help='Show debug messages.')
 
 
 args = parser.parse_args()
 file = args.file
 outdir = args.outdir
 info = args.info
-
+debug = args.debug
 
 if file != None and info != False:
     info_filepath = os.path.abspath(file)
@@ -49,9 +50,9 @@ elif file != None:
     pak_file = PAK_file(filepath=pak_filepath)
     if outdir != None:
         output_filepath = os.path.abspath(outdir)
-        pak_file.dump(outdir)
+        pak_file.dump(outdir, debug)
     else:
-        pak_file.dump()
+        pak_file.dump(verbose=debug)
         
     
     
