@@ -52,9 +52,9 @@ elif file != None:
 
     if outdir != None:
         output_filepath = os.path.abspath(outdir)
-        ctx_file.dump2file(outdir)
+        ctx_file.dump2text_file(outdir)
     else:
-        ctx_file.dump2file()
+        ctx_file.dump2text_file()
         
 else:
     print "Nothing happened"

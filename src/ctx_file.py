@@ -23,34 +23,65 @@ Created on February 6, 2012
 import struct 
 import os
 import codecs
+import binascii           
 from collections import OrderedDict
 
 class CTX_language:
-    def __init__(self, description_string, data_offset):
+    def __init__(self, description_string, data_offset=0):
         self.description_string = description_string
         self.data_offset = data_offset
         self.data_dictionary = OrderedDict()   # {text id : data} mapping
     
     def add_data(self, id, text):
         self.data_dictionary[id] = text
-        
+    
+    def get_description(self):
+        return self.description_string
+    
     def get_data(self):
         return self.data_dictionary
+    
+    def get_num_items(self):
+        return len(self.data_dictionary)
+    
+    def get_last_item_id(self):
+        last_item = self.data_dictionary.popitem()  # get last item in ordered dictionary        
+        # put item back
+        self.add_data(last_item[0], last_item[1])
+        last_item_id = last_item[0]
+        return last_item_id
+    
+    def get_description_length(self):
+        return len(self.description_string)
+    
+    def get_packed_data(self):        
+        buffer = ""
+        for key, value in self.data_dictionary.items():       
+            encoded_value = value.encode('utf-16le')     
+            encoded_size = len(encoded_value)         
+            data_packed = struct.pack("<II%is" % encoded_size, key, encoded_size/2, encoded_value)
+            #print binascii.hexlify(data_packed)
+            buffer = buffer + data_packed
+            #print binascii.hexlify(buffer)
+        return buffer
     
     def __str__(self):
         return "Language: %s, data offset: %s bytes" % (self.description_string, hex(self.data_offset).rstrip('L'))
         
-class CTX_header:
+class CTX_data:
     def __init__(self):
         self.num_items = None
+        self.last_item_id = 0
         self.num_languages = None
         self.data_offset = 0 
-        self.last_item_id = 0
         self.language_list = []
     
     def get_languages(self):
         return self.language_list
     
+    def insert_language(self, language):
+        self.language_list.append(language)
+        
     def unpack(self, file_pointer, peek=False, verbose=False):    
         self.num_items,self.last_item_id,self.num_languages = struct.unpack("<III", file_pointer.read(12))
         
@@ -77,21 +108,46 @@ class CTX_header:
             for i in range(0, self.num_items):
                 id,item_length = struct.unpack("<II", file_pointer.read(8))
                 item_length = 2 * item_length               # multiply by two to compensate for the "\0"
-                item_raw_text = file_pointer.read(item_length)
-                # swap bytes 
-                #item_little_endian_text = struct.unpack("<%iH" %(item_length/2), item_raw_text)
-                #swaped_text = struct.pack(">%iH" %(item_length/2), *item_little_endian_text)
-                #print swaped_text
-                item_text = unicode(item_raw_text, "utf-16")
-                #item_text = item_text.replace("\00", "")
+                item_raw_text = file_pointer.read(item_length)                
+                item_text = unicode(item_raw_text, "utf-16le")                
                 language.add_data(id, item_text)
                 if verbose:
-                    print id,item_text                
+                    print id,item_text    
+                    
+    def get_packed_data(self):
+        #1. check to see if all the language have the same amount of items
+        #2. check that all languages have the same last item id
+        self.num_languages = len(self.language_list)
+        self.num_items = self.language_list[0].get_num_items()
+        self.last_item_id = self.language_list[0].get_last_item_id()        
+        
+        for i in range(1, len(self.language_list)):
+            if self.language_list[i].get_num_items() != self.num_items:
+                print "Languages do not contain same ammount of items!"
+                return
+            if self.language_list[i].get_last_item_id()  != self.last_item_id:
+                print "The last item in each language is not the same!"
+                return
+            
+        #3. pack each language into a byte string and create the data 
+        header_buffer = struct.pack("<III", self.num_items, self.last_item_id, self.num_languages)
+        data_buffer = ""
+        previous_buffer_length = 0
+        for language in self.language_list:
+            length = language.get_description_length()
+            description = language.get_description()
+            header_buffer = header_buffer + struct.pack("<I%isI" % length, length, description, previous_buffer_length)
+            #print binascii.hexlify(header_buffer)
+            data_buffer = data_buffer + language.get_packed_data()
+            previous_buffer_length = len(data_buffer)
+            
+        #4. concatenate the byte strings and return     
+        return (header_buffer + data_buffer)            
             
 class CTX_file:
     def __init__(self, filepath=None):
         self.filepath = filepath
-        self.header = None
+        self.data = None
         if self.filepath != None:
             self.open(filepath)
     
@@ -102,46 +158,89 @@ class CTX_file:
         if self.filepath == None:
             self.filepath = filepath
         
-        self.header = CTX_header()
+        self.data = CTX_data()
+        
+    def get_data(self):
+        return self.data
+    
+    def pack(self, verbose=False):
+        if self.filepath == None:
+            print "File path is empty. Open the file with a valid path."
+            return
+        
+        print "Creating %s" % self.filepath
+         
+        with open(self.filepath, "wb") as f:            
+            data = self.data.get_packed_data()
+            f.write(data)
 
     def unpack(self, verbose=False):
         with open(self.filepath, "rb") as f:            
-            self.header.unpack(f, verbose=verbose)
+            self.data.unpack(f, verbose=verbose)
 
+    # don't use this function, just for experimentation
     def dump2text(self):
-        languages = self.header.get_languages()
+        languages = self.data.get_languages()
         for language in languages:
             data = language.get_data()
             print "%s {" % language.description_string
             for key, value in data.items():
                 print "\t", key, value
             print "}"
+            
+    def dump2py(self, dest_filepath=os.getcwd()):
+        file_name = os.path.join(dest_filepath, os.path.splitext(os.path.basename(self.filepath))[0])
+        full_path = file_name + ".py"
+        
+        utf_comment = "# -*- coding: utf-8 -*- \n"
+        comment = "# This file was automatically generated at {timestamp}.\n" \
+                  "# Note that this is encoded in utf-8 and the game text will be reencoded to utf-16le.\n\n"
+        import_statement = "from ctx_file import CTX_file, CTX_data, CTX_language\n\n"
+        ctx_file = ("ctx_file = CTX_file(\"%s.ctx\") \n" % file_name) + \
+                    "ctx_file.open() \n\n"
+        with codecs.open(full_path, "w", "utf-8") as f:
+            f.write(utf_comment)
+            f.write(comment)
+            f.write(import_statement)
+            f.write(ctx_file)
+            
+            for language in self.data.get_languages():
+                description = language.description_string
+                language_comment = "###########################\n" + \
+                                   "# Language block: %s \n" % description + \
+                                   "###########################\n" 
+                f.write(language_comment)
+                ctx_language = "ctx_language_%s = CTX_language(\"%s\")\n" % (description, description)
+#                print ctx_language
+                f.write(ctx_language)
+                data = language.get_data()        
+                for key, value in data.items():
+                    entry = "ctx_language_%s.add_data(%s, \"%s\") \n" % (description, key, value)
+#                    print entry
+                    f.write(entry)
+                f.write("\n")
 
-    def dump2file(self, dest_filepath=os.getcwd()): 
+    def dump2text_file(self, dest_filepath=os.getcwd()): 
         file_name = os.path.join(dest_filepath, os.path.splitext(os.path.basename(self.filepath))[0])
         full_path = file_name + ".txt"
         print "Creating %s" % full_path 
 
-        f = codecs.open(full_path, "w", "utf-16") 
-        languages = self.header.get_languages()
-
-        for language in languages:
-            data = language.get_data()
-            f.write("\n%s {\n" % language.description_string)
-            for key, value in data.items():
-                f.write("\t%i %s\n" % (key, value))
-            f.write("}")
-        f.close()
-
-    def pack(self, dest_filepath=os.getcwd(), verbose=False):
-        print "Not implemented yet."
-#        with open(self.filepath, "rb") as f:            
-#            self.header.unpack(f, dest_filepath, verbose)
+        with codecs.open(full_path, "w", "utf-16") as f: 
+            languages = self.data.get_languages()
+    
+            for language in languages:
+                data = language.get_data()
+                f.write("\n%s {\n" % language.description_string)
+                for key, value in data.items():
+                    f.write("\t%i %s\n" % (key, value))
+                f.write("}")
 
 if __name__ == "__main__":
     cF = CTX_file("C:\Users\sbobovyc\Desktop\\test\\bin_win32\interface\equipment.ctx")
     #cF = CTX_file("/media/Acer/Users/sbobovyc/Desktop/test/bin_win32/interface/equipment.ctx")
     cF.open()        
     cF.unpack(verbose=False)
-    cF.dump2file(".")
+    #cF.dump2text_file(".")
+    cF.dump2py(".")
+#    cF.pack(verbose=False)
                 
