@@ -23,6 +23,7 @@ Created on February 6, 2012
 import struct 
 import os
 import codecs
+import yaml
 import binascii           
 from collections import OrderedDict
 
@@ -65,6 +66,10 @@ class CTX_language:
             #print binascii.hexlify(buffer)
         return buffer
     
+    def __repr__(self):
+        return "%s(name=%r, language=%r, data=%r)" % (
+             self.__class__.__name__, self.description_string, self.data_dictionary)
+   
     def __str__(self):
         return "Language: %s, data offset: %s bytes" % (self.description_string, hex(self.data_offset).rstrip('L'))
         
@@ -143,6 +148,10 @@ class CTX_data:
             
         #4. concatenate the byte strings and return     
         return (header_buffer + data_buffer)            
+
+    def __repr__(self):
+        return "%s(name=%r, languages=%r)" % (
+             self.__class__.__name__, self.language_list)
             
 class CTX_file:
     def __init__(self, filepath=None):
@@ -187,7 +196,8 @@ class CTX_file:
             for key, value in data.items():
                 print "\t", key, value
             print "}"
-            
+
+                        
     def dump2py(self, dest_filepath=os.getcwd()):
         file_name = os.path.join(dest_filepath, os.path.splitext(os.path.basename(self.filepath))[0])
         full_path = file_name + ".py"
@@ -220,27 +230,61 @@ class CTX_file:
                     f.write(entry)
                 f.write("\n")
 
-    def dump2text_file(self, dest_filepath=os.getcwd()): 
-        file_name = os.path.join(dest_filepath, os.path.splitext(os.path.basename(self.filepath))[0])
-        full_path = file_name + ".txt"
-        print "Creating %s" % full_path 
+    def dump2yaml(self, dest_filepath=os.getcwd()): 
+        file_name = os.path.join(dest_filepath, os.path.splitext(os.path.basename(self.filepath))[0])        
 
-        with codecs.open(full_path, "w", "utf-16") as f: 
-            languages = self.data.get_languages()
+        full_path = file_name + ".ctx.txt" 
+        print "Creating %s" % full_path
+        with codecs.open(full_path, "w", "utf-16") as f:                
+                yaml.dump(self.data, f, allow_unicode=True)                     
+
+    def dump2text_files(self, dest_filepath=os.getcwd()): 
+        file_name = os.path.join(dest_filepath, os.path.splitext(os.path.basename(self.filepath))[0])
+ 
+        languages = self.data.get_languages()
+        for language in languages:        
+            description = language.description_string
+            full_path = file_name + ".ctx.%s.txt" % description
+            print "Creating %s" % full_path
+            with codecs.open(full_path, "w", "utf-16") as f:                
+                    data = language.get_data() 
+                    for key, value in data.items():
+                        f.write("%i | %s\n" % (key, value))
+                        
+    def text_files2ctx(self, file_list, dest_filepath=os.getcwd()):
+        for file in file_list:
+            file_path = os.path.abspath(file)
+            path,file_name = os.path.split(file_path)
+            descriptor = file_name.split(".")[2]
+            language = CTX_language(descriptor)            
+            
+            with codecs.open(file_path, "r", "utf-16") as f:
+                for line in f:
+                    #print repr(line)
+                    line = line.rstrip("\r\n")
+                    id,item_text = line.split("|")
+                    id = int(id)
+                    item_text = item_text.lstrip(" ")
+                    print id,repr(item_text)
+                    language.add_data(id, item_text) 
+            self.data.add_language(language)
+        self.pack()
     
-            for language in languages:
-                data = language.get_data()
-                f.write("\n%s {\n" % language.description_string)
-                for key, value in data.items():
-                    f.write("\t%i %s\n" % (key, value))
-                f.write("}")
+    def yaml2ctx(self, yaml_file):
+        filepath = os.path.abspath(yaml_file)
+        with codecs.open(filepath, "r", "utf-16") as f:
+            self.data = yaml.load(f)                   
+        self.pack()
 
 if __name__ == "__main__":
     cF = CTX_file("C:\Users\sbobovyc\Desktop\\test\\bin_win32\interface\equipment.ctx")
     #cF = CTX_file("/media/Acer/Users/sbobovyc/Desktop/test/bin_win32/interface/equipment.ctx")
     cF.open()        
-    cF.unpack(verbose=False)
-    #cF.dump2text_file(".")
-    cF.dump2py(".")
+    cF.unpack(verbose=False)    
+#    cF.dump2text_files(".")
+#    cF.dump2py(".")
+    cF.dump2yaml(".")
 #    cF.pack(verbose=False)
+    cFnew = CTX_file("new_equipment.ctx")
+    cFnew.yaml2ctx("equipment.ctx.txt")
                 
