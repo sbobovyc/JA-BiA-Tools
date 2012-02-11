@@ -24,10 +24,12 @@ import argparse
 import os
 from ctx_file import CTX_file
 
-parser = argparse.ArgumentParser(description='Tool that can unpack Jagged Alliance: BiA ctx files.')
+parser = argparse.ArgumentParser(description='Tool that can unpack/pack Jagged Alliance: BiA ctx files.', \
+                                epilog='All languages must contain the same number of entries and the last ' + \
+                                 'entry id has to be the same in all languages.')
 
 parser.add_argument('file', nargs='?', help='Input file')
-parser.add_argument('outdir', nargs='?', help='Output directory')
+parser.add_argument('outdir', nargs='?', default=os.getcwd(), help='Output directory')
 parser.add_argument('-i', '--info', default=False, action='store_true', help='Output information about ctx file')
 parser.add_argument('-d', '--debug', default=False, action='store_true', help='Show debug messages.')
 
@@ -43,19 +45,26 @@ if file != None and info != False:
     print "Not implemented yet."
     
     
-elif file != None:            
+elif file != None and os.path.splitext(file)[1][1:].strip() == "ctx":            
     ctx_filepath = os.path.abspath(file)
     print "Unpacking %s" % ctx_filepath
     ctx_file = CTX_file(filepath=ctx_filepath)
     ctx_file.open()
     ctx_file.unpack(verbose=debug)
 
-    if outdir != None:
-        output_filepath = os.path.abspath(outdir)
-        ctx_file.dump2text_files(outdir)
-    else:
-        ctx_file.dump2text_files()
+    
+    output_filepath = os.path.abspath(outdir)
+    ctx_file.dump2yaml(outdir)
+    
+elif file != None and os.path.splitext(file)[1][1:].strip() == "txt":            
+    yaml_ctx_filepath = os.path.abspath(file)
+    ctx_file_name = os.path.basename(file).split('.')[0] + ".ctx"    
+    ctx_filepath = os.path.join(os.path.abspath(outdir), ctx_file_name)
         
+    print "Packing %s" % yaml_ctx_filepath
+    ctx_file = CTX_file(filepath=ctx_filepath)
+    ctx_file.yaml2ctx(yaml_ctx_filepath)
+
 else:
     print "Nothing happened"
     parser.print_help()

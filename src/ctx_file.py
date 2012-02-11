@@ -253,12 +253,13 @@ class CTX_file:
                         
     def text_files2ctx(self, file_list, dest_filepath=os.getcwd()):
         for file in file_list:
-            file_path = os.path.abspath(file)
-            path,file_name = os.path.split(file_path)
+            full_path = os.path.abspath(file)
+            path,file_name = os.path.split(full_path)
             descriptor = file_name.split(".")[2]
             language = CTX_language(descriptor)            
             
-            with codecs.open(file_path, "r", "utf-16") as f:
+            print "Creating %s" % full_path
+            with codecs.open(full_path, "r", "utf-16") as f:
                 for line in f:
                     #print repr(line)
                     line = line.rstrip("\r\n")
