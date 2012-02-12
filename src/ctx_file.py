@@ -236,7 +236,7 @@ class CTX_file:
         full_path = file_name + ".ctx.txt" 
         print "Creating %s" % full_path
         with codecs.open(full_path, "w", "utf-16") as f:                
-                yaml.dump(self.data, f, allow_unicode=True)                     
+                yaml.dump(self.data, f, allow_unicode=True, encoding="utf-16")                     
 
     def dump2text_files(self, dest_filepath=os.getcwd()): 
         file_name = os.path.join(dest_filepath, os.path.splitext(os.path.basename(self.filepath))[0])
@@ -278,14 +278,19 @@ class CTX_file:
         self.pack()
 
 if __name__ == "__main__":
+    pass
     cF = CTX_file("C:\Users\sbobovyc\Desktop\\test\\bin_win32\interface\equipment.ctx")
     #cF = CTX_file("/media/Acer/Users/sbobovyc/Desktop/test/bin_win32/interface/equipment.ctx")
     cF.open()        
     cF.unpack(verbose=False)    
-#    cF.dump2text_files(".")
-#    cF.dump2py(".")
     cF.dump2yaml(".")
 #    cF.pack(verbose=False)
-    cFnew = CTX_file("new_equipment.ctx")
-    cFnew.yaml2ctx("equipment.ctx.txt")
-                
+#    cFnew = CTX_file("new_equipment.ctx")
+#    cFnew.yaml2ctx("equipment.ctx.txt")
+
+    # create a file programmatically
+#    cTest = CTX_file("test.ctx")
+#    english = CTX_language("eng")
+#    english.add_data(0, u"Officer's key")
+#    cTest.data.insert_language(english)
+#    cTest.dump2yaml(".")
