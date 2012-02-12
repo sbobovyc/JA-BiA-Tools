@@ -183,9 +183,9 @@ class CTX_file:
             data = self.data.get_packed_data()
             f.write(data)
 
-    def unpack(self, verbose=False):
+    def unpack(self, peek=False, verbose=False):
         with open(self.filepath, "rb") as f:            
-            self.data.unpack(f, verbose=verbose)
+            self.data.unpack(f, peek=peek, verbose=verbose)
 
     # don't use this function, just for experimentation
     def dump2text(self):
@@ -235,7 +235,8 @@ class CTX_file:
 
         full_path = file_name + ".ctx.txt" 
         print "Creating %s" % full_path
-        with codecs.open(full_path, "w", "utf-16") as f:                
+        yaml.add_representer(unicode, lambda dumper, value: dumper.represent_scalar(u'tag:yaml.org,2002:str', value))
+        with codecs.open(full_path, "w", "utf-16") as f:                                
                 yaml.dump(self.data, f, allow_unicode=True, encoding="utf-16")                     
 
     def dump2text_files(self, dest_filepath=os.getcwd()): 

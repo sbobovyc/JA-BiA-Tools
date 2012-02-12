@@ -40,21 +40,16 @@ outdir = args.outdir
 info = args.info
 debug = args.debug
 
-if file != None and info != False:
-    info_filepath = os.path.abspath(file)
-    print "Not implemented yet."
-    
-    
-elif file != None and os.path.splitext(file)[1][1:].strip() == "ctx":            
+if file != None and os.path.splitext(file)[1][1:].strip() == "ctx":            
     ctx_filepath = os.path.abspath(file)
     print "Unpacking %s" % ctx_filepath
     ctx_file = CTX_file(filepath=ctx_filepath)
     ctx_file.open()
-    ctx_file.unpack(verbose=debug)
+    ctx_file.unpack(peek=info, verbose=debug)
 
-    
-    output_filepath = os.path.abspath(outdir)
-    ctx_file.dump2yaml(outdir)
+    if not info:
+        output_filepath = os.path.abspath(outdir)
+        ctx_file.dump2yaml(outdir)
     
 elif file != None and os.path.splitext(file)[1][1:].strip() == "txt":            
     yaml_ctx_filepath = os.path.abspath(file)
