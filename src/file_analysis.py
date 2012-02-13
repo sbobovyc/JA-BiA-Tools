@@ -74,7 +74,7 @@ def sliding_window_filter(file_pointer, count, filename="", file_offset=0x0, byt
         
 def graph_file_data2(data, file_offset, byte_order, type, abs_min, abs_max, input_filename="", save=False, layer=False, show=True):
         ax = plt.subplot(111)
-        cumilative = False
+        CUMULATIVE = False
         if data != None and file_offset != None and byte_order != None and type != None:  
             # clear plot
             if not layer:
@@ -85,7 +85,7 @@ def graph_file_data2(data, file_offset, byte_order, type, abs_min, abs_max, inpu
             endianess = endian_dict[byte_order]
             data_type = type_dict[type]
         else:
-            cumilative = True
+            CUMULATIVE = True
             
         plt.xlabel("File offset")
         plt.ylabel("Value")
@@ -98,7 +98,7 @@ def graph_file_data2(data, file_offset, byte_order, type, abs_min, abs_max, inpu
             textstr = "%i data points\nData: %s %s\nFilter: abs_min=%0.3f, abs_max=%0.3f" % (len(data), endianess, data_type, abs_min, abs_max)
         if layer:
             textstr = "Filter: abs_min=%0.3f, abs_max=%0.3f" % (abs_min, abs_max)            
-            ax.set_title("Cumilative summary")
+            ax.set_title("CUMULATIVE summary")
         if not layer:
             # Shrink current axis by 20%
             box = ax.get_position()
@@ -110,78 +110,101 @@ def graph_file_data2(data, file_offset, byte_order, type, abs_min, abs_max, inpu
             ax.legend(loc='upper center', bbox_to_anchor=(0.95, 1.05), fancybox=True, shadow=True, prop=legend_font_props)
         if not layer and save and input_filename != "":
             plt.savefig(input_filename + "_%s_%s%s" % (endianess, data_type, ".png"))
-        if layer and save and input_filename != "" and cumilative:
+        if layer and save and input_filename != "" and CUMULATIVE:
             plt.savefig(input_filename)
         if show:
             plt.show()
 
-def graph_file_data(data, file_offset, byte_order, type, abs_min, abs_max, input_filename="", save=False, layer=False, show=True):
+def graph_file_data(data, file_offset, byte_order, type, abs_min, abs_max, mode, input_filename="", save=False, show=True):
         fig = plt.figure()
         ax = fig.add_subplot(111)
-        cumilative = False
-        if data != None and file_offset != None and byte_order != None and type != None:  
-            pass
-        else:
-            cumilative = True
             
-        # clear plot or plot more data
-        if not layer or not cumilative:
-            plt.clf()                     
-            ll = plt.plot(file_offset, data, label="%s %s" % (endian_dict[byte_order], type_dict[type]))
-        if layer:
-            ll = plt.plot(file_offset, data, label="%s%s %s" % (byte_order, type, input_filename))
-        plt.savefig("1.png") #debug
-        endianess = endian_dict[byte_order]
-        data_type = type_dict[type]
+        if mode == "SINGLE":
+            ax.plot(file_offset, data, label="%s %s" % (endian_dict[byte_order], type_dict[type]))
+        elif mode == "MULTIPLE":
+            i = 0;
+            print len(file_offset)
+            print len(data)
+            print len(byte_order)
+            print len(type)
+            for d in data:                   
+                print byte_order[i], type[i]
+                label = "%s %s" % (endian_dict[byte_order[i]], type_dict[type[i]])
+                ax.plot(file_offset[i], d, label=label)
+                i += 1
+        elif mode == "CUMULATIVE":
+            ax.plot(file_offset, data, label="%s%s %s" % (byte_order, type, input_filename))
+        else:
+            print "Error, wrong mode"
+            return 
+        
+#        plt.savefig("1.png") #debug
         # axis format and labels, grid
         majorFormatter = FormatStrFormatter('%X') # change to %d to see decimal offsets
         ax.xaxis.set_major_formatter(majorFormatter)
-        plt.xlabel("File offset")
-        plt.ylabel("Value")
-        plt.grid(True)
-        plt.savefig("2.png") #debug
-        if not layer or cumilative:
+        ax.set_xlabel("File offset")
+        ax.set_ylabel("Value")
+        ax.grid(True)
+#        fig.savefig("2.png") #debug
+        
+        if mode == "SINGLE":
+            endianess = endian_dict[byte_order]
+            data_type = type_dict[type]
             textstr = "%i data points\nData: %s %s\nFilter: abs_min=%0.3f, abs_max=%0.3f" % (len(data), endianess, data_type, abs_min, abs_max)
             ax.set_title(input_filename)  
-            plt.savefig("3.png") #debug          
-        if layer or cumilative:
+#            plt.savefig("3.png") #debug
+        if mode == "MULTIPLE":
             textstr = "Filter: abs_min=%0.3f, abs_max=%0.3f" % (abs_min, abs_max)            
-            ax.set_title("Cumilative summary")
-        if not layer:
+            ax.set_title(input_filename + " summary")          
+        if mode == "CUMULATIVE":
+            textstr = "Filter: abs_min=%0.3f, abs_max=%0.3f" % (abs_min, abs_max)            
+            ax.set_title("CUMULATIVE summary")
+
+        if mode == "MULTIPLE" or mode == "CUMULATIVE":
+            legend_font_props = FontProperties()
+            legend_font_props.set_size('small')  
+            ax.legend(loc='upper center', bbox_to_anchor=(0.95, 1.05), fancybox=True, shadow=True, prop=legend_font_props)
             # Shrink current axis by 20%
             box = ax.get_position()
             ax.set_position([box.x0, box.y0 + 0.15, box.width, box.height * 0.8])
             props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
             ax.text(0.25, -0.15, textstr, transform=ax.transAxes, fontsize=14, horizontalalignment='left', verticalalignment='top', bbox=props)
-        if layer:
-            legend_font_props = FontProperties()
-            legend_font_props.set_size('small')  
-            ax.legend(loc='upper center', bbox_to_anchor=(0.95, 1.05), fancybox=True, shadow=True, prop=legend_font_props)
             
-        if not layer and save and input_filename != "":
+        if mode == "SINGLE" and input_filename != "":
             plt.savefig(input_filename + "_%s_%s%s" % (endianess, data_type, ".png"))
-        if layer and save and input_filename != "" and cumilative:
+        if mode == "MULTIPLE" and input_filename != "":
+            plt.savefig(input_filename + ".png")
+        if mode == "CUMULATIVE":
             plt.savefig(input_filename)
         if show:
             plt.show()
                     
-def graph_cumilative(input_filename, abs_min, abs_max):
+def graph_CUMULATIVE(input_filename, abs_min, abs_max):
     graph_file_data(None, None, None, None, abs_min, abs_max, input_filename=input_filename, save=True, layer=True, show=False)
     
 def clear_graph():
     plt.clf()  
     
-def file_scan(full_file_path, count, type_list=type_list, endian_list=endian_list, file_offset=0x0, abs_min=0.1, abs_max=20, verbose=False, graph=False, save=False, layer=False, show=False):
+def file_scan(full_file_path, count, type_list=type_list, endian_list=endian_list, file_offset=0x0, abs_min=0.1, abs_max=20, verbose=False, mode="SINGLE", graph=False, save=False, show=False):
+    value_list = []
+    offsets_list = []
+    e_list = []
+    t_list = []
     for endianess in endian_list:
         for type in type_list:
             with open(full_file_path, "rb") as f:
                 f.seek(file_offset)
                 filename = os.path.basename(full_file_path)
                 values, offsets = sliding_window_filter(f, count, filename=full_file_path, file_offset=file_offset, byte_order=endianess, type=type, abs_min=abs_min, abs_max=abs_max, verbose=verbose)
-                if graph:
-                    graph_file_data(values, offsets, endianess, type, abs_min, abs_max, input_filename=filename, save=save, layer=layer, show=show)
-
-#        plt.savefig("cumilative_summary.png")
+                if graph and mode == "SINGLE":
+                    graph_file_data(values, offsets, endianess, type, abs_min, abs_max, input_filename=filename, mode=mode, save=save, show=show)
+                if graph and mode == "MULTIPLE":
+                    value_list.append(values)
+                    offsets_list.append(offsets)
+                    e_list.append(endianess)
+                    t_list.append(type)
+    if mode == "MULTIPLE":                
+        graph_file_data(value_list, offsets_list, e_list, t_list, abs_min, abs_max, input_filename=filename, mode=mode, save=save, show=show)
     
 if __name__ == "__main__":    
     path = "C:\\Users\\sbobovyc\\Desktop\\bia\\1.03\\bin_win32\weapons"
@@ -190,9 +213,9 @@ if __name__ == "__main__":
         if file.endswith(".crf"):
             full_file_path = os.path.abspath(os.path.join(path, file)) 
             print full_file_path
-            file_scan(full_file_path, 10000, type_list=('f','d'), file_offset=0x1c, graph=True, save=True, layer=False)
+            file_scan(full_file_path, 10000, type_list=('f','d'), file_offset=0x1c, mode="MULTIPLE", graph=True, save=True)
                     
-#    graph_cumilative("cumilative_summary1.png", abs_min=0.1, abs_max=20.0)
+#    graph_CUMULATIVE("CUMULATIVE_summary1.png", abs_min=0.1, abs_max=20.0)
 #    
 #    clear_graph()
 #    
@@ -201,4 +224,4 @@ if __name__ == "__main__":
 #            full_file_path = os.path.abspath(os.path.join(path, file)) 
 #            print full_file_path
 #            file_scan(full_file_path, 10000, type_list=('f'), endian_list=('<'), file_offset=0x1c, graph=True, save=True, layer=True)
-#    graph_cumilative("cumilative_summary2.png", abs_min=0.1, abs_max=20.0)
+#    graph_CUMULATIVE("CUMULATIVE_summary2.png", abs_min=0.1, abs_max=20.0)
