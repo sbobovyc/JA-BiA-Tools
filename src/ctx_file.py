@@ -84,9 +84,12 @@ class CTX_data:
     def get_languages(self):
         return self.language_list
     
+    def get_num_languages(self):
+        return len(self.language_list)
+    
     def insert_language(self, language):
         self.language_list.append(language)
-        
+    
     def unpack(self, file_pointer, peek=False, verbose=False):    
         self.num_items,self.last_item_id,self.num_languages = struct.unpack("<III", file_pointer.read(12))
         
@@ -94,7 +97,7 @@ class CTX_data:
             desc_length, = struct.unpack("<I", file_pointer.read(4))
             description_string = file_pointer.read(desc_length)
             data_offset, = struct.unpack("<I", file_pointer.read(4))
-            self.language_list.append( CTX_language(description_string, data_offset))
+            self.insert_language(CTX_language(description_string, data_offset))
         
         self.data_offset = file_pointer.tell()
         
@@ -122,7 +125,7 @@ class CTX_data:
     def get_packed_data(self):
         #1. check to see if all the language have the same amount of items
         #2. check that all languages have the same last item id
-        self.num_languages = len(self.language_list)
+        self.num_languages = self.get_num_languages()
         self.num_items = self.language_list[0].get_num_items()
         self.last_item_id = self.language_list[0].get_last_item_id()        
         
@@ -186,91 +189,15 @@ class CTX_file:
     def unpack(self, peek=False, verbose=False):
         with open(self.filepath, "rb") as f:            
             self.data.unpack(f, peek=peek, verbose=verbose)
-
-    # don't use this function, just for experimentation
-    def dump2text(self):
-        languages = self.data.get_languages()
-        for language in languages:
-            data = language.get_data()
-            print "%s {" % language.description_string
-            for key, value in data.items():
-                print "\t", key, value
-            print "}"
-
                         
-    def dump2py(self, dest_filepath=os.getcwd()):
-        file_name = os.path.join(dest_filepath, os.path.splitext(os.path.basename(self.filepath))[0])
-        full_path = file_name + ".py"
-        
-        utf_comment = "# -*- coding: utf-8 -*- \n"
-        comment = "# This file was automatically generated at {timestamp}.\n" \
-                  "# Note that this is encoded in utf-8 and the game text will be reencoded to utf-16le.\n\n"
-        import_statement = "from ctx_file import CTX_file, CTX_data, CTX_language\n\n"
-        ctx_file = ("ctx_file = CTX_file(\"%s.ctx\") \n" % file_name) + \
-                    "ctx_file.open() \n\n"
-        with codecs.open(full_path, "w", "utf-8") as f:
-            f.write(utf_comment)
-            f.write(comment)
-            f.write(import_statement)
-            f.write(ctx_file)
-            
-            for language in self.data.get_languages():
-                description = language.description_string
-                language_comment = "###########################\n" + \
-                                   "# Language block: %s \n" % description + \
-                                   "###########################\n" 
-                f.write(language_comment)
-                ctx_language = "ctx_language_%s = CTX_language(\"%s\")\n" % (description, description)
-#                print ctx_language
-                f.write(ctx_language)
-                data = language.get_data()        
-                for key, value in data.items():
-                    entry = "ctx_language_%s.add_data(%s, \"%s\") \n" % (description, key, value)
-#                    print entry
-                    f.write(entry)
-                f.write("\n")
-
     def dump2yaml(self, dest_filepath=os.getcwd()): 
         file_name = os.path.join(dest_filepath, os.path.splitext(os.path.basename(self.filepath))[0])        
 
         full_path = file_name + ".ctx.txt" 
         print "Creating %s" % full_path
         yaml.add_representer(unicode, lambda dumper, value: dumper.represent_scalar(u'tag:yaml.org,2002:str', value))
-        with codecs.open(full_path, "w", "utf-16") as f:                                
-                yaml.dump(self.data, f, allow_unicode=True, encoding="utf-16")                     
-
-    def dump2text_files(self, dest_filepath=os.getcwd()): 
-        file_name = os.path.join(dest_filepath, os.path.splitext(os.path.basename(self.filepath))[0])
- 
-        languages = self.data.get_languages()
-        for language in languages:        
-            description = language.description_string
-            full_path = file_name + ".ctx.%s.txt" % description
-            print "Creating %s" % full_path
-            with codecs.open(full_path, "w", "utf-16") as f:                
-                    data = language.get_data() 
-                    for key, value in data.items():
-                        f.write("%i | %s\n" % (key, value))
-                        
-    def text_files2ctx(self, file_list, dest_filepath=os.getcwd()):
-        for file in file_list:
-            full_path = os.path.abspath(file)
-            path,file_name = os.path.split(full_path)
-            descriptor = file_name.split(".")[2]
-            language = CTX_language(descriptor)            
-            
-            print "Creating %s" % full_path
-            with codecs.open(full_path, "r", "utf-16") as f:
-                for line in f:
-                    #print repr(line)
-                    line = line.rstrip("\r\n")
-                    id,item_text = line.split("|")
-                    id = int(id)
-                    item_text = item_text.lstrip(" ")
-                    print id,repr(item_text)
-                    language.add_data(id, item_text) 
-            self.data.add_language(language)
-        self.pack()
+        with codecs.open(full_path, "wb", "utf-16") as f:                                            
+                yaml.dump(self.data, f, allow_unicode=True, encoding="utf-16")                                             
     
     def yaml2ctx(self, yaml_file):
         filepath = os.path.abspath(yaml_file)
