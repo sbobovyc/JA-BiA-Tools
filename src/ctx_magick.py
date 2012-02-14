@@ -24,7 +24,7 @@ import argparse
 import os
 from ctx_file import CTX_file
 
-parser = argparse.ArgumentParser(description='Tool that can unpack/pack Jagged Alliance: BiA ctx files.', \
+parser = argparse.ArgumentParser(description='Tool that can unpack/pack Jagged Alliance: BiA compiled text (ctx) files.', \
                                 epilog='All languages must contain the same number of entries and the last ' + \
                                  'entry id has to be the same in all languages.')
 

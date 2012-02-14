@@ -2,6 +2,9 @@
 PYTHON
 ########
 cd src
+python pak_magick.py -h
+python ctx_magick.py -h
+
 python pak_magick.py "C:\Program Files (x86)\Jagged Alliance Back in Action Demo\voices_win32.pak"
 
 python ctx_magick.py ..\..\..\Desktop\test\bin_win32\interface\equipment.ctx
@@ -27,7 +30,15 @@ Language: spa, data offset: 0xa0a1c bytes
 ########
 BINARY
 ########
-cd dist
+1. Open a command prompt, you should see something like "C:\Users\your_name"
+2. Then change directory to where the tools are:
+cd C:\Users\your_name\Desktop\bia_tools
+3. Use the tools:
+pak_magick.exe somefile.pak
+ctx_magick.exe somefile.ctx
+4. Both files have a help
+pak_magick.exe -h
+ctx_magick.exe -h
 
 ctx_magick.exe equipment.ctx
 Unpacking C:\Users\sbobovyc\workspace\JA-BiA-Tools\dist\equipment.ctx
