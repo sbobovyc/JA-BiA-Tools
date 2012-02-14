@@ -36,6 +36,23 @@ endian_dict = {"<":"little endian", ">":"big endian"}
 type_list = type_dict.keys()
 endian_list = endian_dict.keys()
 
+def dump_xyz():
+    path = "C:\\Users\\sbobovyc\\Desktop\\bia\\1.03\\bin_win32\weapons\\memdump.crf"
+    dumped_data = None
+    f_data = open(path, "rb")
+    dumped_data = f_data.read()
+    f_data.seek(0x0)
+    num_points = len(dumped_data) / 4 / 8
+    print num_points
+    with open("C:\Users\sbobovyc\Desktop\out.xyz", "w") as f:
+        f.write("%i\n" % num_points)
+        f.write("sbobovyc Dump of hummer\n")
+        for i in range(0, num_points):
+            x,y,z,a,b,c,d,e = struct.unpack("<ffffffff", f_data.read(32))
+            print i, x, y, z
+            f.write("Au %f %f %f\n" % (x, y, z))
+    f_data.close()
+  
 def sliding_window_filter(file_pointer, count, filename="", file_offset=0x0, byte_order="<", type="f", abs_min=0.1, abs_max=20, verbose=False):    
     start_offset = file_offset
     file_pointer.seek(start_offset)
@@ -180,7 +197,7 @@ def graph_file_data(data, file_offset, byte_order, type, abs_min, abs_max, mode,
             plt.show()
                     
 def graph_CUMULATIVE(input_filename, abs_min, abs_max):
-    graph_file_data(None, None, None, None, abs_min, abs_max, input_filename=input_filename, save=True, layer=True, show=False)
+    graph_file_data(None, None, None, None, abs_min, abs_max, input_filename=input_filename, save=True, show=False)
     
 def clear_graph():
     plt.clf()  
@@ -206,15 +223,16 @@ def file_scan(full_file_path, count, type_list=type_list, endian_list=endian_lis
     if mode == "MULTIPLE":                
         graph_file_data(value_list, offsets_list, e_list, t_list, abs_min, abs_max, input_filename=filename, mode=mode, save=save, show=show)
     
-if __name__ == "__main__":    
-    path = "C:\\Users\\sbobovyc\\Desktop\\bia\\1.03\\bin_win32\weapons"
-    file_list = os.listdir(path)
-    for file in file_list:
-        if file.endswith(".crf"):
-            full_file_path = os.path.abspath(os.path.join(path, file)) 
-            print full_file_path
-            file_scan(full_file_path, 10000, type_list=('f','d'), file_offset=0x1c, mode="MULTIPLE", graph=True, save=True)
-                    
+if __name__ == "__main__":
+    dump_xyz()    
+#    path = "C:\\Users\\sbobovyc\\Desktop\\bia\\1.03\\bin_win32\weapons"
+#    file_list = os.listdir(path)
+#    for file in file_list:
+#        if file.endswith(".crf"):
+#            full_file_path = os.path.abspath(os.path.join(path, file)) 
+#            print full_file_path
+#            file_scan(full_file_path, 10000, type_list=('f','d'), file_offset=0x1c, mode="MULTIPLE", graph=True, save=True)
+#                    
 #    graph_CUMULATIVE("CUMULATIVE_summary1.png", abs_min=0.1, abs_max=20.0)
 #    
 #    clear_graph()
