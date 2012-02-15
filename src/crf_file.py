@@ -40,6 +40,8 @@ except ImportError, err:
 class CRF_data:
     def __init__(self):
         self.crf_magick = None
+        self.vertex_xyz_data = []   # list of numpy arrays containing x,y,z
+        self.vertex_uvw_data = []
         
     def unpack(self, file_pointer, peek=False, verbose=False):    
         self.crf_magick, = struct.unpack("<Q", file_pointer.read(8))    
@@ -53,7 +55,6 @@ class CRF_data:
         self.footer_offset,self.magick2 = struct.unpack("<II", file_pointer.read(8))
         print self.footer_offset, hex(self.footer_offset)
         print self.magick2, hex(self.magick2)
-        print file_pointer.tell()
         self.magick3, self.magick4, self.num_models_in_file = struct.unpack("<III", file_pointer.read(12))
         print self.magick3, self.magick4
         print "Number of models in file", self.num_models_in_file
@@ -65,10 +66,19 @@ class CRF_data:
         print "Number of points", self.number_of_point
         self.length_of_compiled_data, = struct.unpack("<I", file_pointer.read(4))
         print "Length of compiled data", self.length_of_compiled_data*6
-#        self.start = 02 21 80 01 0C 20 00 00 00
-        # then a bunch of compiled text
-        # then 0x21 80 01 0C 20 00 00 00
-        # then data {x,y,z,u0,u1,u2,u3,u4}
+        print "Position", hex(file_pointer.tell())
+        self.compile_data = file_pointer.read(self.length_of_compiled_data*6)
+        print "Position", hex(file_pointer.tell())
+        self.start_token,null = struct.unpack("<QB", file_pointer.read(9)) 
+        #0x0000200c01802102, 0x00
+        print hex(self.start_token)
+        
+        #reading verteces
+        for i in range(0, self.number_of_point):
+            print hex(file_pointer.tell())
+            x,y,z,a,b,c,d,e = struct.unpack("<fffIIIII", file_pointer.read(32))
+            vertex = array([x,y,z])
+            print i, vertex
         # then 0x00 00 00 08 00 08 00 00 00
         # then data that does not seem to be used
         # then nm to signal end of data
