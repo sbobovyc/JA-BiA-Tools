@@ -38,20 +38,36 @@ endian_list = endian_dict.keys()
 
 def dump_xyz():
     path = "C:\\Users\\sbobovyc\\Desktop\\bia\\1.03\\bin_win32\weapons\\memdump.crf"
+    path2 = "C:\\Users\\sbobovyc\\Desktop\\bia\\1.03\\bin_win32\weapons\\memdump2.crf"
     dumped_data = None
     f_data = open(path, "rb")
     dumped_data = f_data.read()
     f_data.seek(0x0)
     num_points = len(dumped_data) / 4 / 8
     print num_points
+    f_out = open(path2, "wb")
     with open("C:\Users\sbobovyc\Desktop\out.xyz", "w") as f:
         f.write("%i\n" % num_points)
         f.write("sbobovyc Dump of hummer\n")
         for i in range(0, num_points):
-            x,y,z,a,b,c,d,e = struct.unpack("<ffffffff", f_data.read(32))
+#            x,y,z,a,b,c,d,e = struct.unpack("<fffIIIII", f_data.read(32))
+            x,y,z = struct.unpack("<fff", f_data.read(12))
+            texture_data = struct.unpack("<20B", f_data.read(20))
+            f_data.seek(f_data.tell()-20)     
+            texture_data2 = struct.unpack("<5f", f_data.read(20))
+            f_data.seek(f_data.tell()-20)     
+            texture_data3 = struct.unpack("<5I", f_data.read(20))      
             print i, x, y, z
-            f.write("Au %f %f %f\n" % (x, y, z))
+            print texture_data
+            print texture_data2
+            print texture_data3
+            f.write("Au\t%f\t%f\t%f\n" % (x, y, z))
+#            data = struct.pack('<fffIIIII', x, y, z, 0x008080ff, 0xff7ffe80, 0xa5679000, 0xa5679002, 0x00ff7f80)
+#            80FE8200 018082FF DDD9BE36 3915D735 7D820100
+            data = struct.pack('<fffIIIII', x, y, z, 0x0082FE80, 0xff828001, 0x36bed9dd, 0x35d71539, 0x0001827d)
+#            f_out.write(data)
     f_data.close()
+    f_out.close()
   
 def sliding_window_filter(file_pointer, count, filename="", file_offset=0x0, byte_order="<", type="f", abs_min=0.1, abs_max=20, verbose=False):    
     start_offset = file_offset
