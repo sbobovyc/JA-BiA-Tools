@@ -76,9 +76,10 @@ class CRF_data:
         #reading verteces
         for i in range(0, self.number_of_point):
             print hex(file_pointer.tell())
-            x,y,z,a,b,c,d,e = struct.unpack("<fffIIIII", file_pointer.read(32))
+            # Sir_Kane    float x, y, z; dword diffuse, specular; short u0, v0, u1, v1; dword blendweights
+            x, y, z, diffuse, specular, u0, v0, u1, v1, blendweights = struct.unpack("<fffIIHHHHI", file_pointer.read(32))
             vertex = array([x,y,z])
-            print i, vertex
+            print i, vertex, diffuse, specular, u0, v0, u1, v1, blendweights
         # then 0x00 00 00 08 00 08 00 00 00
         # then data that does not seem to be used
         # then nm to signal end of data
