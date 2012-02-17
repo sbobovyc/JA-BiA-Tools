@@ -23,37 +23,46 @@ class Icon(Texture):
         self.y = y
         self.width = width
         self.height = height
+
+class Item:
+    def __init__(self):
+        self.id
         
-class Weapon:
-    def __init__(self, id, armament, weight, price, resource_id, damage, 
-                 best_range, quality, icon_id, icon_location, picture, deliverable):
-        self.id = id
-        self.armament = armament
-        self.weight = weight
-        self.price = price
-        self.resource_id = resource_id
-        self.damage = damage
-        self.best_range = best_range
-        self.quality = quality
-        self.icon_id = icon_id
-        self.icon_location = icon_location
-        self.picture = picture
-        self.deliverable = deliverable 
+class Weapon(Item):
+    def __init__(self): 
+        self.armament 
+        self.weight 
+        self.price 
+        self.resource_id 
+        self.damage 
+        self.best_range 
+        self.quality 
+        self.icon_id 
+        self.icon_location 
+        self.picture 
+        self.deliverable  
 
 class Rifle(Weapon):
-    def __init__(self, shot_effect_id, stance_factor, clip_size, ammunition, rpm, gun_type, anchor_point, *args):
-        self.__init__(args)
+    def __init__(self):        
         self.shot_effect_id
-        self.stance_factor = stance_factor
-        self.clip_size = clip_size
-        self.ammunition = ammunition
-        self.rpm = rpm
-        self.gun_type = gun_type
-        self.anchor_point = anchor_point
+        self.stance_factor 
+        self.clip_size 
+        self.ammunition 
+        self.rpm 
+        self.gun_type 
+        self.anchor_point 
 
 class Hand_gun(Weapon, Rifle):
     def __init__(self, *args):
-        
+        pass
+    
 class Knife(Weapon):
-    def __init__(self, *args):
-        self.__init__(args)
+    def __init__(self):
+        pass
+
+if __name__ == "__main__":
+    # example of object reflection
+    tex = type("Texture", (object,), dict(id=1, full_path="."))
+    print tex.id
+    item = type("Item", (object,), dict(id=55))
+    print item.id
