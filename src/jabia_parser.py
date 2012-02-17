@@ -19,21 +19,22 @@ Created on February 16, 2012
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import sys
+import os
 from pyparsing import *
 
 LPAR,RPAR,LBRACK,RBRACK,LBRACE,RBRACE,SEMI,COMMA = map(Suppress, "()[]{};,")
 jabiaKeywords = Keyword("Deliverable") ^ Keyword("DisableAttachments")
-jabiaObjectType = Word(alphanums + "_")
+jabiaObjectType = Word(alphanums + "_") ^ Combine(Word(alphas) + " " + Word(nums))
 jabiaVariable = Word(alphas)
 jabiaString = dblQuotedString.setParseAction( removeQuotes )
 jabiaNumber = Combine( Optional('-') + ( '0' | Word('123456789',nums) ) +
                     Optional( '.' + Word(nums) ) +
                     Optional( Word('eE',exact=1) + Word(nums+'+-',nums) ) )
-jabiaValue = jabiaString | jabiaObjectType | jabiaNumber
-#jabiaArray = delimitedList(jabiaNumber, delim=White(' ',exact=1)) 
-jabiaArray = OneOrMore(jabiaNumber)
-jabiaStatement = Group(jabiaKeywords + ZeroOrMore("*")) | (Group(jabiaVariable + jabiaArray) ^ Group(jabiaVariable + jabiaValue))   
-#jabiaObject = OneOrMore(jabiaStatement)
+jabiaValue = jabiaString | jabiaObjectType | jabiaNumber 
+jabiaArray = OneOrMore(jabiaNumber) | OneOrMore(jabiaString) | OneOrMore(jabiaNumber + jabiaString)
+#jabiaStatement = Group(jabiaKeywords + ZeroOrMore("*")) | (Group(jabiaVariable + Group(jabiaArray)) ^ Group(jabiaVariable + jabiaValue & ZeroOrMore("*")))
+jabiaStatement = Group(jabiaKeywords + ZeroOrMore("*")) | (Group(jabiaVariable + jabiaArray) ^ Group(jabiaVariable + jabiaValue)) #last one does not match properly   
 jabiaObject = Group(jabiaObjectType + LPAR + Optional(Group(delimitedList(jabiaValue))) + RPAR +
             LBRACE + Optional(OneOrMore(jabiaStatement)) + RBRACE)
 jabiaObjectCollection = OneOrMore(jabiaObject)
@@ -50,40 +51,14 @@ def convertNumbers(s,l,toks):
 jabiaNumber.setParseAction( convertNumbers )
 
 if __name__ == "__main__":
-    test_data = """
-// 38 S&W
-Weapon (36, HandGun)
-{
-    Weight 650
-      Price 720
-    ResourceId 4205    
-    ShotEffectId 5608
-
-    // logic:
-    Damage 22
-    BestRange 14.0
-    StanceFactor 0 1
-    StanceFactor 1 0.9
-    StanceFactor 2 0.9
-    StanceFactor 3 0.9
-    ClipSize 6
-    Ammunition 38cal
-    Quality 400
-    RPM 450
-      GunType Handgun
-    Icon 0 112 200 112 40
-    Picture 0 8 0 2
-    
-    
-    DisableAttachments
-    AnchorPoint 0.0 0.5 -1.9
-    
-    Deliverable
-}
-"""
+    if len(sys.argv) != 2:
+        print "Not enough arguments"
+#        sys.exit()
+#    file = os.path.abspath(sys.argv[1]) 
+    test_data = """0 "a" """
     import pprint
 #    results = jabiaObject.parseString(test_data)
-#    pprint.pprint( results.asList() )
-    results = jabiaObjectCollection.parseFile("C:\\Users\\sbobovyc\\Desktop\\test\\bin_win32\\configs\\weapons.txt")
+    results = jabiaArray.parseString(test_data)
+#    results = jabiaObjectCollection.parseFile(file)
     pprint.pprint(results.asList())
 
