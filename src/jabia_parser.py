@@ -32,7 +32,7 @@ jabiaNumber = Combine( Optional('-') + ( '0' | Word('123456789',nums) ) +
                     Optional( '.' + Word(nums) ) +
                     Optional( Word('eE',exact=1) + Word(nums+'+-',nums) ) )
 jabiaValue = jabiaString | jabiaObjectType | jabiaNumber 
-jabiaArray = OneOrMore(jabiaNumber) | OneOrMore(jabiaString) | OneOrMore(jabiaNumber + jabiaString)
+jabiaArray = (jabiaNumber + jabiaString) | OneOrMore(jabiaNumber) | OneOrMore(jabiaString)  
 #jabiaStatement = Group(jabiaKeywords + ZeroOrMore("*")) | (Group(jabiaVariable + Group(jabiaArray)) ^ Group(jabiaVariable + jabiaValue & ZeroOrMore("*")))
 jabiaStatement = Group(jabiaKeywords + ZeroOrMore("*")) | (Group(jabiaVariable + jabiaArray) ^ Group(jabiaVariable + jabiaValue)) #last one does not match properly   
 jabiaObject = Group(jabiaObjectType + LPAR + Optional(Group(delimitedList(jabiaValue))) + RPAR +
@@ -53,12 +53,12 @@ jabiaNumber.setParseAction( convertNumbers )
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print "Not enough arguments"
-#        sys.exit()
-#    file = os.path.abspath(sys.argv[1]) 
+        sys.exit()
+    file = os.path.abspath(sys.argv[1]) 
     test_data = """0 "a" """
     import pprint
 #    results = jabiaObject.parseString(test_data)
     results = jabiaArray.parseString(test_data)
-#    results = jabiaObjectCollection.parseFile(file)
+    results = jabiaObjectCollection.parseFile(file)
     pprint.pprint(results.asList())
 
