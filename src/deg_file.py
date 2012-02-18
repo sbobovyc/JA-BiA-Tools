@@ -34,7 +34,7 @@ class DEG_entry:
         self.name = name
         self.color_file = color_file
         self.normal_file = normal_file
-        self.coords = coords
+        self.coords = coords    # ((ulx,uly),(width,height))
         self.mystery = mystery
     
     def get_name_lenth(self):
@@ -63,7 +63,7 @@ class DEG_entry:
         return data_buffer
     
     def __str__(self):
-        string = "%s = %s and %s,\n(ulx,uly)=(%s), (lrx,lry)=(%s), mystery=(%s,%s)\n" % ( 
+        string = "%s = %s and %s,\n(ulx,uly)=%s, (width,height)=%s, mystery=(%s,%s)\n" % ( 
             self.name, self.color_file, self.normal_file, self.coords[0], self.coords[1], 
             hex(self.mystery[0]), hex(self.mystery[1]))
         return string
@@ -92,11 +92,11 @@ class DEG_data:
             c_file = file_pointer.read(c_file_length)
             n_file_length, = struct.unpack("<I", file_pointer.read(4))
             n_file = file_pointer.read(n_file_length)
-            ulx,uly,lrx,lry = struct.unpack("<IIII", file_pointer.read(16))
+            ulx,uly,width,height = struct.unpack("<IIII", file_pointer.read(16))
             unknown1,unknown2 = struct.unpack("<II", file_pointer.read(8))
             # eat "0x01" or "0x00" flags (0x01 means has normals, 0x00 means doesn't)
             file_pointer.read(1)
-            entry = DEG_entry(variable_name, c_file, n_file, ((ulx,uly),(lrx,lry)), (unknown1, unknown2))
+            entry = DEG_entry(variable_name, c_file, n_file, ((ulx,uly),(width,height)), (unknown1, unknown2))
             if verbose:
                 print entry
             self.entry_list.append(entry)
