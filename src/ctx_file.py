@@ -56,15 +56,15 @@ class CTX_language:
         return len(self.description_string)
     
     def get_packed_data(self):        
-        buffer = ""
+        data_buffer = ""
         for key, value in self.data_dictionary.items():       
             encoded_value = value.encode('utf-16le')     
             encoded_size = len(encoded_value)         
             data_packed = struct.pack("<II%is" % encoded_size, key, encoded_size/2, encoded_value)
             #print binascii.hexlify(data_packed)
-            buffer = buffer + data_packed
-            #print binascii.hexlify(buffer)
-        return buffer
+            data_buffer = data_buffer + data_packed
+            #print binascii.hexlify(data_buffer)
+        return data_buffer
     
     def __repr__(self):
         return "%s(name=%r, language=%r, data=%r)" % (
@@ -213,6 +213,7 @@ if __name__ == "__main__":
     cF.unpack(verbose=False)    
     cF.dump2yaml(".")
 #    cF.pack(verbose=False)
+    # pack
 #    cFnew = CTX_file("new_equipment.ctx")
 #    cFnew.yaml2ctx("equipment.ctx.txt")
 

@@ -1,5 +1,5 @@
 """
-Created on February 16, 2012
+Created on February 17, 2012
 
 @author: sbobovyc
 """
@@ -27,6 +27,8 @@ import yaml
 import binascii           
 from collections import OrderedDict
 
+DEG_entry_start = 0x0000
+
 class DEG_entry:
     def __init__(self, name, color_file, normal_file, coords, mystery):
         self.name = name
@@ -34,7 +36,32 @@ class DEG_entry:
         self.normal_file = normal_file
         self.coords = coords
         self.mystery = mystery
-        
+    
+    def get_name_lenth(self):
+        return len(self.name)
+    
+    def get_c_length(self):
+        return len(self.color_file)
+    
+    def get_n_length(self):
+        return len(self.normal_file)
+    
+    def has_normals(self):
+        if self.get_n_length() > 0:
+            return True
+        else:            
+            return False
+    def get_packed_data(self):
+        data_buffer = struct.pack("<I%isI%isI%is" % (self.get_name_lenth(), self.get_c_length(), self.get_n_length()),
+                             self.get_name_lenth(), self.name, 
+                             self.get_c_length(), self.color_file, 
+                             self.get_n_length(), self.normal_file)
+        data_buffer += struct.pack("<IIII", self.coords[0][0], self.coords[0][1],
+                              self.coords[1][0],self.coords[1][1])
+        data_buffer += struct.pack("<II", self.mystery[0], self.mystery[1])
+        binascii.hexlify(data_buffer)
+        return data_buffer
+    
     def __str__(self):
         string = "%s = %s and %s,\n(ulx,uly)=(%s), (lrx,lry)=(%s), mystery=(%s,%s)\n" % ( 
             self.name, self.color_file, self.normal_file, self.coords[0], self.coords[1], 
@@ -43,21 +70,22 @@ class DEG_entry:
         
 class DEG_data:
     def __init__(self):
-        self.num_entries = 0
         self.entry_list = []
     
+    def get_num_entries(self):
+        return len(self.entry_list)
     
     def unpack(self, file_pointer, peek=False, verbose=False):    
-        self.num_entries, = struct.unpack("<I", file_pointer.read(4))
+        num_entries, = struct.unpack("<I", file_pointer.read(4))
         
-        if peek or verbose:
-            print "Not implemented"
         if peek:
+            print "Peek not implemented"
             return 
 
-        print "Number of entries ", self.num_entries
+        if verbose:
+            print "Number of entries ", num_entries
         
-        for i in range(0, self.num_entries):
+        for i in range(0, num_entries):
             entry_separator,length = struct.unpack("<II", file_pointer.read(8))
             variable_name = file_pointer.read(length)
             c_file_length, = struct.unpack("<I", file_pointer.read(4))
@@ -66,42 +94,31 @@ class DEG_data:
             n_file = file_pointer.read(n_file_length)
             ulx,uly,lrx,lry = struct.unpack("<IIII", file_pointer.read(16))
             unknown1,unknown2 = struct.unpack("<II", file_pointer.read(8))
-            # eat "0x01"
+            # eat "0x01" or "0x00" flags (0x01 means has normals, 0x00 means doesn't)
             file_pointer.read(1)
             entry = DEG_entry(variable_name, c_file, n_file, ((ulx,uly),(lrx,lry)), (unknown1, unknown2))
-            print entry
+            if verbose:
+                print entry
             self.entry_list.append(entry)
             
 
                     
     def get_packed_data(self):
-        #1. check to see if all the language have the same amount of items
-        #2. check that all languages have the same last item id
-        self.num_languages = self.get_num_languages()
-        self.num_items = self.language_list[0].get_num_items()
-        self.last_item_id = self.language_list[0].get_last_item_id()        
+        #1. get number of entries
+        num_entries = self.get_num_entries()     
+        header_buffer = struct.pack("<I", num_entries)
         
-        for i in range(1, len(self.language_list)):
-            if self.language_list[i].get_num_items() != self.num_items:
-                print "Languages do not contain same ammount of items!"
-                return
-            if self.language_list[i].get_last_item_id()  != self.last_item_id:
-                print "The last item in each language is not the same!"
-                return
-            
-        #3. pack each language into a byte string and create the data 
-        header_buffer = struct.pack("<III", self.num_items, self.last_item_id, self.num_languages)
+        #2. pack each entry 
         data_buffer = ""
-        previous_buffer_length = 0
-        for language in self.language_list:
-            length = language.get_description_length()
-            description = language.get_description()
-            header_buffer = header_buffer + struct.pack("<I%isI" % length, length, description, previous_buffer_length)
-            #print binascii.hexlify(header_buffer)
-            data_buffer = data_buffer + language.get_packed_data()
-            previous_buffer_length = len(data_buffer)
+        for entry in self.entry_list:                                                   
+            data_buffer += struct.pack("<I", DEG_entry_start)
+            data_buffer += entry.get_packed_data()
+            if entry.has_normals():
+                data_buffer += struct.pack("<B", 0x01)
+            else:
+                data_buffer += struct.pack("<B", 0x00)
             
-        #4. concatenate the byte strings and return     
+        #3. concatenate the header and data   
         return (header_buffer + data_buffer)            
 
     def __repr__(self):
@@ -145,21 +162,26 @@ class DEG_file:
     def dump2yaml(self, dest_filepath=os.getcwd()): 
         file_name = os.path.join(dest_filepath, os.path.splitext(os.path.basename(self.filepath))[0])        
 
-        full_path = file_name + ".ctx.txt" 
+        full_path = file_name + ".deg.txt" 
         print "Creating %s" % full_path
         yaml.add_representer(unicode, lambda dumper, value: dumper.represent_scalar(u'tag:yaml.org,2002:str', value))
         with codecs.open(full_path, "wb", "utf-16") as f:                                            
                 yaml.dump(self.data, f, allow_unicode=True, encoding="utf-16")                                             
     
-    def yaml2ctx(self, yaml_file):
+    def yaml2deg(self, yaml_file):
         filepath = os.path.abspath(yaml_file)
         with codecs.open(filepath, "r", "utf-16") as f:
             self.data = yaml.load(f)                   
         self.pack()
 
 if __name__ == "__main__":    
-    dF = DEG_file("C:\Users\sbobovyc\Desktop\\bia\\1.06\\bin_win32\\configs\main.deg")
-    #cF = CTX_file("/media/Acer/Users/sbobovyc/Desktop/test/bin_win32/interface/equipment.ctx")
-    dF.open()        
-    dF.unpack(verbose=False)    
+#    dF = DEG_file("C:\Users\sbobovyc\Desktop\\bia\\1.06\\bin_win32\\configs\main.deg")
+#    dF.open()        
+#    dF.unpack(verbose=False)    
+#    dF.dump2yaml()
 
+    # packing
+#    dF = DEG_file("main.deg")
+#    dF.open()
+#    dF.yaml2deg("main.deg.txt")
+    pass
