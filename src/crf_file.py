@@ -23,7 +23,6 @@ import binascii
 import struct
 import math
 
-from file_analysis import graph_file_data, sliding_window_filter
 
 try:
     from numpy import *
@@ -78,7 +77,9 @@ class CRF_data:
             print hex(file_pointer.tell())
             # Sir_Kane    float x, y, z; dword diffuse, specular; short u0, v0, u1, v1; dword blendweights
             x, y, z, diffuse, specular, u0, v0, u1, v1, blendweights = struct.unpack("<fffIIHHHHI", file_pointer.read(32))
-            vertex = array([x,y,z])
+#            vertex = array([x,y,z])
+            vertex = [x,y,z]
+            self.vertex_xyz_data.append(vertex)
             print i, vertex, diffuse, specular, u0, v0, u1, v1, blendweights
         # then 0x00 00 00 08 00 08 00 00 00
         # then data that does not seem to be used
