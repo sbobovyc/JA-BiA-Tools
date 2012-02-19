@@ -75,74 +75,107 @@ class CTX_language:
         
 class CUI_data:
     def __init__(self):
-        self.num_items = None
-        self.last_item_id = 0
-        self.num_languages = None
-        self.data_offset = 0 
-        self.language_list = []
-    
+        pass
     
     def unpack(self, file_pointer, peek=False, verbose=False):    
-        self.last_id,self.unknown2 = struct.unpack("<II", file_pointer.read(8))
-        
-        print "Last id:", self.last_id
-        id = 0
-        while(id < self.last_id):
-            id,length = struct.unpack("<II", file_pointer.read(8))
-            variable_name = file_pointer.read(length)
-            length, = struct.unpack("<I", file_pointer.read(4))
-            variable_value = file_pointer.read(length)
-            print id,variable_name, "=", variable_value
-            self.data_offset = file_pointer.tell()
-            
-        self.file_count, = struct.unpack("<I", file_pointer.read(4))
-        print "File count:", self.file_count
-        id = 0
-        for i in range(0, self.file_count):
-            id,length = struct.unpack("<II", file_pointer.read(8))
-            file_name = file_pointer.read(length)
-            print id, file_name
-        
-        self.binary_count, = struct.unpack("<I", file_pointer.read(4))
-        print "Binary count:", self.binary_count
-        for i in range(0, self.binary_count):
-            id, = struct.unpack("<I", file_pointer.read(4))
-            raw_data = file_pointer.read(9)
-            print id,binascii.hexlify(raw_data)
+        self.last_variable_id,self.unknown2 = struct.unpack("<II", file_pointer.read(8))
+
         if peek or verbose:
             print "Not implemented"
         if peek:
             return 
-                    
+        
+        print "Last variable picture_id:", self.last_variable_id
+        picture_id = 0
+        while(picture_id < self.last_variable_id):
+            picture_id,length = struct.unpack("<II", file_pointer.read(8))
+            variable_name = file_pointer.read(length)
+            length, = struct.unpack("<I", file_pointer.read(4))
+            variable_value = file_pointer.read(length)
+            print picture_id,variable_name, "=", variable_value
+            self.data_offset = file_pointer.tell()
+        
+        print
+        
+        self.file_count, = struct.unpack("<I", file_pointer.read(4))
+        print "File count:", self.file_count
+        picture_id = 0
+        for i in range(0, self.file_count):
+            picture_id,length = struct.unpack("<II", file_pointer.read(8))
+            file_name = file_pointer.read(length)
+            print picture_id, file_name
+        
+        self.binary_count, = struct.unpack("<I", file_pointer.read(4))
+        print "Binary sound info blob count:", self.binary_count
+        for i in range(0, self.binary_count):
+            picture_id, = struct.unpack("<I", file_pointer.read(4))
+            raw_data = file_pointer.read(9)
+            print picture_id,binascii.hexlify(raw_data)
+        
+        print
+        
+        self.font_count, = struct.unpack("<I", file_pointer.read(4))
+        print "Font count:", self.font_count
+        for i in range(0, self.font_count):
+            picture_id,length = struct.unpack("<II", file_pointer.read(8))
+            font_name = file_pointer.read(length)
+            length, = struct.unpack("<I", file_pointer.read(4))
+            font_file = file_pointer.read(length)
+            print picture_id,font_name,font_file
+            
+        print
+        
+        self.ui_file_count, = struct.unpack("<I", file_pointer.read(4))
+        print "UI file count:", self.ui_file_count
+        for i in range(0, self.ui_file_count):
+            picture_id,length = struct.unpack("<II", file_pointer.read(8))
+            ui_name = file_pointer.read(length)
+            length, = struct.unpack("<I", file_pointer.read(4))
+            ui_file = file_pointer.read(length)
+            print picture_id,ui_name,ui_file
+        
+        print 
+        
+        self.ui_count, = struct.unpack("<I", file_pointer.read(4))
+        print "UI element count:", self.ui_count
+        print "resource ID, picture ID, ulx, uly, lrx, lry"
+        for i in range(0, self.ui_count):
+            picture_id,resource_id = struct.unpack("<II", file_pointer.read(8))
+            ulx,uly,lrx,lry = struct.unpack("<HHHH", file_pointer.read(8))
+            print picture_id,resource_id,ulx,uly,lrx,lry
+            
+        print hex(file_pointer.tell())
+        print "Rest of file unknown"
     def get_packed_data(self):
+        return None
         #1. check to see if all the language have the same amount of items
         #2. check that all languages have the same last item id
-        self.num_languages = self.get_num_languages()
-        self.num_items = self.language_list[0].get_num_items()
-        self.last_item_id = self.language_list[0].get_last_item_id()        
-        
-        for i in range(1, len(self.language_list)):
-            if self.language_list[i].get_num_items() != self.num_items:
-                print "Languages do not contain same ammount of items!"
-                return
-            if self.language_list[i].get_last_item_id()  != self.last_item_id:
-                print "The last item in each language is not the same!"
-                return
-            
-        #3. pack each language into a byte string and create the data 
-        header_buffer = struct.pack("<III", self.num_items, self.last_item_id, self.num_languages)
-        data_buffer = ""
-        previous_buffer_length = 0
-        for language in self.language_list:
-            length = language.get_description_length()
-            description = language.get_description()
-            header_buffer = header_buffer + struct.pack("<I%isI" % length, length, description, previous_buffer_length)
-            #print binascii.hexlify(header_buffer)
-            data_buffer = data_buffer + language.get_packed_data()
-            previous_buffer_length = len(data_buffer)
-            
-        #4. concatenate the byte strings and return     
-        return (header_buffer + data_buffer)            
+#        self.num_languages = self.get_num_languages()
+#        self.num_items = self.language_list[0].get_num_items()
+#        self.last_item_id = self.language_list[0].get_last_item_id()        
+#        
+#        for i in range(1, len(self.language_list)):
+#            if self.language_list[i].get_num_items() != self.num_items:
+#                print "Languages do not contain same ammount of items!"
+#                return
+#            if self.language_list[i].get_last_item_id()  != self.last_item_id:
+#                print "The last item in each language is not the same!"
+#                return
+#            
+#        #3. pack each language into a byte string and create the data 
+#        header_buffer = struct.pack("<III", self.num_items, self.last_item_id, self.num_languages)
+#        data_buffer = ""
+#        previous_buffer_length = 0
+#        for language in self.language_list:
+#            length = language.get_description_length()
+#            description = language.get_description()
+#            header_buffer = header_buffer + struct.pack("<I%isI" % length, length, description, previous_buffer_length)
+#            #print binascii.hexlify(header_buffer)
+#            data_buffer = data_buffer + language.get_packed_data()
+#            previous_buffer_length = len(data_buffer)
+#            
+#        #4. concatenate the byte strings and return     
+#        return (header_buffer + data_buffer)            
 
     def __repr__(self):
         return "%s(name=%r, languages=%r)" % (
