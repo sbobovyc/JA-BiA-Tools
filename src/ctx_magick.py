@@ -22,7 +22,7 @@ Created on February 6, 2012
 
 import argparse
 import os
-from deg_file import CTX_file
+from ctx_file import CTX_file
 
 parser = argparse.ArgumentParser(description='Tool that can unpack/pack Jagged Alliance: BiA compiled text (ctx) files.', \
                                 epilog='All languages must contain the same number of entries and the last ' + \
@@ -41,24 +41,24 @@ info = args.info
 debug = args.debug
 
 if file != None and os.path.splitext(file)[1][1:].strip() == "ctx":            
-    deg_filepath = os.path.abspath(file)
-    print "Unpacking %s" % deg_filepath
-    deg_file = CTX_file(filepath=deg_filepath)
-    deg_file.open()
-    deg_file.unpack(peek=info, verbose=debug)
+    ctx_filepath = os.path.abspath(file)
+    print "Unpacking %s" % ctx_filepath
+    ctx_file = CTX_file(filepath=ctx_filepath)
+    ctx_file.open()
+    ctx_file.unpack(peek=info, verbose=debug)
 
     if not info:
         output_filepath = os.path.abspath(outdir)
-        deg_file.dump2yaml(outdir)
+        ctx_file.dump2yaml(outdir)
     
 elif file != None and os.path.splitext(file)[1][1:].strip() == "txt":            
-    yaml_deg_filepath = os.path.abspath(file)
-    deg_file_name = os.path.basename(file).split('.')[0] + ".ctx"    
-    deg_filepath = os.path.join(os.path.abspath(outdir), deg_file_name)
+    yaml_ctx_filepath = os.path.abspath(file)
+    ctx_file_name = os.path.basename(file).split('.')[0] + ".ctx"    
+    ctx_filepath = os.path.join(os.path.abspath(outdir), ctx_file_name)
         
-    print "Packing %s" % yaml_deg_filepath
-    deg_file = CTX_file(filepath=deg_filepath)
-    deg_file.yaml2ctx(yaml_deg_filepath)
+    print "Packing %s" % yaml_ctx_filepath
+    ctx_file = CTX_file(filepath=ctx_filepath)
+    ctx_file.yaml2ctx(yaml_ctx_filepath)
 
 else:
     print "Nothing happened"
