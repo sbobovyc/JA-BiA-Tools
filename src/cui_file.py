@@ -108,9 +108,9 @@ class CUI_data:
         self.binary_count, = struct.unpack("<I", file_pointer.read(4))
         print "Binary sound info blob count:", self.binary_count
         for i in range(0, self.binary_count):
-            picture_id, = struct.unpack("<I", file_pointer.read(4))
+            id, = struct.unpack("<I", file_pointer.read(4))
             raw_data = file_pointer.read(9)
-            print picture_id,binascii.hexlify(raw_data)
+            print id,binascii.hexlify(raw_data)
         
         print
         
@@ -145,7 +145,14 @@ class CUI_data:
             print picture_id,resource_id,ulx,uly,lrx,lry
             
         print hex(file_pointer.tell())
-        print "Rest of file unknown"
+        count, = struct.unpack("<I", file_pointer.read(4))
+        print "Count", count
+        for i in range(0, count):
+            id,length = struct.unpack("<II", file_pointer.read(8))
+            text = file_pointer.read(length)
+            
+            print id,text
+        
     def get_packed_data(self):
         return None
         #1. check to see if all the language have the same amount of items
