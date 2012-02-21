@@ -153,6 +153,15 @@ class CUI_data:
             
             print id,text
         
+        # MAIN_PlayTutorial, 0x03 UI_type (button with text),
+        # 0x03 (center the text), 0x0000, length, name, byte column, byte row, 
+        # int16 x offset from grid center, int16 y offset from grid center,
+        # 0x18012400 (type?, only exists in main menu), uint32 ctx id (which text to use), uint32 length in bytes of next command,
+        # command (play tutorial, new game, exit, etc) {memory address?}, nonsense
+        
+        # merc, uint32 layer, 0x0000, uint32 special effect, 0x01c5 resource id, uint32, uint32, length, name, byte column, byte row, int16 x offset from grid center, 
+        # int16 y offset from grid center, nonsense
+        
     def get_packed_data(self):
         return None
         #1. check to see if all the language have the same amount of items
