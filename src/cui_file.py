@@ -156,13 +156,17 @@ class CUI_data:
             print unknown0,unknown1,unknown2
             print data
         
+        
+        # Pic_Background_white(solid), uint32 id, unint32 length, name, 19 bytes of stuff,
+        # 7D 7D 7D 0A (RGBA) diffuse color, 7F 7F 7F C8 specular? (it's unused),
+        
         # MAIN_PlayTutorial, 0x03 UI_type (button with text),
         # 0x03 (center the text), 0x0000, length, name, byte column, byte row, 
         # int16 x offset from grid center, int16 y offset from grid center,
         # 0x18012400 (type?, only exists in main menu), uint32 ctx id (which text to use), uint32 length in bytes of next command,
         # command (play tutorial, new game, exit, etc) {memory address?}, nonsense
         
-        # merc, uint32 layer, 0x0000, uint32 special effect, 0x01c5 resource id, uint32, uint32, length, name, byte column, byte row, int16 x offset from grid center, 
+        # merc, uint32 layer, 0x0000, uint32 ui type (Pic_Background_white(solid)), 0x01c5 resource id, uint32, uint32, length, name, byte column, byte row, int16 x offset from grid center, 
         # int16 y offset from grid center, nonsense
         
     def get_packed_data(self):
