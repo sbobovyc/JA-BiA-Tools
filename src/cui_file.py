@@ -147,11 +147,14 @@ class CUI_data:
         print hex(file_pointer.tell())
         count, = struct.unpack("<I", file_pointer.read(4))
         print "Count", count
-        for i in range(0, count):
+        for i in range(0, 1):
             id,length = struct.unpack("<II", file_pointer.read(8))
             text = file_pointer.read(length)
-            
+            unknown0, unknown1, unknown2 = struct.unpack("<IHH", file_pointer.read(8))
+            data = struct.unpack("<20I", file_pointer.read(80))
             print id,text
+            print unknown0,unknown1,unknown2
+            print data
         
         # MAIN_PlayTutorial, 0x03 UI_type (button with text),
         # 0x03 (center the text), 0x0000, length, name, byte column, byte row, 
