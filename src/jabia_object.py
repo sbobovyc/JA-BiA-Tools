@@ -66,3 +66,6 @@ if __name__ == "__main__":
     print tex.id
     item = type("Item", (object,), dict(id=55))
     print item.id
+    id = 57
+    item = type("Item", (object,), dict(id=id))
+    print item.id

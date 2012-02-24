@@ -28,8 +28,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.49497474"
-     inkscape:cx="779.53418"
-     inkscape:cy="449.74772"
+     inkscape:cx="846.65035"
+     inkscape:cy="216.43345"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -50,7 +50,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -121,14 +121,14 @@
        transform="matrix(0.35903444,0,0,0.17410715,918.19432,34.752404)" />
     <path
        sodipodi:type="arc"
-       style="fill:none;stroke:#d93631;stroke-width:18.35936165;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       style="fill:none;stroke:#d93631;stroke-width:22.67604065;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
        id="path3199-1-7"
        sodipodi:cx="-1583.9192"
        sodipodi:cy="599.81384"
        sodipodi:rx="452.54834"
        sodipodi:ry="226.27417"
-       d="m -1131.3708,599.81384 c 0,124.96778 -202.6128,226.27417 -452.5484,226.27417 -249.9355,0 -452.5483,-101.30639 -452.5483,-226.27417 0,-124.96777 202.6128,-226.27417 452.5483,-226.27417 249.9356,0 452.5484,101.3064 452.5484,226.27417 z"
-       transform="matrix(0.42599873,0,0,0.17410715,989.91517,374.7324)" />
+       d="m -1131.3708,599.81384 a 452.54834,226.27417 0 1 1 -905.0967,0 452.54834,226.27417 0 1 1 905.0967,0 z"
+       transform="matrix(0.42599873,0,0,0.11412934,989.91517,411.4222)" />
     <path
        style="fill:#d93531;fill-opacity:1;stroke:#d93531;stroke-width:5;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
        d="M 230.02762,57.433716 510.8877,-8.6028132"
@@ -141,7 +141,7 @@
        inkscape:connector-curvature="0" />
     <path
        style="fill:#d93531;fill-opacity:1;stroke:#d93531;stroke-width:5;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
-       d="M 497.98637,467.7358 720.2576,432.00388"
+       d="M 506.06759,475.81702 720.2576,432.00388"
        id="path4005-4-0"
        inkscape:connector-curvature="0" />
     <flowRoot
@@ -191,5 +191,32 @@
            x="937.42157"
            y="-127.49599"
            style="fill:#d93631;fill-opacity:1;stroke:#d93531;stroke-opacity:1" /></flowRegion><flowPara
-         id="flowPara4057-8-5">ui_equipment_icons_1.dds, x location, y location, x width, y height</flowPara></flowRoot>  </g>
+         id="flowPara4057-8-5">ui_equipment_icons_1.dds, x location, y location, x width, y height</flowPara></flowRoot>    <path
+       sodipodi:type="arc"
+       style="fill:none;stroke:#d93631;stroke-width:34.87816238;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       id="path3199-1-7-1"
+       sodipodi:cx="-1583.9192"
+       sodipodi:cy="599.81384"
+       sodipodi:rx="452.54834"
+       sodipodi:ry="226.27417"
+       d="m -1131.3708,599.81384 a 452.54834,226.27417 0 1 1 -905.0967,0 452.54834,226.27417 0 1 1 905.0967,0 z"
+       transform="matrix(0.17823086,0,0,0.11530549,548.53667,463.53782)" />
+    <flowRoot
+       xml:space="preserve"
+       id="flowRoot4051-9-2-2"
+       style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#d93631;fill-opacity:1;stroke:#d93531;stroke-opacity:1;font-family:Sans"
+       transform="translate(-165.16854,634.14726)"><flowRegion
+         id="flowRegion4053-4-4-16"><rect
+           id="rect4055-8-5-8"
+           width="1224.7399"
+           height="95.994217"
+           x="937.42157"
+           y="-127.49599"
+           style="fill:#d93631;fill-opacity:1;stroke:#d93531;stroke-opacity:1" /></flowRegion><flowPara
+         id="flowPara4057-8-5-5">ui_equipment_pictures_3.dds, column 3, row 4, 3 rows wide</flowPara></flowRoot>    <path
+       style="fill:#d93531;fill-opacity:1;stroke:#d93531;stroke-width:4.99999952;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       d="m 347.56983,537.53526 424.66788,2.5349"
+       id="path4005-4-0-7"
+       inkscape:connector-curvature="0" />
+  </g>
 </svg>
