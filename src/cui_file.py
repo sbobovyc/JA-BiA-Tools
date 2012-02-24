@@ -144,21 +144,48 @@ class CUI_data:
             ulx,uly,lrx,lry = struct.unpack("<HHHH", file_pointer.read(8))
             print picture_id,resource_id,ulx,uly,lrx,lry
             
-        print hex(file_pointer.tell())
+        print 
+        
         count, = struct.unpack("<I", file_pointer.read(4))
-        print "Count", count
-        for i in range(0, 1):
+        print "Number of ui elements:", count
+        for i in range(0, count):
             id,length = struct.unpack("<II", file_pointer.read(8))
             text = file_pointer.read(length)
-            unknown0, unknown1, unknown2 = struct.unpack("<IHH", file_pointer.read(8))
-            data = struct.unpack("<20I", file_pointer.read(80))
-            print id,text
-            print unknown0,unknown1,unknown2
-            print data
+            unknown0, = struct.unpack("<I", file_pointer.read(4))
+            unknown1 = struct.unpack("<7H", file_pointer.read(14))
+            padding = struct.unpack("<B", file_pointer.read(1))
+            
+            num_verteces, = struct.unpack("<H", file_pointer.read(2))
+            
+            for j in range(0, num_verteces):
+                vertex_id, = struct.unpack("<I", file_pointer.read(4))
+                color, = struct.unpack("<I", file_pointer.read(4))
+                data = struct.unpack("<IB", file_pointer.read(5))
+                
+            trailer_length = struct.unpack("<H", file_pointer.read(2))
+            if(trailer_length == 0):
+                padding = file_pointer.read(2)
+            else:
+                pass
+            print id, text, hex(unknown0), unknown1, num_verteces
+            print hex(file_pointer.tell())
         
+        # Background_Overlapping_Inactive, uint32 id, unint32 length, name, 
+        
+        # Pic_Background_white(transparent), uint32 id, unint32 length, name, 
+        # 0x1000, 0x10 00 13 00 02 01 00 00 00 00 00 02 00 02 00,
+        # 0x06 number of vertex definitions, uint32 vertex id?, 9 bytes of vertex definition
+        # 7D 7D 7D 64 (RGBA) diffuse (D3DDECLTYPE_D3DCOLOR) color, 7F 7F 7F C8 specular? (it's unused),
+    
         
         # Pic_Background_white(solid), uint32 id, unint32 length, name, 19 bytes of stuff,
         # 7D 7D 7D 0A (RGBA) diffuse color, 7F 7F 7F C8 specular? (it's unused),
+        
+        # ButtonBitIcon_CheckButton is the last ui type
+        
+        # MainMenu Start, uint32 UI type (0xA9, Pic_Background_lightgreen), uint32 length of name, name, 
+        # uint32 number of ui elements, uint32 unknown, 0x00
+        # MAIN_LoadGame, uint32 UI type(0xA7), 0xFFFFFFFF, 0x03030000, uint32 length of name, name, 
         
         # MAIN_PlayTutorial, 0x03 UI_type (button with text),
         # 0x03 (center the text), 0x0000, length, name, byte column, byte row, 
@@ -166,7 +193,7 @@ class CUI_data:
         # 0x18012400 (type?, only exists in main menu), uint32 ctx id (which text to use), uint32 length in bytes of next command,
         # command (play tutorial, new game, exit, etc) {memory address?}, nonsense
         
-        # merc, uint32 layer, 0x0000, uint32 ui type (Pic_Background_white(solid)), 0x01c5 resource id, uint32, uint32, length, name, byte column, byte row, int16 x offset from grid center, 
+        # merc, uint32 layer, 0x0000, uint32 ui type (Pic_Background_white(solid)), 0x01c5 resource id, uint32, uint32 length, name, byte column, byte row, int16 x offset from grid center, 
         # int16 y offset from grid center, nonsense
         
     def get_packed_data(self):
