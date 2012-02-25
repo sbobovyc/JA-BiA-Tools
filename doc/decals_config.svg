@@ -15,7 +15,7 @@
    version="1.1"
    inkscape:version="0.48.2 r9819"
    sodipodi:docname="decals_config.svg"
-   inkscape:export-filename="C:\Users\sbobovyc\Desktop\decals_config.png"
+   inkscape:export-filename="C:\Users\sbobovyc\workspace\JA-BiA-Tools\doc\decals_config.png"
    inkscape:export-xdpi="45.023918"
    inkscape:export-ydpi="45.023918">
   <defs
@@ -93,7 +93,7 @@
          id="flowPara3082"> Decal grenade_asphalt_01</flowPara><flowPara
          id="flowPara3084"> Decal grenade_asphalt_02</flowPara><flowPara
          id="flowPara3086"> Decal grenade_asphalt_03</flowPara><flowPara
-         id="flowPara3088"></flowPara><flowPara
+         id="flowPara3088" /><flowPara
          id="flowPara3090"> MaterialRadius 5</flowPara><flowPara
          id="flowPara3092"> RequiredMaterial Ground_Asphalt 0.60</flowPara><flowPara
          id="flowPara3094"> XZScale 1.2 1.2</flowPara><flowPara

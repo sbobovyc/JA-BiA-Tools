@@ -15,7 +15,7 @@
    version="1.1"
    inkscape:version="0.48.2 r9819"
    sodipodi:docname="clothing_config.svg"
-   inkscape:export-filename="C:\Users\sbobovyc\Desktop\weapon_config.png"
+   inkscape:export-filename="C:\Users\sbobovyc\workspace\JA-BiA-Tools\doc\clothing_config.png"
    inkscape:export-xdpi="45.023918"
    inkscape:export-ydpi="45.023918">
   <defs
@@ -50,7 +50,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -127,7 +127,7 @@
        sodipodi:cy="599.81384"
        sodipodi:rx="452.54834"
        sodipodi:ry="226.27417"
-       d="m -1131.3708,599.81384 a 452.54834,226.27417 0 1 1 -905.0967,0 452.54834,226.27417 0 1 1 905.0967,0 z"
+       d="m -1131.3708,599.81384 c 0,124.96778 -202.6128,226.27417 -452.5484,226.27417 -249.9355,0 -452.5483,-101.30639 -452.5483,-226.27417 0,-124.96777 202.6128,-226.27417 452.5483,-226.27417 249.9356,0 452.5484,101.3064 452.5484,226.27417 z"
        transform="matrix(0.42599873,0,0,0.11412934,989.91517,411.4222)" />
     <path
        style="fill:#d93531;fill-opacity:1;stroke:#d93531;stroke-width:5;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
@@ -199,7 +199,7 @@
        sodipodi:cy="599.81384"
        sodipodi:rx="452.54834"
        sodipodi:ry="226.27417"
-       d="m -1131.3708,599.81384 a 452.54834,226.27417 0 1 1 -905.0967,0 452.54834,226.27417 0 1 1 905.0967,0 z"
+       d="m -1131.3708,599.81384 c 0,124.96778 -202.6128,226.27417 -452.5484,226.27417 -249.9355,0 -452.5483,-101.30639 -452.5483,-226.27417 0,-124.96777 202.6128,-226.27417 452.5483,-226.27417 249.9356,0 452.5484,101.3064 452.5484,226.27417 z"
        transform="matrix(0.17823086,0,0,0.11530549,548.53667,463.53782)" />
     <flowRoot
        xml:space="preserve"
@@ -213,7 +213,7 @@
            x="937.42157"
            y="-127.49599"
            style="fill:#d93631;fill-opacity:1;stroke:#d93531;stroke-opacity:1" /></flowRegion><flowPara
-         id="flowPara4057-8-5-5">ui_equipment_pictures_3.dds, column 3, row 4, 3 rows wide</flowPara></flowRoot>    <path
+         id="flowPara4057-8-5-5">ui_equipment_pictures_3.dds, column 7, row 0, 1 row wide</flowPara></flowRoot>    <path
        style="fill:#d93531;fill-opacity:1;stroke:#d93531;stroke-width:4.99999952;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
        d="m 347.56983,537.53526 424.66788,2.5349"
        id="path4005-4-0-7"
