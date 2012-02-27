@@ -8,3 +8,4 @@
     python %PIP%pyinstaller.py --onefile --console --icon %ICON2% --name ctx_magick -p src\ src\ctx_magick.py
     python %PIP%pyinstaller.py --onefile --console --icon %ICON3% --name find_pkle -p src\ src\find_pkle.py
     python %PIP%pyinstaller.py --onefile --console --icon %ICON4% --name deg_magick -p src\ src\deg_magick.py
+    python %PIP%pyinstaller.py --onefile --console --name cui_magick -p src\ src\cui_magick.py

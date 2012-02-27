@@ -149,7 +149,7 @@ class CUI_data:
         count, = struct.unpack("<I", file_pointer.read(4))
         print "Number of ui elements:", count
         for i in range(0, count):
-            id,length = struct.unpack("<II", file_pointer.read(8))
+            ui_id,length = struct.unpack("<II", file_pointer.read(8))
             text = file_pointer.read(length)
             unknown0, = struct.unpack("<I", file_pointer.read(4))
             unknown1 = struct.unpack("<7H", file_pointer.read(14))
@@ -161,14 +161,28 @@ class CUI_data:
                 vertex_id, = struct.unpack("<I", file_pointer.read(4))
                 color, = struct.unpack("<I", file_pointer.read(4))
                 data = struct.unpack("<IB", file_pointer.read(5))
-                
-            trailer_length = struct.unpack("<H", file_pointer.read(2))
-            if(trailer_length == 0):
-                padding = file_pointer.read(2)
-            else:
+            # this hack is here because I still don't know why some UI elements have traling data and some don't
+            saved_position = file_pointer.tell()
+            trailer = file_pointer.read(28)
+            magick1 = "00000400000004000000020002000000030005000000060003000000"
+            magick2 = "00000400000011000000020010000000030012000000060003000000"
+            if binascii.hexlify(trailer) == magick1 or binascii.hexlify(trailer) == magick2:
                 pass
-            print id, text, hex(unknown0), unknown1, num_verteces
-            print hex(file_pointer.tell())
+            else:
+                file_pointer.seek(saved_position)   # reset the address, very hacky
+                trailer_length, = struct.unpack("<H", file_pointer.read(2))
+                if(trailer_length == 0):
+                    padding = file_pointer.read(2)
+                else:
+                    for i in range(0, trailer_length):
+                        id,data = struct.unpack("<II", file_pointer.read(8))
+                    trailer_length, = struct.unpack("<H", file_pointer.read(2))
+                    for i in range(0, trailer_length):
+                        id,data = struct.unpack("<HI", file_pointer.read(6))
+            print "UI id: %i," % ui_id, "UI name: %s," % text, "UI type?:%s" % hex(unknown0)
+            print "Unknown data:",unknown1
+            print "Number of vertex descriptions?:",num_verteces
+            print 
         
         # Background_Overlapping_Inactive, uint32 id, unint32 length, name, 
         
@@ -274,7 +288,7 @@ class CUI_file:
         with codecs.open(full_path, "wb", "utf-16") as f:                                            
                 yaml.dump(self.data, f, allow_unicode=True, encoding="utf-16")                                             
     
-    def yaml2ctx(self, yaml_file):
+    def yaml2cui(self, yaml_file):
         filepath = os.path.abspath(yaml_file)
         with codecs.open(filepath, "r", "utf-16") as f:
             self.data = yaml.load(f)                   
