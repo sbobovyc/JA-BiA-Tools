@@ -26,6 +26,7 @@ import codecs
 import yaml
 import binascii           
 from collections import OrderedDict
+from jabia_file import JABIA_file
 
 DEG_entry_start = 0x0000
 
@@ -125,63 +126,20 @@ class DEG_data:
         return "%s(name=%r, languages=%r)" % (
              self.__class__.__name__, self.language_list)
             
-class DEG_file:
-    def __init__(self, filepath=None):
-        self.filepath = filepath
-        self.data = None
-        if self.filepath != None:
-            self.open(filepath)
-    
+class DEG_file(JABIA_file):    
     def open(self, filepath=None, peek=False):
-        if filepath == None and self.filepath == None:
-            print "File path is empty"
-            return
-        if self.filepath == None:
-            self.filepath = filepath
-        
+        super(DEG_file,self).open(filepath=filepath, peek=peek)
         self.data = DEG_data()
-        
-    def get_data(self):
-        return self.data
-    
-    def pack(self, verbose=False):
-        if self.filepath == None:
-            print "File path is empty. Open the file with a valid path."
-            return
-        
-        print "Creating %s" % self.filepath
-         
-        with open(self.filepath, "wb") as f:            
-            data = self.data.get_packed_data()
-            f.write(data)
 
-    def unpack(self, peek=False, verbose=False):
-        with open(self.filepath, "rb") as f:            
-            self.data.unpack(f, peek=peek, verbose=verbose)
-                        
-    def dump2yaml(self, dest_filepath=os.getcwd()): 
-        file_name = os.path.join(dest_filepath, os.path.splitext(os.path.basename(self.filepath))[0])        
-
-        full_path = file_name + ".deg.txt" 
-        print "Creating %s" % full_path
-        yaml.add_representer(unicode, lambda dumper, value: dumper.represent_scalar(u'tag:yaml.org,2002:str', value))
-        with codecs.open(full_path, "wb", "utf-16") as f:                                            
-                yaml.dump(self.data, f, allow_unicode=True, encoding="utf-16")                                             
-    
-    def yaml2deg(self, yaml_file):
-        filepath = os.path.abspath(yaml_file)
-        with codecs.open(filepath, "r", "utf-16") as f:
-            self.data = yaml.load(f)                   
-        self.pack()
 
 if __name__ == "__main__":    
-#    dF = DEG_file("C:\Users\sbobovyc\Desktop\\bia\\1.06\\bin_win32\\configs\main.deg")
-#    dF.open()        
-#    dF.unpack(verbose=False)    
-#    dF.dump2yaml()
+    dF = DEG_file("C:\Users\sbobovyc\Desktop\\bia\\1.06\\bin_win32\\configs\main.deg")
+    dF.open()        
+    dF.unpack(verbose=False)    
+    dF.dump2yaml()
 
     # packing
 #    dF = DEG_file("main.deg")
 #    dF.open()
 #    dF.yaml2deg("main.deg.txt")
-    pass
+    

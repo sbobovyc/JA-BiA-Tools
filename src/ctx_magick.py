@@ -58,7 +58,7 @@ elif file != None and os.path.splitext(file)[1][1:].strip() == "txt":
         
     print "Packing %s" % yaml_ctx_filepath
     ctx_file = CTX_file(filepath=ctx_filepath)
-    ctx_file.yaml2ctx(yaml_ctx_filepath)
+    ctx_file.yaml2bin(yaml_ctx_filepath)
 
 else:
     print "Nothing happened"

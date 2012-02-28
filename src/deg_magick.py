@@ -57,7 +57,7 @@ elif file != None and os.path.splitext(file)[1][1:].strip() == "txt":
         
     print "Packing %s" % yaml_deg_filepath
     deg_file = DEG_file(filepath=deg_filepath)
-    deg_file.yaml2deg(yaml_deg_filepath)
+    deg_file.yaml2bin(yaml_deg_filepath)
 
 else:
     print "Nothing happened"
