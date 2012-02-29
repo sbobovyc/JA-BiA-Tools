@@ -30,6 +30,7 @@ class JABIA_file(object):
         self.data = None
         if self.filepath != None:
             self.open(filepath)
+        self.yaml_extension = ".txt"
     
     def open(self, filepath=None, peek=False):
         if filepath == None and self.filepath == None:
@@ -59,7 +60,7 @@ class JABIA_file(object):
     def dump2yaml(self, dest_filepath=os.getcwd()): 
         file_name = os.path.join(dest_filepath, os.path.splitext(os.path.basename(self.filepath))[0])        
 
-        full_path = file_name + ".ctx.txt" 
+        full_path = file_name + self.yaml_extension 
         print "Creating %s" % full_path
         yaml.add_representer(unicode, lambda dumper, value: dumper.represent_scalar(u'tag:yaml.org,2002:str', value))
         with codecs.open(full_path, "wb", "utf-16") as f:                                            

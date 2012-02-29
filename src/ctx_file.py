@@ -24,6 +24,20 @@ import struct
 from collections import OrderedDict
 from jabia_file import JABIA_file
 
+class CTX_ID:
+    def __init__(self, id, id_name, path):
+        self.id = id
+        self.font_name = id_name
+        self.path = path
+ 
+    def __repr__(self):
+        return "%s(name=%r, id=%r, font_name=%r, path=%r)" % (
+             self.__class__.__name__, self.id, self.font_name, self.path)
+   
+    def __str__(self):
+        return "CTX ID: %s, %s = %s" % (self.id, self.font_name, self.path)
+ 
+         
 class CTX_language:
     def __init__(self, description_string, data_offset=0):
         self.description_string = description_string
@@ -154,6 +168,10 @@ class CTX_data:
              self.__class__.__name__, self.language_list)
             
 class CTX_file(JABIA_file):    
+    def __init__(self, filepath=None):
+        super(CTX_file,self).__init__(filepath=filepath)
+        self.yaml_extension = ".ctx.txt"
+        
     def open(self, filepath=None, peek=False):
         super(CTX_file,self).open(filepath=filepath, peek=peek)  
         self.data = CTX_data()

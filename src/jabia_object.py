@@ -1,3 +1,29 @@
+class JABIA_sound:
+    def __init__(self, id, filename):
+        self.id = id
+        self.filename = filename
+    
+    def __repr__(self):
+        return "%s(name=%r, id=%r, filename=%r)" % (
+             self.__class__.__name__, self.id, self.filename)
+   
+    def __str__(self):
+        return "Sound ID: %s = %s" % (self.id, self.filename)
+
+class JABIA_font:
+    def __init__(self, id, font_name, filename):
+        self.id = id
+        self.font_name = font_name
+        self.filename = filename
+    
+    def __repr__(self):
+        return "%s(name=%r, id=%r, font_name=%r, filename=%r)" % (
+             self.__class__.__name__, self.id, self.font_name, self.filename)
+   
+    def __str__(self):
+        return "Font ID: %s, %s = %s" % (self.id, self.font_name, self.filename)
+
+# classes below are experimental         
 class Anchor_point:
     def __init__(self, x, y, z):
         self.x = x

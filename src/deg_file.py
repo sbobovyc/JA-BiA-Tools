@@ -127,6 +127,10 @@ class DEG_data:
              self.__class__.__name__, self.language_list)
             
 class DEG_file(JABIA_file):    
+    def __init__(self, filepath=None):
+        super(DEG_file,self).__init__(filepath=filepath)
+        self.yaml_extension = ".deg.txt"
+        
     def open(self, filepath=None, peek=False):
         super(DEG_file,self).open(filepath=filepath, peek=peek)
         self.data = DEG_data()

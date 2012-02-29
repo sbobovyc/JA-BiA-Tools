@@ -21,63 +21,33 @@ Created on February 16, 2012
 """
 
 import struct 
-import os
-import codecs
-import yaml
 import binascii           
 from collections import OrderedDict
 from jabia_file import JABIA_file
+from jabia_object import JABIA_sound, JABIA_font
+from ctx_file import CTX_ID
 
-class CTX_language:
-    def __init__(self, description_string, data_offset=0):
-        self.description_string = description_string
-        self.data_offset = data_offset
-        self.data_dictionary = OrderedDict()   # {text id : data} mapping
-    
-    def add_data(self, id, text):
-        self.data_dictionary[id] = text
-    
-    def get_description(self):
-        return self.description_string
-    
-    def get_data(self):
-        return self.data_dictionary
-    
-    def get_num_items(self):
-        return len(self.data_dictionary)
-    
-    def get_last_item_id(self):
-        last_item = self.data_dictionary.popitem()  # get last item in ordered dictionary        
-        # put item back
-        self.add_data(last_item[0], last_item[1])
-        last_item_id = last_item[0]
-        return last_item_id
-    
-    def get_description_length(self):
-        return len(self.description_string)
-    
-    def get_packed_data(self):        
-        buffer = ""
-        for key, value in self.data_dictionary.items():       
-            encoded_value = value.encode('utf-16le')     
-            encoded_size = len(encoded_value)         
-            data_packed = struct.pack("<II%is" % encoded_size, key, encoded_size/2, encoded_value)
-            #print binascii.hexlify(data_packed)
-            buffer = buffer + data_packed
-            #print binascii.hexlify(buffer)
-        return buffer
+class CUI_ui_resource:
+    def __init__(self, id, ui_name, filename):
+        self.id = id
+        self.ui_name = ui_name
+        self.filename = filename
     
     def __repr__(self):
-        return "%s(name=%r, language=%r, data=%r)" % (
-             self.__class__.__name__, self.description_string, self.data_dictionary)
+        return "%s(name=%r, id=%r, ui_name=%r, filename=%r)" % (
+             self.__class__.__name__, self.id, self.ui_name, self.filename)
    
     def __str__(self):
-        return "Language: %s, data offset: %s bytes" % (self.description_string, hex(self.data_offset).rstrip('L'))
-        
+        return "UI resource ID: %s, %s = %s" % (self.id, self.ui_name, self.filename)
+    
 class CUI_data:
     def __init__(self):
-        pass
-    
+        self.ctx_id_list = [] 
+        self.sound_list = [] 
+        self.binary_blob_dictionary = {}  
+        self.font_list = []
+        self.ui_resource_list = []
+        
     def unpack(self, file_pointer, peek=False, verbose=False):    
         self.last_variable_id,self.unknown2 = struct.unpack("<II", file_pointer.read(8))
 
@@ -87,54 +57,63 @@ class CUI_data:
             return 
         
         print "Last variable picture_id:", self.last_variable_id
-        picture_id = 0
-        while(picture_id < self.last_variable_id):
-            picture_id,length = struct.unpack("<II", file_pointer.read(8))
+        id = 0
+        while(id < self.last_variable_id):
+            id,length = struct.unpack("<II", file_pointer.read(8))
             variable_name = file_pointer.read(length)
             length, = struct.unpack("<I", file_pointer.read(4))
             variable_value = file_pointer.read(length)
-            print picture_id,variable_name, "=", variable_value
-            self.data_offset = file_pointer.tell()
+            ctx_id = CTX_ID(id, variable_name, variable_value)
+            print ctx_id
+            self.ctx_id_list.append(ctx_id)
         
         print
         
         self.file_count, = struct.unpack("<I", file_pointer.read(4))
         print "File count:", self.file_count
-        picture_id = 0
+        id = 0
         for i in range(0, self.file_count):
-            picture_id,length = struct.unpack("<II", file_pointer.read(8))
-            file_name = file_pointer.read(length)
-            print picture_id, file_name
+            id,length = struct.unpack("<II", file_pointer.read(8))
+            filename = file_pointer.read(length)
+            jabia_sound = JABIA_sound(id, filename)            
+            print jabia_sound
+            self.sound_list.append(jabia_sound)
+        
+        print 
         
         self.binary_count, = struct.unpack("<I", file_pointer.read(4))
         print "Binary sound info blob count:", self.binary_count
         for i in range(0, self.binary_count):
             id, = struct.unpack("<I", file_pointer.read(4))
-            raw_data = file_pointer.read(9)
+            raw_data = file_pointer.read(9)            
             print id,binascii.hexlify(raw_data)
+            self.binary_blob_dictionary[id] = raw_data
         
         print
         
         self.font_count, = struct.unpack("<I", file_pointer.read(4))
         print "Font count:", self.font_count
         for i in range(0, self.font_count):
-            picture_id,length = struct.unpack("<II", file_pointer.read(8))
+            id,length = struct.unpack("<II", file_pointer.read(8))
             font_name = file_pointer.read(length)
             length, = struct.unpack("<I", file_pointer.read(4))
-            font_file = file_pointer.read(length)
-            print picture_id,font_name,font_file
+            filename = file_pointer.read(length)
+            jabia_font = JABIA_font(id, font_name, filename)
+            print jabia_font
+            self.font_list.append(jabia_font)
             
         print
         
         self.ui_file_count, = struct.unpack("<I", file_pointer.read(4))
         print "UI file count:", self.ui_file_count
         for i in range(0, self.ui_file_count):
-            picture_id,length = struct.unpack("<II", file_pointer.read(8))
+            id,length = struct.unpack("<II", file_pointer.read(8))
             ui_name = file_pointer.read(length)
             length, = struct.unpack("<I", file_pointer.read(4))
-            ui_file = file_pointer.read(length)
-            print picture_id,ui_name,ui_file
-        
+            filename = file_pointer.read(length)
+            ui_resource = CUI_ui_resource(id, ui_name, filename)
+            print ui_resource
+            self.ui_resource_list.append(ui_resource)
         print 
         
         self.ui_count, = struct.unpack("<I", file_pointer.read(4))
@@ -247,6 +226,10 @@ class CUI_data:
              self.__class__.__name__, self.language_list)
             
 class CUI_file(JABIA_file):
+    def __init__(self, filepath=None):
+        super(CUI_file,self).__init__(filepath=filepath)
+        self.yaml_extension = ".cui.txt"
+        
     def open(self, filepath=None, peek=False):
         super(CUI_file,self).open(filepath=filepath, peek=peek)
         self.data = CUI_data()   
@@ -255,5 +238,6 @@ if __name__ == "__main__":
     cU = CUI_file("C:\Users\sbobovyc\Desktop\\bia\\1.06\\bin_win32\\interface\interface.cui")
     #cF = CTX_file("/media/Acer/Users/sbobovyc/Desktop/test/bin_win32/interface/equipment.ctx")
     cU.open()        
-    cU.unpack(verbose=False)    
+    cU.unpack(verbose=False)   
+    cU.dump2yaml() 
 
