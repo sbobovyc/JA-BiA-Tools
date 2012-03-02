@@ -1,8 +1,17 @@
+import struct
+
 class JABIA_sound:
     def __init__(self, id, filename):
         self.id = id
         self.filename = filename
     
+    def get_packed_data(self): 
+        import binascii       
+        data_buffer = struct.pack("<II%is" % len(self.filename), 
+                                  self.id, len(self.filename), self.filename)
+        print binascii.hexlify(data_buffer)
+        return data_buffer
+        
     def __repr__(self):
         return "%s(name=%r, id=%r, filename=%r)" % (
              self.__class__.__name__, self.id, self.filename)
@@ -15,7 +24,14 @@ class JABIA_font:
         self.id = id
         self.font_name = font_name
         self.filename = filename
-    
+
+    def get_packed_data(self): 
+        import binascii       
+        data_buffer = struct.pack("<II%isI%is" % (len(self.font_name), len(self.filename)), 
+                                  self.id, len(self.font_name), self.font_name, len(self.filename), self.filename)
+        print binascii.hexlify(data_buffer)
+        return data_buffer
+        
     def __repr__(self):
         return "%s(name=%r, id=%r, font_name=%r, filename=%r)" % (
              self.__class__.__name__, self.id, self.font_name, self.filename)

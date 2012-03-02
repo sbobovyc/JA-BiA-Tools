@@ -27,12 +27,48 @@ from jabia_file import JABIA_file
 from jabia_object import JABIA_sound, JABIA_font
 from ctx_file import CTX_ID
 
+class CUI_ui_element:
+    def __repr__(self):
+        return "%s(name=%r, icon_id=%r, resource=%r, ulx=%r, uly=%r, lrx=%r, lry=%s)" % (
+             self.__class__.__name__, self.icon_id, self.resource_id, self.ulx, self.uly, self.lrx, self.lry)
+   
+    def __str__(self):
+        return "UI icon ID: %s, resource %s, (%s,%s)(%s,%s)" % (self.icon_id, self.resource_id, self.ulx, self.uly, self.lrx, self.lry)
+
+class CUI_ui_icon:
+    def __init__(self, icon_id, resource_id, ulx, uly, lrx, lry):
+        self.icon_id = icon_id
+        self.resource_id = resource_id    
+        self.ulx = ulx
+        self.uly = uly
+        self.lrx = lrx
+        self.lry = lry
+
+    def get_packed_data(self):        
+        data_buffer = struct.pack("<IIHHHH", 
+                                  self.icon_id, self.resource_id, self.ulx, self.uly, self.lrx, self.lry)
+        print binascii.hexlify(data_buffer)
+        return data_buffer
+        
+    def __repr__(self):
+        return "%s(name=%r, icon_id=%r, resource=%r, ulx=%r, uly=%r, lrx=%r, lry=%s)" % (
+             self.__class__.__name__, self.icon_id, self.resource_id, self.ulx, self.uly, self.lrx, self.lry)
+   
+    def __str__(self):
+        return "UI icon ID: %s, resource %s, (%s,%s)(%s,%s)" % (self.icon_id, self.resource_id, self.ulx, self.uly, self.lrx, self.lry)
+
 class CUI_ui_resource:
     def __init__(self, id, ui_name, filename):
         self.id = id
         self.ui_name = ui_name
         self.filename = filename
-    
+
+    def get_packed_data(self):        
+        data_buffer = struct.pack("<II%isI%is" % (len(self.ui_name), len(self.filename)), 
+                                  self.id, len(self.ui_name), self.ui_name, len(self.filename), self.filename)
+        print binascii.hexlify(data_buffer)
+        return data_buffer
+        
     def __repr__(self):
         return "%s(name=%r, id=%r, ui_name=%r, filename=%r)" % (
              self.__class__.__name__, self.id, self.ui_name, self.filename)
@@ -46,10 +82,11 @@ class CUI_data:
         self.sound_list = [] 
         self.binary_blob_dictionary = {}  
         self.font_list = []
-        self.ui_resource_list = []
+        self.ui_resource_dict = OrderedDict()   # {resource id : CUI_ui_resource} mapping
+        self.ui_icon_dict = OrderedDict()   # {icon id : CUI_ui_icon} mapping
         
     def unpack(self, file_pointer, peek=False, verbose=False):    
-        self.last_variable_id,self.unknown2 = struct.unpack("<II", file_pointer.read(8))
+        self.last_variable_id,unknown1 = struct.unpack("<II", file_pointer.read(8))
 
         if peek or verbose:
             print "Not implemented"
@@ -57,6 +94,7 @@ class CUI_data:
             return 
         
         print "Last variable picture_id:", self.last_variable_id
+        
         id = 0
         while(id < self.last_variable_id):
             id,length = struct.unpack("<II", file_pointer.read(8))
@@ -70,7 +108,7 @@ class CUI_data:
         print
         
         self.file_count, = struct.unpack("<I", file_pointer.read(4))
-        print "File count:", self.file_count
+        print "Sound file count:", self.file_count
         id = 0
         for i in range(0, self.file_count):
             id,length = struct.unpack("<II", file_pointer.read(8))
@@ -113,16 +151,17 @@ class CUI_data:
             filename = file_pointer.read(length)
             ui_resource = CUI_ui_resource(id, ui_name, filename)
             print ui_resource
-            self.ui_resource_list.append(ui_resource)
+            self.ui_resource_dict[id]= ui_resource
         print 
         
         self.ui_count, = struct.unpack("<I", file_pointer.read(4))
-        print "UI element count:", self.ui_count
-        print "resource ID, picture ID, ulx, uly, lrx, lry"
+        print "UI icon count:", self.ui_count
         for i in range(0, self.ui_count):
-            picture_id,resource_id = struct.unpack("<II", file_pointer.read(8))
+            icon_id,resource_id = struct.unpack("<II", file_pointer.read(8))
             ulx,uly,lrx,lry = struct.unpack("<HHHH", file_pointer.read(8))
-            print picture_id,resource_id,ulx,uly,lrx,lry
+            icon = CUI_ui_icon(icon_id, resource_id, ulx, uly, lrx, lry)
+            self.ui_icon_dict[icon_id] = icon
+            print icon
             
         print 
         
@@ -146,8 +185,10 @@ class CUI_data:
             trailer = file_pointer.read(28)
             magick1 = "00000400000004000000020002000000030005000000060003000000"
             magick2 = "00000400000011000000020010000000030012000000060003000000"
-            if binascii.hexlify(trailer) == magick1 or binascii.hexlify(trailer) == magick2:
-                pass
+            if binascii.hexlify(trailer) == magick1:
+                print "magick1"
+            elif binascii.hexlify(trailer) == magick2:
+                print "magick2"
             else:
                 file_pointer.seek(saved_position)   # reset the address, very hacky
                 trailer_length, = struct.unpack("<H", file_pointer.read(2))
@@ -190,39 +231,49 @@ class CUI_data:
         # merc, uint32 layer, 0x0000, uint32 ui type (Pic_Background_white(solid)), 0x01c5 resource id, uint32, uint32 length, name, byte column, byte row, int16 x offset from grid center, 
         # int16 y offset from grid center, nonsense
         
-    def get_packed_data(self):
-        return None
-        #1. check to see if all the language have the same amount of items
-        #2. check that all languages have the same last item id
-#        self.num_languages = self.get_num_languages()
-#        self.num_items = self.language_list[0].get_num_items()
-#        self.last_item_id = self.language_list[0].get_last_item_id()        
-#        
-#        for i in range(1, len(self.language_list)):
-#            if self.language_list[i].get_num_items() != self.num_items:
-#                print "Languages do not contain same ammount of items!"
-#                return
-#            if self.language_list[i].get_last_item_id()  != self.last_item_id:
-#                print "The last item in each language is not the same!"
-#                return
-#            
-#        #3. pack each language into a byte string and create the data 
-#        header_buffer = struct.pack("<III", self.num_items, self.last_item_id, self.num_languages)
-#        data_buffer = ""
-#        previous_buffer_length = 0
-#        for language in self.language_list:
-#            length = language.get_description_length()
-#            description = language.get_description()
-#            header_buffer = header_buffer + struct.pack("<I%isI" % length, length, description, previous_buffer_length)
-#            #print binascii.hexlify(header_buffer)
-#            data_buffer = data_buffer + language.get_packed_data()
-#            previous_buffer_length = len(data_buffer)
-#            
-#        #4. concatenate the byte strings and return     
-#        return (header_buffer + data_buffer)            
+    def get_packed_data(self):        
+        last_ctx_id = self.ctx_id_list[-1].id     
+        num_sounds = len(self.sound_list)
+        num_binary = len(self.binary_blob_dictionary)
+        num_fonts = len(self.font_list)
+        num_ui_resources = len(self.ui_resource_dict)
+        num_ui_icons = len(self.ui_icon_dict)
+        
+        # 1. compile ctx mappings
+        data_buffer = struct.pack("<II", last_ctx_id, 0xFFFFFFFF)      
+        for ctx_id in self.ctx_id_list:
+            data_buffer = data_buffer + ctx_id.get_packed_data()
 
+        # 2. compile sound mappings
+        data_buffer = data_buffer + struct.pack("<I", num_sounds)
+        for sound in self.sound_list:
+            data_buffer = data_buffer + sound.get_packed_data()
+        
+        # 3. compile unknown binary data
+        data_buffer = data_buffer + struct.pack("<I", num_binary)
+        for key, value in self.binary_blob_dictionary.items():        
+            data_packed = struct.pack("<I%is" % len(value), key, value)
+            data_buffer = data_buffer + data_packed                
+        
+        # 4. compile fonts
+        data_buffer = data_buffer + struct.pack("<I", num_fonts)
+        for font in self.font_list:
+            data_buffer = data_buffer + font.get_packed_data()
+        
+        # 5. compile ui resources
+        data_buffer = data_buffer + struct.pack("<I", num_ui_resources)
+        for key, value in self.ui_resource_dict.items():
+            data_buffer = data_buffer + value.get_packed_data()
+        
+        # 6. compile ui icons
+        data_buffer = data_buffer + struct.pack("<I", num_ui_icons)
+        for key, value in self.ui_icon_dict.items():
+            data_buffer = data_buffer + value.get_packed_data()
+            
+        return (data_buffer)  
+    
     def __repr__(self):
-        return "%s(name=%r, languages=%r)" % (
+        return "%s(name=%r)" % (
              self.__class__.__name__, self.language_list)
             
 class CUI_file(JABIA_file):
@@ -240,4 +291,5 @@ if __name__ == "__main__":
     cU.open()        
     cU.unpack(verbose=False)   
     cU.dump2yaml() 
+    cU.yaml2bin("interface.cui.txt")
 

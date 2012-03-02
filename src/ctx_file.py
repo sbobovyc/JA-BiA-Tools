@@ -27,15 +27,22 @@ from jabia_file import JABIA_file
 class CTX_ID:
     def __init__(self, id, id_name, path):
         self.id = id
-        self.font_name = id_name
+        self.id_name = id_name
         self.path = path
  
+    def get_packed_data(self): 
+        import binascii       
+        data_buffer = struct.pack("<II%isI%is" % (len(self.id_name), len(self.path)), 
+                                  self.id, len(self.id_name), self.id_name, len(self.path), self.path)
+        print binascii.hexlify(data_buffer)
+        return data_buffer
+    
     def __repr__(self):
-        return "%s(name=%r, id=%r, font_name=%r, path=%r)" % (
-             self.__class__.__name__, self.id, self.font_name, self.path)
+        return "%s(name=%r, id=%r, id_name=%r, path=%r)" % (
+             self.__class__.__name__, self.id, self.id_name, self.path)
    
     def __str__(self):
-        return "CTX ID: %s, %s = %s" % (self.id, self.font_name, self.path)
+        return "CTX ID: %s, %s = %s" % (self.id, self.id_name, self.path)
  
          
 class CTX_language:
@@ -186,7 +193,7 @@ if __name__ == "__main__":
 #    cF.pack(verbose=False)
     # pack
 #    cFnew = CTX_file("new_equipment.ctx")
-#    cFnew.yaml2ctx("equipment.ctx.txt")
+#    cFnew.yaml2bin("equipment.ctx.txt")
 
     # create a file programmatically
 #    cTest = CTX_file("test.ctx")
