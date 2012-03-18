@@ -3,8 +3,16 @@ import wx
 import wx.wizard as wizmod
 from wx.lib.pubsub import Publisher as pub
 import os.path
+import os
 padding = 5
 
+class wizard_settings(object):
+    jabia_path = "C:\Program Files (x86)\Steam\steamapps\common\jabia"
+    workspace_path = os.path.join(os.getenv('USERPROFILE'), "workspace_jabia")
+    
+    def __init__(self):
+        pass
+    
 class wizard_page(wizmod.PyWizardPage):
     ''' An extended panel obj with a few methods to keep track of its siblings.  
         This should be modified and added to the wizard.  Season to taste.'''
@@ -47,6 +55,7 @@ class wizard(wx.wizard.Wizard):
                 img = wx.Bitmap(img_filename)
         else:   img = wx.NullBitmap
         wx.wizard.Wizard.__init__(self, None, -1, title, img)
+        self.SetPageSize(size=(350,50))
         self.pages = []
         # Lets catch the events
         self.Bind(wizmod.EVT_WIZARD_PAGE_CHANGED, self.on_page_changed)
@@ -95,6 +104,8 @@ class wizard(wx.wizard.Wizard):
 
 class JABIA_Tools_wizard(object):
     def __init__(self):
+        # load settings
+        self.settings = wizard_settings()
         # Create wizard and add any kind pages you'd like
         self.mywiz = wizard('JABIA Tools Wizard', img_filename='wiz.png')
         
@@ -109,7 +120,8 @@ class JABIA_Tools_wizard(object):
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.Add(wx.StaticText(page2, -1, 'Locate your JABIA root directory.'), wx.EXPAND | wx.ALL, 20)
         hbox1 = wx.BoxSizer(wx.HORIZONTAL) 
-        self.dirText = wx.TextCtrl(page2, size=(180, -1))
+        self.dirText = wx.TextCtrl(page2, size=(270, -1))
+        self.dirText.SetValue(self.settings.jabia_path)
         hbox1.Add(self.dirText, wx.EXPAND | wx.ALL)
         browse = wx.Button(page2, -1, 'Browse')
         hbox1.Add(browse)
@@ -123,7 +135,8 @@ class JABIA_Tools_wizard(object):
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.Add(wx.StaticText(page3, -1, 'Select an output directory.'), wx.EXPAND | wx.ALL, 20)
         hbox1 = wx.BoxSizer(wx.HORIZONTAL) 
-        self.dirText = wx.TextCtrl(page3, size=(180, -1))
+        self.dirText = wx.TextCtrl(page3, size=(270, -1))
+        self.dirText.SetValue(self.settings.workspace_path)
         hbox1.Add(self.dirText, wx.EXPAND | wx.ALL)
         browse = wx.Button(page3, -1, 'Browse')
         hbox1.Add(browse)
