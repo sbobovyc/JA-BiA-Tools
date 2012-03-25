@@ -47,19 +47,17 @@ if file != None and os.path.splitext(file)[1][1:].strip() == "cui":
     cui_file.unpack(peek=info, verbose=debug)
 
     if not info:
-        pass
-#        output_filepath = os.path.abspath(outdir)
-#        cui_file.dump2yaml(outdir)
+        output_filepath = os.path.abspath(outdir)
+        cui_file.dump2yaml(outdir)
     
-elif file != None and os.path.splitext(file)[1][1:].strip() == "txt":
-    print "Not implemented yet."            
-#    yaml_cui_filepath = os.path.abspath(file)
-#    cui_file_name = os.path.basename(file).split('.')[0] + ".deg"    
-#    cui_filepath = os.path.join(os.path.abspath(outdir), cui_file_name)
-#        
-#    print "Packing %s" % yaml_cui_filepath
-#    cui_file = cui_file(filepath=cui_filepath)
-#    cui_file.yaml2cui(yaml_cui_filepath)
+elif file != None and os.path.splitext(file)[1][1:].strip() == "txt":       
+    yaml_cui_filepath = os.path.abspath(file)
+    cui_file_name = os.path.basename(file).split('.')[0] + ".cui"    
+    cui_filepath = os.path.join(os.path.abspath(outdir), cui_file_name)
+        
+    print "Packing %s" % yaml_cui_filepath
+    cui_file = CUI_file(filepath=cui_filepath)
+    cui_file.yaml2bin(yaml_cui_filepath)
 
 else:
     print "Nothing happened"

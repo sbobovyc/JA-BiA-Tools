@@ -27,13 +27,101 @@ from jabia_file import JABIA_file
 from jabia_object import JABIA_sound, JABIA_font
 from ctx_file import CTX_ID
 
-class CUI_ui_element:
-    def __repr__(self):
-        return "%s(name=%r, icon_id=%r, resource=%r, ulx=%r, uly=%r, lrx=%r, lry=%s)" % (
-             self.__class__.__name__, self.icon_id, self.resource_id, self.ulx, self.uly, self.lrx, self.lry)
-   
+magick1 = "00000400000004000000020002000000030005000000060003000000"
+magick2 = "00000400000011000000020010000000030012000000060003000000"
+magick3 = "pad 2 bytes"
+magick4 = "some unknown data"
+
+class CUI_ui_screen_element:
+    def __init__(self, type, name, count, unknown):
+        pass
+    
+class CUI_ui_screen:
+    def __init__(self, type, name, count, unknown):
+        self.type = type
+        self.name = name
+        self.ui_count = count
+        self.unknown = unknown
+        self.element_list = []
+        
+    def get_packed_data(self):
+        data_buffer = struct.pack("<II%isIx" % len(self.name), 
+                                  self.id, len(self.name), self.name, self.unknown)
+        return data_buffer
+    
+class CUI_ui_element_trailer:
+    def __init__(self, unknown_data0, unknown_data1):
+        self.unknonw_data0 = unknown_data0 # list of (id, data) 
+        self.unknonw_data1 = unknown_data1
+    
+    def get_packed_data(self):
+        data_buffer = struct.pack("<H", len(self.unknonw_data0))
+        for each in self.unknonw_data0:
+            data_buffer += struct.pack("<II", each[0], each[1])
+        if len(self.unknonw_data1) == 0:
+            data_buffer += struct.pack("xx")
+        else:
+            data_buffer += struct.pack("<H", len(self.unknonw_data1))
+            for each in self.unknonw_data1:
+                data_buffer += struct.pack("<HI", each[0], each[1])        
+
+        return data_buffer
+
+class CUI_ui_element_vertex:
+    def __init__(self, vertex_id, color, data):
+        self.vertex_id = vertex_id
+        self.color = color
+        self.data = data 
+    
+    def get_packed_data(self):
+        data_buffer = struct.pack("<IIIB", self.vertex_id, self.color, *self.data)
+        return data_buffer
+    
     def __str__(self):
-        return "UI icon ID: %s, resource %s, (%s,%s)(%s,%s)" % (self.icon_id, self.resource_id, self.ulx, self.uly, self.lrx, self.lry)
+        return "id: %s, color: %s, data:%s" % (self.vertex_id, hex(self.color).rstrip('L'), self.data)
+    
+class CUI_ui_element: 
+    def __init__(self, element_id, name, unknown0, unknown1, verteces, trailer):
+        self.element_id = element_id
+        self.name = name
+        self.unknown0 = unknown0
+        self.unknown1 = unknown1
+        self.verteces = verteces    # list of CUI_ui_element_verteces
+        self.trailer = trailer      # 
+
+    def get_packed_data(self):        
+        data_buffer = struct.pack("<II%isI" % (len(self.name)), 
+                                  self.element_id, len(self.name), self.name, self.unknown0)
+        data_buffer += struct.pack("<7Hx", *self.unknown1)
+        data_buffer += struct.pack("<H", len(self.verteces))
+        
+        for vertex in self.verteces:
+            data_buffer += vertex.get_packed_data()
+            
+        if self.trailer == "magick1":
+            data_buffer += binascii.unhexlify(magick1)            
+        elif self.trailer == "magick2":
+            data_buffer += binascii.unhexlify(magick2)
+        elif self.trailer == "magick3":
+            data_buffer += struct.pack("Hxx", 0x0)
+        else:
+            data_buffer += self.trailer.get_packed_data()
+#        print binascii.hexlify(data_buffer)
+        return data_buffer
+    
+        
+#    def __repr__(self):
+#        return "%s(name=%r, icon_id=%r, resource=%r, ulx=%r, uly=%r, lrx=%r, lry=%s)" % (
+#             self.__class__.__name__, self.icon_id, self.resource_id, self.ulx, self.uly, self.lrx, self.lry)
+#   
+    def __str__(self):
+        string = ""
+        string += "UI element id: %s, name: %s, type?: %s\n" % (self.element_id, self.name, hex(self.unknown0))
+        string += "unknown data: (" + ', '.join(map(str, self.unknown1)) + ")\n"
+        for vertex in self.verteces:
+            string += vertex.__str__() + "\n"
+        return string
+#        return "UI icon ID: %s, resource %s, (%s,%s)(%s,%s)" % (self.icon_id, self.resource_id, self.ulx, self.uly, self.lrx, self.lry)
 
 class CUI_ui_icon:
     def __init__(self, icon_id, resource_id, ulx, uly, lrx, lry):
@@ -47,7 +135,7 @@ class CUI_ui_icon:
     def get_packed_data(self):        
         data_buffer = struct.pack("<IIHHHH", 
                                   self.icon_id, self.resource_id, self.ulx, self.uly, self.lrx, self.lry)
-        print binascii.hexlify(data_buffer)
+#        print binascii.hexlify(data_buffer)
         return data_buffer
         
     def __repr__(self):
@@ -66,7 +154,7 @@ class CUI_ui_resource:
     def get_packed_data(self):        
         data_buffer = struct.pack("<II%isI%is" % (len(self.ui_name), len(self.filename)), 
                                   self.id, len(self.ui_name), self.ui_name, len(self.filename), self.filename)
-        print binascii.hexlify(data_buffer)
+#        print binascii.hexlify(data_buffer)
         return data_buffer
         
     def __repr__(self):
@@ -84,6 +172,8 @@ class CUI_data:
         self.font_list = []
         self.ui_resource_dict = OrderedDict()   # {resource id : CUI_ui_resource} mapping
         self.ui_icon_dict = OrderedDict()   # {icon id : CUI_ui_icon} mapping
+        self.ui_element_dict = OrderedDict()   # {element id : CUI_ui_element} mapping
+        self.binary_ui_blob = ""
         
     def unpack(self, file_pointer, peek=False, verbose=False):    
         self.last_variable_id,unknown1 = struct.unpack("<II", file_pointer.read(8))
@@ -107,10 +197,10 @@ class CUI_data:
         
         print
         
-        self.file_count, = struct.unpack("<I", file_pointer.read(4))
-        print "Sound file count:", self.file_count
+        file_count, = struct.unpack("<I", file_pointer.read(4))
+        print "Sound file count:", file_count
         id = 0
-        for i in range(0, self.file_count):
+        for i in range(0, file_count):
             id,length = struct.unpack("<II", file_pointer.read(8))
             filename = file_pointer.read(length)
             jabia_sound = JABIA_sound(id, filename)            
@@ -168,43 +258,70 @@ class CUI_data:
         count, = struct.unpack("<I", file_pointer.read(4))
         print "Number of ui elements:", count
         for i in range(0, count):
-            ui_id,length = struct.unpack("<II", file_pointer.read(8))
-            text = file_pointer.read(length)
+            ui_element_id,length = struct.unpack("<II", file_pointer.read(8))
+            name = file_pointer.read(length)
             unknown0, = struct.unpack("<I", file_pointer.read(4))
-            unknown1 = struct.unpack("<7H", file_pointer.read(14))
-            padding = struct.unpack("<B", file_pointer.read(1))
+            unknown1 = struct.unpack("<7Hx", file_pointer.read(15))
             
             num_verteces, = struct.unpack("<H", file_pointer.read(2))
             
+            verteces = []
             for j in range(0, num_verteces):
                 vertex_id, = struct.unpack("<I", file_pointer.read(4))
                 color, = struct.unpack("<I", file_pointer.read(4))
                 data = struct.unpack("<IB", file_pointer.read(5))
+                verteces.append(CUI_ui_element_vertex(vertex_id, color, data))
             # this hack is here because I still don't know why some UI elements have traling data and some don't
             saved_position = file_pointer.tell()
             trailer = file_pointer.read(28)
-            magick1 = "00000400000004000000020002000000030005000000060003000000"
-            magick2 = "00000400000011000000020010000000030012000000060003000000"
+            
+            trailer_type = None
+            unknown_data0 = []
+            unknown_data1 = []
             if binascii.hexlify(trailer) == magick1:
-                print "magick1"
+                trailer_type = "magick1"
             elif binascii.hexlify(trailer) == magick2:
-                print "magick2"
+                trailer_type = "magick2"
             else:
                 file_pointer.seek(saved_position)   # reset the address, very hacky
                 trailer_length, = struct.unpack("<H", file_pointer.read(2))
                 if(trailer_length == 0):
                     padding = file_pointer.read(2)
+                    trailer_type = "magick3"
                 else:
                     for i in range(0, trailer_length):
                         id,data = struct.unpack("<II", file_pointer.read(8))
+                        unknown_data0.append((id,data))
+                        
                     trailer_length, = struct.unpack("<H", file_pointer.read(2))
                     for i in range(0, trailer_length):
                         id,data = struct.unpack("<HI", file_pointer.read(6))
-            print "UI id: %i," % ui_id, "UI name: %s," % text, "UI type?:%s" % hex(unknown0)
-            print "Unknown data:",unknown1
-            print "Number of vertex descriptions?:",num_verteces
+                        unknown_data1.append((id,data))                        
+                        
+                    trailer_type = CUI_ui_element_trailer(unknown_data0, unknown_data1)
             print 
+            # construct object
+            cui_ui_element = CUI_ui_element(ui_element_id, name, unknown0, unknown1, verteces, trailer_type)
+            self.ui_element_dict[ui_element_id] = cui_ui_element
+            print cui_ui_element
         
+        self.binary_ui_blob = file_pointer.read()
+#        count, = struct.unpack("<I", file_pointer.read(4))
+#        print "Number of ui screens:", count        
+#        for i in range(0, count):
+#            ui_type,length = struct.unpack("<II", file_pointer.read(8))
+#            name = file_pointer.read(length)
+#            num_items, = struct.unpack("<I", file_pointer.read(4))
+#            unknown, = struct.unpack("<Ix", file_pointer.read(5))
+#            cui_ui_screen = CUI_ui_screen(ui_type, name, num_items, unknown)
+#            print ui_type, name, num_items, unknown
+#            for j in range(0, num_items):
+#                ui_element_type, unknown, positioning, length = struct.unpack("<IIII", file_pointer.read(32))
+#                name = file_pointer.read(length)
+#                region, x_offset, y_offset = struct.unpack("<HHH", file_pointer.read(6))
+#                print name, ui_element_type, hex(unknown)
+#                print hex(region), x_offset, y_offset
+                
         # Background_Overlapping_Inactive, uint32 id, unint32 length, name, 
         
         # Pic_Background_white(transparent), uint32 id, unint32 length, name, 
@@ -228,7 +345,7 @@ class CUI_data:
         # 0x18012400 (type?, only exists in main menu), uint32 ctx id (which text to use), uint32 length in bytes of next command,
         # command (play tutorial, new game, exit, etc) {memory address?}, nonsense
         
-        # merc, uint32 layer, 0x0000, uint32 ui type (Pic_Background_white(solid)), 0x01c5 resource id, uint32, uint32 length, name, byte column, byte row, int16 x offset from grid center, 
+        # merc, uint32 layer, 0x0000, uint32 ui type 0x26 (Pic_Background_white(solid)), 0x01c5 resource id, uint32, uint32 length, name, byte column, byte row, int16 x offset from grid center, 
         # int16 y offset from grid center, nonsense
         
     def get_packed_data(self):        
@@ -238,6 +355,7 @@ class CUI_data:
         num_fonts = len(self.font_list)
         num_ui_resources = len(self.ui_resource_dict)
         num_ui_icons = len(self.ui_icon_dict)
+        num_ui_elements = len(self.ui_element_dict)
         
         # 1. compile ctx mappings
         data_buffer = struct.pack("<II", last_ctx_id, 0xFFFFFFFF)      
@@ -269,7 +387,14 @@ class CUI_data:
         data_buffer = data_buffer + struct.pack("<I", num_ui_icons)
         for key, value in self.ui_icon_dict.items():
             data_buffer = data_buffer + value.get_packed_data()
-            
+        
+        # 7. compile ui elements
+        data_buffer = data_buffer + struct.pack("<I", num_ui_elements)
+        for key, value in self.ui_element_dict.items():
+            data_buffer = data_buffer + value.get_packed_data()
+        
+        # 8. compile ui screen binary blob
+        data_buffer = data_buffer + self.binary_ui_blob
         return (data_buffer)  
     
     def __repr__(self):
@@ -285,11 +410,11 @@ class CUI_file(JABIA_file):
         super(CUI_file,self).open(filepath=filepath, peek=peek)
         self.data = CUI_data()   
 
-if __name__ == "__main__":    
-    cU = CUI_file("C:\Users\sbobovyc\Desktop\\bia\\1.06\\bin_win32\\interface\interface.cui")
-    #cF = CTX_file("/media/Acer/Users/sbobovyc/Desktop/test/bin_win32/interface/equipment.ctx")
-    cU.open()        
-    cU.unpack(verbose=False)   
-    cU.dump2yaml() 
-    cU.yaml2bin("interface.cui.txt")
+#if __name__ == "__main__":    
+#    cU = CUI_file("C:\Users\sbobovyc\Desktop\\bia\\1.06\\bin_win32\\interface\interface.cui")
+#    #cF = CTX_file("/media/Acer/Users/sbobovyc/Desktop/test/bin_win32/interface/equipment.ctx")
+#    cU.open()        
+#    cU.unpack(verbose=False)   
+#    cU.dump2yaml() 
+#    cU.yaml2bin("interface.cui.txt")
 

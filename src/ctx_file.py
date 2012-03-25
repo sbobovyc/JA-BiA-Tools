@@ -34,7 +34,7 @@ class CTX_ID:
         import binascii       
         data_buffer = struct.pack("<II%isI%is" % (len(self.id_name), len(self.path)), 
                                   self.id, len(self.id_name), self.id_name, len(self.path), self.path)
-        print binascii.hexlify(data_buffer)
+#        print binascii.hexlify(data_buffer)
         return data_buffer
     
     def __repr__(self):

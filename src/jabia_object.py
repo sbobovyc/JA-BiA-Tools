@@ -9,7 +9,7 @@ class JABIA_sound:
         import binascii       
         data_buffer = struct.pack("<II%is" % len(self.filename), 
                                   self.id, len(self.filename), self.filename)
-        print binascii.hexlify(data_buffer)
+#        print binascii.hexlify(data_buffer)
         return data_buffer
         
     def __repr__(self):
@@ -29,7 +29,7 @@ class JABIA_font:
         import binascii       
         data_buffer = struct.pack("<II%isI%is" % (len(self.font_name), len(self.filename)), 
                                   self.id, len(self.font_name), self.font_name, len(self.filename), self.filename)
-        print binascii.hexlify(data_buffer)
+#        print binascii.hexlify(data_buffer)
         return data_buffer
         
     def __repr__(self):
