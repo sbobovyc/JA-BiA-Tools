@@ -5,6 +5,9 @@ from wx.lib.pubsub import Publisher as pub
 import os
 import yaml
 import codecs
+
+from pak_file import PAK_file
+
 padding = 5
 
 class wizard_settings(object):    
@@ -12,10 +15,12 @@ class wizard_settings(object):
         #TODO This path only works on windows
         self.jabia_path = "C:\Program Files (x86)\Steam\steamapps\common\jabia"
         #TODO This environment variable only works on windows
-        self.workspace_path = os.path.join(os.getenv('USERPROFILE'), "workspace_jabia")
+        self.workspace_path = os.path.join(os.getenv('USERPROFILE'), "workspace_jabia", "default_1.11")
         self.filepath = "wizard"
         self.yaml_extension = ".txt"
         yaml_file = self.filepath + self.yaml_extension
+        self.file_list = ["data_win32.pak", "data1_win32.pak", "data2_win32.pak", 
+                          "data3_win32.pak", "data4_win32.pak"]
         if os.path.exists(os.path.join(os.getcwd(), yaml_file)):
             self.yaml2bin(yaml_file)
     
@@ -125,6 +130,7 @@ class wizard(wx.wizard.Wizard):
     def on_finished(self, evt):
         'Finish button has been pressed.  Clean up and exit.'
         print "OnWizFinished\n"
+        pub.sendMessage("FINISH")
 
 class JABIA_Tools_wizard(object):
     def __init__(self):
@@ -172,20 +178,21 @@ class JABIA_Tools_wizard(object):
         self.mywiz.add_page(page3)
     
         pub.subscribe(self.dirChanged, "DIR_CHANGED")
+        pub.subscribe(self.finish, "FINISH")
         
-        page4 = wizard_page(self.mywiz, "")
+        self.page4 = wizard_page(self.mywiz, "")
         vbox = wx.BoxSizer(wx.VERTICAL)
-        vbox.Add(wx.StaticText(page4, -1, 'Click Finish to commence unpacking.'), wx.EXPAND | wx.ALL, 20)
-        panel = wx.Panel(page4, -1) 
+        vbox.Add(wx.StaticText(self.page4, -1, 'Click Finish to commence unpacking.'), wx.EXPAND | wx.ALL, 20)
+        panel = wx.Panel(self.page4, -1) 
         self.gauge = wx.Gauge(panel, -1, 50, size=(340, 25))
         vbox.Add(panel)
-        page4.add_stuff(vbox)
-        self.mywiz.add_page(page4)
+        self.status = wx.TextCtrl(self.page4, -1, 'Unpacking', style=wx.TE_MULTILINE)
+        vbox.Add(self.status)
+        self.page4.add_stuff(vbox)
+        self.mywiz.add_page(self.page4)
         self.mywiz.run() # Show the main window
     
-        # Cleanup
-        self.mywiz.Destroy()
-        self.settings.dump2yaml()
+
     
     def dirChanged(self, message):
         """
@@ -207,6 +214,16 @@ class JABIA_Tools_wizard(object):
             pub.sendMessage("DIR_CHANGED", dlg.GetPath())
         dlg.Destroy()
         
+    def finish(self, event):
+        for file in self.settings.file_list:
+            pak_filepath = os.path.join(self.settings.jabia_path, file)
+            print pak_filepath 
+            pak_file = PAK_file(filepath=pak_filepath)
+            self.status = wx.StaticText(self.page4, -1, file)
+            pak_file.dump(self.settings.workspace_path)
+        # Cleanup
+        #self.mywiz.Destroy()
+        self.settings.dump2yaml()
 if __name__ == '__main__':
     app = wx.PySimpleApp()  # Start the application
     wiz = JABIA_Tools_wizard()

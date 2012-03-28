@@ -36,6 +36,7 @@ BINARY
 cd C:\Users\your_name\Desktop\bia_tools
 3. Use the tools:
 pak_magick.exe somefile.pak
+pak_magick.exe somefile.pak.crypt
 ctx_magick.exe somefile.ctx
 deg_magick.exe somefile.deg
 

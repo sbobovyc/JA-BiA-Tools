@@ -23,20 +23,26 @@ Created on February 2, 2012
 import struct 
 import os
 import zlib
+import cStringIO
+import base64
+from Crypto.Cipher import AES
 
+PAK_SIGNATURE = 0x504B4C4501000000
+AES_KEY = "xWurz3lPETER253z"
+AES_KEY_CIPHERED = "eFd1cnozbFBFVEVSMjUzeg=="
+                
 class PAK_data:
     def __init_(self, dir):  
         self.file_name_length = None    # includes '\0' 
         self.file_size = None   # in bytes
         self.file_offset = None # in bytes
-        self.unknown_long = None
-        self.file_name = None   # includes '\0'
-                
+        self.file_crc = None    # unknown crc
+        self.file_name = None   # includes '\0'                
         self.data = None
     
     def unpack(self, dir, file_pointer, dest_filepath, verbose=False):
         self.file_directory = dir
-        self.file_name_length, self.file_size, self.file_offset, self.unknown_long = struct.unpack('<IQQQ', file_pointer.read(28))
+        self.file_name_length, self.file_size, self.file_offset, self.file_crc = struct.unpack('<IQQQ', file_pointer.read(28))
         
         self.file_name = file_pointer.read(self.file_name_length)
         # srip the null
@@ -50,9 +56,9 @@ class PAK_data:
             print "File name: %s" % os.path.join(self.file_directory,self.file_name)
             print "File offset: %s" % hex(self.file_offset)
             print "File Size: %s bytes" % hex(self.file_size)
-            print "File unknown data: %s" % hex(self.unknown_long)
-            print "File Adler32 %s" % hex(zlib.adler32(self.data) & 0xffffffff )
-            print "File CRC32 %s" % hex(zlib.crc32(self.data) & 0xffffffff )
+            print "File unknown crc: %s" % hex(self.file_crc)
+            #print "File Adler32 %s" % hex(zlib.adler32(self.data) & 0xffffffff )
+            #print "File CRC32 %s" % hex(zlib.crc32(self.data) & 0xffffffff )
             print 
         
         path = os.path.join(dest_filepath, self.file_directory)
@@ -60,9 +66,6 @@ class PAK_data:
             os.makedirs(path)
             
         with open(os.path.join(path, self.file_name), "wb") as f:
-#            data_struct = struct.Struct("%ic" % len(self.data))
-#            packed_data = data_struct.pack(self.data)
-#            f.write(packed_data)
             f.write(self.data)
         file_pointer.seek(saved_pointer)
         
@@ -98,7 +101,7 @@ class PAK_header:
     def unpack(self, file_pointer, dest_filepath, verbose=False):    
         self.magic, = struct.unpack(">Q", file_pointer.read(8))
         
-        if self.magic != 0x504B4C4501000000:
+        if self.magic != PAK_SIGNATURE:            
             # something bad happened
             print "File is not BiA pak"
             return
@@ -132,8 +135,29 @@ class PAK_file:
     def dump(self, dest_filepath=os.getcwd(), verbose=False):
         with open(self.filepath, "rb") as f:            
             self.header.unpack(f, dest_filepath, verbose)
+
+class PAK_CRYPT_file(PAK_file):
+    def open(self, filepath=None, peek=False):        
+        if filepath == None and self.filepath == None:
+            print "File path is empty"
+            return
+        if self.filepath == None:
+            self.filepath = filepath
         
+        with open(self.filepath, "rb") as f:
+            _, real_size, block_size = struct.unpack("<HII", f.read(0xa))
+        
+            buf = f.read(block_size)
+        
+            aes = AES.new(base64.b64decode(AES_KEY_CIPHERED), AES.MODE_ECB)
+            self.io = cStringIO.StringIO(aes.decrypt(buf)[:real_size])
+        self.header = PAK_header()
+
+    def dump(self, dest_filepath=os.getcwd(), verbose=False):          
+            self.header.unpack(self.io, dest_filepath, verbose)
+                            
 if __name__ == "__main__":
     pF = PAK_file("C:\Program Files (x86)\Jagged Alliance Back in Action Demo\\voices_win32.pak")
+    #pF = PAK_CRYPT_file("C:\Program Files (x86)\Jagged Alliance Back in Action Demo\\configs_win32.pak.crypt")
     pF.open()        
     pF.dump()

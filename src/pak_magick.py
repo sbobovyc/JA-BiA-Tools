@@ -22,9 +22,9 @@ Created on February 2, 2012
 
 import argparse
 import os
-from pak_file import PAK_file
+from pak_file import PAK_file, PAK_CRYPT_file
 
-parser = argparse.ArgumentParser(description='Tool that can unpack Jagged Alliance: BiA pak files.')
+parser = argparse.ArgumentParser(description='Tool that can unpack Jagged Alliance: BiA pak/pak.crypt files.')
 
 parser.add_argument('file', nargs='?', help='Input file')
 parser.add_argument('outdir', nargs='?', help='Output directory')
@@ -41,21 +41,26 @@ debug = args.debug
 if file != None and info != False:
     info_filepath = os.path.abspath(file)
     print "Not implemented yet."
-    
-    
-elif file != None:            
-    
+        
+elif file != None:      
+    extension = os.path.splitext(file)[1][1:].strip()
     pak_filepath = os.path.abspath(file)
+    
     print "Unpacking %s" % pak_filepath
-    pak_file = PAK_file(filepath=pak_filepath)
+    
+    if extension == "pak":
+        pak_file = PAK_file(filepath=pak_filepath)
+    elif extension == "crypt":
+        pak_file = PAK_CRYPT_file(filepath=pak_filepath)
+    else:
+        print "File not pak or pak.crypt" 
+    
     if outdir != None:
         output_filepath = os.path.abspath(outdir)
         pak_file.dump(outdir, debug)
     else:
         pak_file.dump(verbose=debug)
-        
-    
-    
+            
 else:
     print "Nothing happened"
     parser.print_help()
