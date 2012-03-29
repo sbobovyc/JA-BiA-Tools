@@ -1,12 +1,34 @@
-""" Code taken from http://wiki.wxpython.org/wxWizard"""
+"""
+Created on March 15, 2012
+
+@author: sbobovyc
+"""
+"""   
+    Copyright (C) 2012 Stanislav Bobovych
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
+""" Parts of code taken from http://wiki.wxpython.org/wxWizard"""
 import wx
 import wx.wizard as wizmod
-from wx.lib.pubsub import Publisher as pub
+from wx.lib.pubsub import setupv1           #have to use api v1 to work with pyinstaller 1.5.1
+from wx.lib.pubsub import Publisher as pub    
 import os
 import yaml
 import codecs
-
-from pak_file import PAK_file
+import thread
 
 padding = 5
 
@@ -20,7 +42,8 @@ class wizard_settings(object):
         self.yaml_extension = ".txt"
         yaml_file = self.filepath + self.yaml_extension
         self.file_list = ["data_win32.pak", "data1_win32.pak", "data2_win32.pak", 
-                          "data3_win32.pak", "data4_win32.pak"]
+                          "data3_win32.pak", "data4_win32.pak", \
+                          "configs_win32.pak.crypt", "interface_win32.pak.crypt"]
         if os.path.exists(os.path.join(os.getcwd(), yaml_file)):
             self.yaml2bin(yaml_file)
     
@@ -116,12 +139,13 @@ class wizard(wx.wizard.Wizard):
             dir = "backward"
         page = evt.GetPage()
         print "page_changing: %s, %s\n" % (dir, page.__class__)
+        pub.sendMessage("FINISH")
         
     def on_cancel(self, evt):
         'Cancel button has been pressed.  Clean up and exit without continuing.'
         page = evt.GetPage()
         print "on_cancel: %s\n" % page.__class__
-
+        self.Destroy()
 #        # Prevent cancelling of the wizard.
 #        if page is self.pages[0]:
 #            wx.MessageBox("Cancelling on the first page has been prevented.", "Sorry")
@@ -129,8 +153,7 @@ class wizard(wx.wizard.Wizard):
 
     def on_finished(self, evt):
         'Finish button has been pressed.  Clean up and exit.'
-        print "OnWizFinished\n"
-        pub.sendMessage("FINISH")
+        print "OnWizFinished\n"        
 
 class JABIA_Tools_wizard(object):
     def __init__(self):
@@ -180,18 +203,29 @@ class JABIA_Tools_wizard(object):
         pub.subscribe(self.dirChanged, "DIR_CHANGED")
         pub.subscribe(self.finish, "FINISH")
         
-        self.page4 = wizard_page(self.mywiz, "")
-        vbox = wx.BoxSizer(wx.VERTICAL)
-        vbox.Add(wx.StaticText(self.page4, -1, 'Click Finish to commence unpacking.'), wx.EXPAND | wx.ALL, 20)
+        self.page4 = wizard_page(self.mywiz, "Unpacking files")
+        #vbox = wx.BoxSizer(wx.VERTICAL)
+        #vbox.Add(wx.StaticText(self.page4, -1, 'Click Finish to commence unpacking.'), wx.EXPAND | wx.ALL, 20)
         panel = wx.Panel(self.page4, -1) 
-        self.gauge = wx.Gauge(panel, -1, 50, size=(340, 25))
-        vbox.Add(panel)
-        self.status = wx.TextCtrl(self.page4, -1, 'Unpacking', style=wx.TE_MULTILINE)
-        vbox.Add(self.status)
-        self.page4.add_stuff(vbox)
+        #self.gauge = wx.Gauge(panel, -1, 50, size=(340, 25))
+        #vbox.Add(panel)
+        self.status = wx.TextCtrl(panel, -1, '', size = wx.Size(200, 200), style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_NO_VSCROLL)
+        #vbox.Add(self.status)
+        #self.page4.add_stuff(vbox)
+        
+        self.hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.hsizer.Add(self.status, 10, wx.EXPAND)
+        self.vsizer=wx.BoxSizer(wx.VERTICAL)
+        self.vsizer.Add(self.hsizer, 1, wx.EXPAND)
+        panel.SetSizer(self.vsizer)
+                
+        self.page4.add_stuff(panel)
+        
         self.mywiz.add_page(self.page4)
         self.mywiz.run() # Show the main window
-    
+        # Cleanup
+        self.mywiz.Destroy()
+        self.settings.dump2yaml()
 
     
     def dirChanged(self, message):
@@ -215,15 +249,24 @@ class JABIA_Tools_wizard(object):
         dlg.Destroy()
         
     def finish(self, event):
+        if self.mywiz.GetCurrentPage() == self.mywiz.pages[2]:  
+            self.mywiz.GetCurrentPage().SetNext(self.mywiz.pages[3])   
+            self.mywiz.FindWindowById(wx.ID_FORWARD).Disable()
+            self.mywiz.FindWindowById(wx.ID_BACKWARD).Disable()          
+            thread.start_new_thread(self.longRunning, ())            
+                
+    def longRunning(self):
+        self.status.SetValue("")
         for file in self.settings.file_list:
-            pak_filepath = os.path.join(self.settings.jabia_path, file)
-            print pak_filepath 
-            pak_file = PAK_file(filepath=pak_filepath)
-            self.status = wx.StaticText(self.page4, -1, file)
-            pak_file.dump(self.settings.workspace_path)
-        # Cleanup
-        #self.mywiz.Destroy()
-        self.settings.dump2yaml()
+            pak_filepath = os.path.join(self.settings.jabia_path, file) 
+            #pak_file = PAK_file(filepath=pak_filepath)        
+            wx.CallAfter(self.status.AppendText, "Unpacking " + file + "\n")        
+            #pak_file.dump(self.settings.workspace_path)
+            cmd = "pak_magick.exe \"%s\" \"%s\"" % (pak_filepath, self.settings.workspace_path)
+            os.system(cmd)
+        self.mywiz.FindWindowById(wx.ID_FORWARD).Enable()
+        self.mywiz.FindWindowById(wx.ID_CANCEL).Disable()
+        
 if __name__ == '__main__':
     app = wx.PySimpleApp()  # Start the application
     wiz = JABIA_Tools_wizard()
