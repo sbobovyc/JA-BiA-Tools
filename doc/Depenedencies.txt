@@ -1,0 +1,3 @@
+pycrypto >=2.3
+wxpython
+pyyaml

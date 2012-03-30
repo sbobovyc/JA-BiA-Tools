@@ -23,8 +23,7 @@ Created on March 15, 2012
 """ Parts of code taken from http://wiki.wxpython.org/wxWizard"""
 import wx
 import wx.wizard as wizmod
-from wx.lib.pubsub import setupv1           #have to use api v1 to work with pyinstaller 1.5.1
-from wx.lib.pubsub import Publisher as pub    
+from wx.lib.pubsub import Publisher as pub #this does not work with pyinstaller 1.5.1    
 import os
 import yaml
 import codecs
@@ -268,6 +267,6 @@ class JABIA_Tools_wizard(object):
         self.mywiz.FindWindowById(wx.ID_CANCEL).Disable()
         
 if __name__ == '__main__':
-    app = wx.PySimpleApp()  # Start the application
+    app = wx.App()  # Start the application    
     wiz = JABIA_Tools_wizard()
     app.MainLoop()
