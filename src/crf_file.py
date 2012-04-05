@@ -62,11 +62,15 @@ class CRF_data:
         print "Last xyz", self.last_x, self.last_y, self.last_z
         print "Last xyz2", self.last_i, self.last_j, self.last_k
         self.number_of_point, = struct.unpack("<I", file_pointer.read(4))
-        print "Number of points", self.number_of_point
-        self.length_of_compiled_data, = struct.unpack("<I", file_pointer.read(4))
-        print "Length of compiled data", self.length_of_compiled_data*6
+        print "Number of verteces", self.number_of_point
+        self.number_of_faces, = struct.unpack("<I", file_pointer.read(4))
+        print "Number of faces", self.number_of_faces
         print "Position", hex(file_pointer.tell())
-        self.compile_data = file_pointer.read(self.length_of_compiled_data*6)
+        self.faces = []
+        for i in range(0, self.number_of_faces):
+            v1, v2, v3 = struct.unpack("<HHH", file_pointer.read(6))
+            self.faces.append([v1, v2, v3])
+            print "Faces %s %s %s" % (v1+1, v2+1, v3+1)
         print "Position", hex(file_pointer.tell())
         self.start_token,null = struct.unpack("<QB", file_pointer.read(9)) 
         #0x0000200c01802102, 0x00
@@ -81,12 +85,22 @@ class CRF_data:
             vertex = [x,y,z]
             self.vertex_xyz_data.append(vertex)
             print i, vertex, diffuse, specular, u0, v0, u1, v1, blendweights
+            #print "v %s %s %s" % (x, y, z)
+            
         # then 0x00 00 00 08 00 08 00 00 00
         # then data that does not seem to be used
         # then nm to signal end of data
         # then footer
 
-          
+        # dump to a simple wavfront object
+        with open("crf_dump.obj", "w") as f:
+            f.write("# Generated with crf_magick from JABIA Tools Project\n")
+            f.write("o Dumped_Object\n")
+            for i in range(0, self.number_of_point):
+                f.write("v %s %s %s\n" % (self.vertex_xyz_data[i][0], self.vertex_xyz_data[i][1], self.vertex_xyz_data[i][2]))
+            f.write("s off\n")
+            for i in range(0, self.number_of_faces):
+                f.write("f %s %s %s\n" % (self.faces[i][0]+1, self.faces[i][1]+1, self.faces[i][2]+1))
            
 class CRF_file:
     def __init__(self, filepath=None):
@@ -109,5 +123,6 @@ class CRF_file:
             self.data.unpack(f, verbose=verbose)
         
 if __name__ == "__main__":
-    crf = CRF_file("C:\\Users\\sbobovyc\\Desktop\\bia\\1.03\\bin_win32\weapons\colt_m16a4_01.crf") 
+    #crf = CRF_file("C:\\Users\\sbobovyc\\Documents\\3DReaperDX\\folder_box_01.crf") 
+    crf = CRF_file("C:\\Users\\sbobovyc\\Desktop\\bia\\1.11\\bin_win32\\weapons\\barret_m82_01.crf")
     crf.unpack()           
