@@ -28,7 +28,6 @@ import base64
 from Crypto.Cipher import AES
 
 PAK_SIGNATURE = 0x504B4C4501000000
-AES_KEY = "xWurz3lPETER253z"
 AES_KEY_CIPHERED = "eFd1cnozbFBFVEVSMjUzeg=="
                 
 class PAK_data:

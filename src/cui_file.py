@@ -179,9 +179,7 @@ class CUI_data:
         self.last_variable_id,unknown1 = struct.unpack("<II", file_pointer.read(8))
 
         if peek or verbose:
-            print "Not implemented"
-        if peek:
-            return 
+            print "Peeking not implemented"
         
         print "Last variable picture_id:", self.last_variable_id
         

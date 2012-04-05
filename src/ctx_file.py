@@ -149,11 +149,9 @@ class CTX_data:
         
         for i in range(1, len(self.language_list)):
             if self.language_list[i].get_num_items() != self.num_items:
-                print "Languages do not contain same ammount of items!"
-                return
+                raise  Exception("Languages do not contain same amount of items!")
             if self.language_list[i].get_last_item_id()  != self.last_item_id:
-                print "The last item in each language is not the same!"
-                return
+                raise  Exception("The last item in each language does not contain the same id!")
             
         #3. pack each language into a byte string and create the data 
         header_buffer = struct.pack("<III", self.num_items, self.last_item_id, self.num_languages)

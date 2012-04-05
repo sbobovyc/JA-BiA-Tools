@@ -34,8 +34,8 @@ class JABIA_file(object):
     
     def open(self, filepath=None, peek=False):
         if filepath == None and self.filepath == None:
-            print "File path is empty"
-            return
+            raise Exception("File path is empty")
+
         if self.filepath == None:
             self.filepath = filepath             
         
@@ -44,8 +44,7 @@ class JABIA_file(object):
     
     def pack(self, verbose=False):
         if self.filepath == None:
-            print "File path is empty. Open the file with a valid path."
-            return
+            raise Exception("File path is empty. Open the file with a valid path.")
         
         print "Creating %s" % self.filepath
          
