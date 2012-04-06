@@ -895,7 +895,6 @@ def load(operator, context, filepath,
     for i in range(0, number_of_point):
         x, y, z, diffuse, specular, u0, v0, u1, v1, blendweights = struct.unpack("<fffIIHHHHI", file.read(32))
         verts_loc.append((x,y,z))
-    print(verts_loc)
 
         
     
@@ -925,11 +924,11 @@ def load(operator, context, filepath,
     else:
         SPLIT_OB_OR_GROUP = False
 
-    print(verts_loc)
-    print(faces)
-    print(unique_materials)
-    print(filepath)
-    print(SPLIT_OB_OR_GROUP)
+##    print(verts_loc)
+##    print(faces)
+##    print(unique_materials)
+##    print(filepath)
+##    print(SPLIT_OB_OR_GROUP)
     for verts_loc_split, faces_split, unique_materials_split, dataname in split_mesh(verts_loc, faces, unique_materials, filepath, SPLIT_OB_OR_GROUP):
         # Create meshes from the data, warning 'vertex_groups' wont support splitting
         create_mesh(new_objects,
