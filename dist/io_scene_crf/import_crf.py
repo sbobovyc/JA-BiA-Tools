@@ -132,7 +132,20 @@ def load(operator, context, filepath,
     #0x0000200c01802102, 0x00
 
     for i in range(0, number_of_point):
-        x, y, z, diffuse, specular, u0, v0, u1, v1, blendweights = struct.unpack("<fffIIHHHHI", file.read(32))
+        x, y, z, \
+            diffuse_blue, diffuse_green, diffuse_red, diffuse_alpha, \
+            specular_blue, specular_green, specular_red, specular_alpha, \
+            u0, v0, u1, v1, blendweights = struct.unpack("<fffBBBBBBBBhhhhI", file.read(32))
+        # convert signed short to float
+        u0 /= 32768
+        v0 /= 32768
+        u1 /= 32768
+        v1 /= 32768
+        # distortions due to rounding by directx and not python
+        print("index=%s, xyz=(%s %s %s), Kd=(%s, %s, %s, %s), Ks=(%s, %s, %s, %s), uv0=(%s, %s), uv1=(%s, %s)" % (i, x,y,z, \
+                                hex(diffuse_alpha), hex(diffuse_red), hex(diffuse_green), hex(diffuse_blue), \
+                                hex(specular_alpha), hex(specular_red), hex(specular_green), hex(specular_blue), \
+                                u0, v0, u1, v1))
         verts_loc.append((x,y,z))
 
         
