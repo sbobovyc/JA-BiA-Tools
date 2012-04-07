@@ -39,6 +39,35 @@ import struct
 from bpy_extras.io_utils import unpack_list, unpack_face_list
 from bpy_extras.image_utils import load_image
 
+
+def createMaterial():    
+    # Create image texture from image. Change here if the snippet 
+    # folder is not located in you home directory.
+    realpath = os.path.expanduser('C:\\Users\\sbobovyc\\Documents\\3DReaperDX\\office_assets_01_c.dds')
+    tex = bpy.data.textures.new('ColorTex', type = 'IMAGE')
+    tex.image = bpy.data.images.load(realpath)
+    tex.use_alpha = True
+ 
+    # Create shadeless material and MTex
+    mat = bpy.data.materials.new('TexMat')
+    mat.use_shadeless = True
+    mtex = mat.texture_slots.add()
+    mtex.texture = tex
+    mtex.texture_coords = 'UV'
+    mtex.use_map_color_diffuse = True 
+    return mat
+
+def createTextureLayer(name, me, texFaces):
+    uvtex = me.uv_textures.new()
+    uvtex.name = name
+    for n,tf in enumerate(texFaces):
+        datum = uvtex.data[n]
+        datum.uv1 = tf[0]
+        datum.uv2 = tf[1]
+        datum.uv3 = tf[2]
+    return uvtex
+
+
 def load(operator, context, filepath,
          global_clamp_size=0.0,
          use_ngons=True,
@@ -69,7 +98,8 @@ def load(operator, context, filepath,
     time_main = time.time()
 
     verts_loc = []
-    verts_tex = []
+    verts_tex0 = []
+    verts_tex1 = []
     faces = []  # tuples of the faces
     material_libs = []  # filanems to material libs this uses
     vertex_groups = {}  # when use_groups_as_vgroups is true
@@ -147,8 +177,9 @@ def load(operator, context, filepath,
                                 hex(specular_alpha), hex(specular_red), hex(specular_green), hex(specular_blue), \
                                 u0, v0, u1, v1))
         verts_loc.append((x,y,z))
+        verts_tex0.append((u0, v0))
 
-        
+    # bpy.context.object.data.materials.append(bpy.data.materials['NewMat'])
     
     time_new = time.time()
     print("%.4f sec" % (time_new - time_sub))
@@ -179,7 +210,9 @@ def load(operator, context, filepath,
     # Fill the mesh with verts, edges, faces 
     me.from_pydata(verts_loc,[],faces)   # edges or faces should be [], or you ask for problems
     me.update(calc_edges=True)    # Update mesh with new data
-                         
+
+    mat = createMaterial()
+    ob.data.materials.append(mat)
     new_objects.append(ob)
 
     # Create new obj
