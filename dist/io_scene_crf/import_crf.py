@@ -95,42 +95,10 @@ def load(operator, context, filepath,
     if use_split_objects or use_split_groups:
         use_groups_as_vgroups = False
 
+    new_objects = []  # put new objects here
+    
     time_main = time.time()
-
-    verts_loc = []
-    verts_tex0 = []
-    verts_tex1 = []
-    faces = []  # tuples of the faces
-    material_libs = []  # filanems to material libs this uses
-    vertex_groups = {}  # when use_groups_as_vgroups is true
-
-    # Context variables
-    context_material = None
-    context_smooth_group = None
-    context_object = None
-    context_vgroup = None
-
-    # Nurbs
-    context_nurbs = {}
-    nurbs = []
-    context_parm = b''  # used by nurbs too but could be used elsewhere
-
-    has_ngons = False
-    # has_smoothgroups= False - is explicit with len(unique_smooth_groups) being > 0
-
-    # Until we can use sets
-    unique_materials = {}
-    unique_material_images = {}
-    unique_smooth_groups = {}
-    # unique_obects= {} - no use for this variable since the objects are stored in the face.
-
-    # when there are faces that end with \
-    # it means they are multiline-
-    # since we use xreadline we cant skip to the next line
-    # so we need to know whether
-    context_multi_line = b''
-
-    print("\tparsing obj file...")
+    print("\tparsing crf file...")
     time_sub = time.time()
 #     time_sub= sys.time()
 
@@ -140,28 +108,34 @@ def load(operator, context, filepath,
         print("Not a CRF file!")
         return 
 
+    #TODO I think some of the magick is bounding box
     footer_offset,magick2 = struct.unpack("<II", file.read(8))
     magick3, magick4, num_models_in_file = struct.unpack("<III", file.read(12))
 
+    # start unpacking loop here
+    verts_loc = []
+    verts_tex0 = []
+    verts_tex1 = []
+    faces = []  # tuples of the faces
+    
     last_x, last_y, last_z = struct.unpack("<fff", file.read(12))        
     last_i, last_j, last_k = struct.unpack("<fff", file.read(12)) #root point?
-    number_of_point, = struct.unpack("<I", file.read(4))
+    number_of_verteces, = struct.unpack("<I", file.read(4))
     number_of_faces, = struct.unpack("<I", file.read(4))
+    
     for i in range(0, number_of_faces):
             v1, v2, v3 = struct.unpack("<HHH", file.read(6))
             face_vert_loc_indices = [v1, v2, v3]
             face_vert_tex_indices = [v1, v2, v3]
-            context_material = b'office_assets_01_c.dds'
-            context_smooth_group = None
-            context_object = b'Dumped_Object'
-            unique_materials[context_material] = None
             faces.append((v1, v2, v3, v1))
 
 
-    start_token,null = struct.unpack("<QB", file.read(9)) 
-    #0x0000200c01802102, 0x00
+    #read start token     #0x0000200c01802102, 0x00
+    start_token, = struct.unpack("<Qx", file.read(9)) 
 
-    for i in range(0, number_of_point):
+
+    # read in verteces, kd, ks, and UVs
+    for i in range(0, number_of_verteces):
         x, y, z, \
             diffuse_blue, diffuse_green, diffuse_red, diffuse_alpha, \
             specular_blue, specular_green, specular_red, specular_alpha, \
@@ -179,19 +153,42 @@ def load(operator, context, filepath,
         verts_loc.append((x,y,z))
         verts_tex0.append((u0, v0))
 
-    # bpy.context.object.data.materials.append(bpy.data.materials['NewMat'])
+    #read in separator 0x000000080008000000
+    separator = struct.unpack("<8B", file.read(8))
+    #read in unknown tuples, somehow related to verteces
+    for i in range(0, number_of_verteces):
+        unknown0, unknown1 = struct.unpack("<ff", file.read(8))
+        print("uknown0=%s, unknown1=%s" % (unknown0, unknown1))
+
+
+    #read in bounding box?
+    bounding_box = struct.unpack("<6f", file.read(24))
+    print(bounding_box)
     
+    # bpy.context.object.data.materials.append(bpy.data.materials['NewMat'])
+    #read in material information
+    materials, = struct.unpack("2s", file.read(2))
+    if materials == b'nm':
+        number_of_materials, = struct.unpack("<I", file.read(4))
+        print("Materials=%s", number_of_materials)
+        #it's unclear if object can have more than one uv map, so I am using a simple parsing approach
+        file.read(8)
+        texture_name_length, = struct.unpack("<I", file.read(4))
+        texture_name, = struct.unpack("%is" % texture_name_length, file.read(texture_name_length))         
+        print(texture_name)
+        file.read(8)
+        normal_name_length, = struct.unpack("<I", file.read(4))
+        normal_name, = struct.unpack("%is" % normal_name_length, file.read(normal_name_length))         
+        print(normal_name)
+    #some kind of lighting information
+    
+
     time_new = time.time()
     print("%.4f sec" % (time_new - time_sub))
     time_sub = time_new
 
     print('\tloading materials and images...')
-    material_libs = [b'default_library']
-    use_image_search = True
-    print(material_libs)
-    print(unique_materials)
-    print(unique_material_images)
-    print(use_image_search)
+
 
     time_new = time.time()
     print("%.4f sec" % (time_new - time_sub))
@@ -203,7 +200,6 @@ def load(operator, context, filepath,
 
     scene = context.scene
 #     scn.objects.selected = []
-    new_objects = []  # put new objects here
 
     me = bpy.data.meshes.new("DumpedObject_Mesh")   # create a new mesh
     ob = bpy.data.objects.new("DumpedObject", me)
@@ -211,10 +207,13 @@ def load(operator, context, filepath,
     me.from_pydata(verts_loc,[],faces)   # edges or faces should be [], or you ask for problems
     me.update(calc_edges=True)    # Update mesh with new data
 
-    mat = createMaterial()
-    ob.data.materials.append(mat)
+    #mat = createMaterial()
+    #ob.data.materials.append(mat)
     new_objects.append(ob)
 
+
+    # end loop
+    
     # Create new obj
     for obj in new_objects:
         base = scene.objects.link(obj)
