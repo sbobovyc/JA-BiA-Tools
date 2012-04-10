@@ -18,17 +18,17 @@
 
 # <pep8 compliant>
 
-# Script copyright (C) Campbell Barton
-# Contributors: Campbell Barton, Jiri Hnidek, Paolo Ciccone
+# Script copyright (C) Stanislav Bobovych
+# Contributors(Wavefront OBJ): Campbell Barton, Jiri Hnidek, Paolo Ciccone
 
 """
-This script imports a Wavefront OBJ files to Blender.
+This script imports a JABIA CRF files to Blender.
 
 Usage:
-Run this script from "File->Import" menu and then load the desired OBJ file.
+Run this script from "File->Import" menu and then load the desired CRF file.
 Note, This loads mesh objects and materials only, nurbs and curves are not supported.
 
-http://wiki.blender.org/index.php/Scripts/Manual/Import/wavefront_obj
+https://github.com/sbobovyc/JA-BiA-Tools/wiki
 """
 
 import os
@@ -70,6 +70,7 @@ def createTextureLayer(name, me, texFaces):
 
 def load(operator, context, filepath,
          global_clamp_size=0.0,
+         use_verbose=False,
          use_ngons=True,
          use_smooth_groups=True,
          use_edges=True,
@@ -111,78 +112,139 @@ def load(operator, context, filepath,
     #TODO I think some of the magick is bounding box
     footer_offset,magick2 = struct.unpack("<II", file.read(8))
     magick3, magick4, num_models_in_file = struct.unpack("<III", file.read(12))
+    last_x, last_y, last_z = struct.unpack("<fff", file.read(12))        
+    last_i, last_j, last_k = struct.unpack("<fff", file.read(12)) #bounding box?
 
     # start unpacking loop here
-    verts_loc = []
-    verts_tex0 = []
-    verts_tex1 = []
-    faces = []  # tuples of the faces
+    for model_number in range(0, num_models_in_file):
+        print("STEP 0")
+        verts_loc = []
+        verts_tex0 = []
+        verts_tex1 = []
+        faces = []  # tuples of the faces
+        
+
+        number_of_verteces, = struct.unpack("<I", file.read(4))
+        number_of_faces, = struct.unpack("<I", file.read(4))
+        print("Model: %i, verteces: %i, faces: %i" % (model_number, number_of_verteces, number_of_faces))
+        for i in range(0, number_of_faces):
+                v1, v2, v3 = struct.unpack("<HHH", file.read(6))
+                face_vert_loc_indices = [v1, v2, v3]
+                face_vert_tex_indices = [v1, v2, v3]
+                faces.append((v1, v2, v3, v1))
+
+
+        #read start token     #0x0000200c01802102, 0x00
+        start_token, = struct.unpack("<Qx", file.read(9)) 
+
+
+        # read in verteces, kd, ks, and UVs
+        for i in range(0, number_of_verteces):
+            x, y, z, \
+                diffuse_blue, diffuse_green, diffuse_red, diffuse_alpha, \
+                specular_blue, specular_green, specular_red, specular_alpha, \
+                u0, v0, u1, v1, blendweights = struct.unpack("<fffBBBBBBBBhhhhI", file.read(32))
+            # convert signed short to float
+            u0 /= 32768
+            v0 /= 32768
+            u1 /= 32768
+            v1 /= 32768
+            # distortions due to rounding by directx and not python
+            if use_verbose:
+                print("index=%s, xyz=(%s %s %s), Kd=(%s, %s, %s, %s), Ks=(%s, %s, %s, %s), uv0=(%s, %s), uv1=(%s, %s)" % (i, x,y,z, \
+                                    hex(diffuse_alpha), hex(diffuse_red), hex(diffuse_green), hex(diffuse_blue), \
+                                    hex(specular_alpha), hex(specular_red), hex(specular_green), hex(specular_blue), \
+                                    u0, v0, u1, v1))
+            verts_loc.append((x,y,z))
+            verts_tex0.append((u0, v0))
+
+        #read in separator 0x000000080008000000
+        separator = struct.unpack("<8B", file.read(8))
+        #read in unknown tuples, somehow related to verteces
+        for i in range(0, number_of_verteces):
+            unknown0, unknown1 = struct.unpack("<ff", file.read(8))
+            if use_verbose:
+                print("uknown0=%s, unknown1=%s" % (unknown0, unknown1))
+
+
+        #read in bounding box?
+        if model_number == 0:
+            bounding_box = struct.unpack("<6f", file.read(24))
+            if use_verbose:
+                print("Bounding box? ", bounding_box)
+        
+        # bpy.context.object.data.materials.append(bpy.data.materials['NewMat'])
+        #read in material information
+        materials, = struct.unpack("2s", file.read(2))
+        if materials == b'nm':
+            number_of_materials, = struct.unpack("<I", file.read(4))
+            print("Materials=", number_of_materials)
+            #it's unclear if object can have more than one uv map, so I am using a simple parsing approach
+            file.read(8)
+            texture_name_length, = struct.unpack("<I", file.read(4))
+            texture_name, = struct.unpack("%is" % texture_name_length, file.read(texture_name_length))         
+            print(texture_name)
+            file.read(8)
+            normal_name_length, = struct.unpack("<I", file.read(4))
+            normal_name, = struct.unpack("%is" % normal_name_length, file.read(normal_name_length))         
+            print(normal_name)
+
+            #TODO write a better shader info parser
+            file.read(4) # read in garbage
+            shader_info, = struct.unpack("4s", file.read(4))
+            print(shader_info)
+            if shader_info == b'lcsp':
+                file.read(12)
+                print("lcsp 1")
+            elif shader_info == b'1tsc':
+                file.read(8)
+                print("1tsc 1")
+            
+            print(hex(file.tell()))
+            shader_info, = struct.unpack("4s", file.read(4))
+            print(shader_info)
+            if shader_info == b'lcps':
+                file.read(12)
+                print("lcps 2")
+            elif shader_info == b'1tsc':
+                print("1tsc 2")
+                file.read(16)
+            
+            print(hex(file.tell()))
+            shader_info, = struct.unpack("4s", file.read(4))
+            print(shader_info)
+            if shader_info == b'lcps':
+                file.read(12)
+                print("lcps 3")
+            elif shader_info == b'1tsc':
+                print("1tsc 3")
+                file.read(24)
+            file.read(24) # read in garbage
+            print("STEP 3")
+            print(hex(file.tell()))
+        #next is some kind of lighting information, not parsed 
+        
+
+        # deselect all
+        if bpy.ops.object.select_all.poll():
+            bpy.ops.object.select_all(action='DESELECT')
+
+        scene = context.scene
+    #     scn.objects.selected = []
+
+        me = bpy.data.meshes.new("DumpedObject%i_Mesh" % model_number)   # create a new mesh
+        ob = bpy.data.objects.new("DumpedObject%i" % model_number, me)
+        # Fill the mesh with verts, edges, faces 
+        me.from_pydata(verts_loc,[],faces)   # edges or faces should be [], or you ask for problems
+        me.update(calc_edges=True)    # Update mesh with new data
+
+        #mat = createMaterial()
+        #ob.data.materials.append(mat)
+        new_objects.append(ob)
+        print("STEP 4")
+
+    # end loop
     
-    last_x, last_y, last_z = struct.unpack("<fff", file.read(12))        
-    last_i, last_j, last_k = struct.unpack("<fff", file.read(12)) #root point?
-    number_of_verteces, = struct.unpack("<I", file.read(4))
-    number_of_faces, = struct.unpack("<I", file.read(4))
-    
-    for i in range(0, number_of_faces):
-            v1, v2, v3 = struct.unpack("<HHH", file.read(6))
-            face_vert_loc_indices = [v1, v2, v3]
-            face_vert_tex_indices = [v1, v2, v3]
-            faces.append((v1, v2, v3, v1))
-
-
-    #read start token     #0x0000200c01802102, 0x00
-    start_token, = struct.unpack("<Qx", file.read(9)) 
-
-
-    # read in verteces, kd, ks, and UVs
-    for i in range(0, number_of_verteces):
-        x, y, z, \
-            diffuse_blue, diffuse_green, diffuse_red, diffuse_alpha, \
-            specular_blue, specular_green, specular_red, specular_alpha, \
-            u0, v0, u1, v1, blendweights = struct.unpack("<fffBBBBBBBBhhhhI", file.read(32))
-        # convert signed short to float
-        u0 /= 32768
-        v0 /= 32768
-        u1 /= 32768
-        v1 /= 32768
-        # distortions due to rounding by directx and not python
-        print("index=%s, xyz=(%s %s %s), Kd=(%s, %s, %s, %s), Ks=(%s, %s, %s, %s), uv0=(%s, %s), uv1=(%s, %s)" % (i, x,y,z, \
-                                hex(diffuse_alpha), hex(diffuse_red), hex(diffuse_green), hex(diffuse_blue), \
-                                hex(specular_alpha), hex(specular_red), hex(specular_green), hex(specular_blue), \
-                                u0, v0, u1, v1))
-        verts_loc.append((x,y,z))
-        verts_tex0.append((u0, v0))
-
-    #read in separator 0x000000080008000000
-    separator = struct.unpack("<8B", file.read(8))
-    #read in unknown tuples, somehow related to verteces
-    for i in range(0, number_of_verteces):
-        unknown0, unknown1 = struct.unpack("<ff", file.read(8))
-        print("uknown0=%s, unknown1=%s" % (unknown0, unknown1))
-
-
-    #read in bounding box?
-    bounding_box = struct.unpack("<6f", file.read(24))
-    print(bounding_box)
-    
-    # bpy.context.object.data.materials.append(bpy.data.materials['NewMat'])
-    #read in material information
-    materials, = struct.unpack("2s", file.read(2))
-    if materials == b'nm':
-        number_of_materials, = struct.unpack("<I", file.read(4))
-        print("Materials=%s", number_of_materials)
-        #it's unclear if object can have more than one uv map, so I am using a simple parsing approach
-        file.read(8)
-        texture_name_length, = struct.unpack("<I", file.read(4))
-        texture_name, = struct.unpack("%is" % texture_name_length, file.read(texture_name_length))         
-        print(texture_name)
-        file.read(8)
-        normal_name_length, = struct.unpack("<I", file.read(4))
-        normal_name, = struct.unpack("%is" % normal_name_length, file.read(normal_name_length))         
-        print(normal_name)
-    #some kind of lighting information
-    
-
     time_new = time.time()
     print("%.4f sec" % (time_new - time_sub))
     time_sub = time_new
@@ -193,26 +255,6 @@ def load(operator, context, filepath,
     time_new = time.time()
     print("%.4f sec" % (time_new - time_sub))
     time_sub = time_new
-
-    # deselect all
-    if bpy.ops.object.select_all.poll():
-        bpy.ops.object.select_all(action='DESELECT')
-
-    scene = context.scene
-#     scn.objects.selected = []
-
-    me = bpy.data.meshes.new("DumpedObject_Mesh")   # create a new mesh
-    ob = bpy.data.objects.new("DumpedObject", me)
-    # Fill the mesh with verts, edges, faces 
-    me.from_pydata(verts_loc,[],faces)   # edges or faces should be [], or you ask for problems
-    me.update(calc_edges=True)    # Update mesh with new data
-
-    #mat = createMaterial()
-    #ob.data.materials.append(mat)
-    new_objects.append(ob)
-
-
-    # end loop
     
     # Create new obj
     for obj in new_objects:

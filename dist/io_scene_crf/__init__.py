@@ -28,7 +28,7 @@ bl_info = {
     "warning": "",
     "wiki_url": "",
     "tracker_url": "",
-    "support": 'COMMUNITY',
+    "support": 'TESTING',
     "category": "Import-Export"}
 
 if "bpy" in locals():
@@ -63,7 +63,12 @@ class ImportOBJ(bpy.types.Operator, ImportHelper):
             default="*.crf",
             options={'HIDDEN'},
             )
-
+    
+    use_verbose = BoolProperty(
+            name="Verbose",
+            description="Verbose output to console",
+            default=False,
+            )
     use_ngons = BoolProperty(
             name="NGons",
             description="Import faces with more then 4 verts as fgons",
@@ -169,6 +174,7 @@ class ImportOBJ(bpy.types.Operator, ImportHelper):
         layout = self.layout
 
         row = layout.row(align=True)
+        row.prop(self, "use_verbose")
         row.prop(self, "use_ngons")
         row.prop(self, "use_edges")
 
