@@ -191,37 +191,32 @@ def load(operator, context, filepath,
 
             #TODO write a better shader info parser
             file.read(4) # read in garbage
-            shader_info, = struct.unpack("4s", file.read(4))
-            print(shader_info)
-            if shader_info == b'lcsp':
-                file.read(12)
-                print("lcsp 1")
-            elif shader_info == b'1tsc':
-                file.read(8)
-                print("1tsc 1")
-            
-            print(hex(file.tell()))
-            shader_info, = struct.unpack("4s", file.read(4))
-            print(shader_info)
-            if shader_info == b'lcps':
-                file.read(12)
-                print("lcps 2")
-            elif shader_info == b'1tsc':
-                print("1tsc 2")
-                file.read(16)
-            
-            print(hex(file.tell()))
-            shader_info, = struct.unpack("4s", file.read(4))
-            print(shader_info)
-            if shader_info == b'lcps':
-                file.read(12)
-                print("lcps 3")
-            elif shader_info == b'1tsc':
-                print("1tsc 3")
-                file.read(24)
-            file.read(24) # read in garbage
+            looping = True
+            tsc_counter = 8
+            last_lcps = False
+            while looping:
+                shader_info, = struct.unpack("4s", file.read(4))
+                print(shader_info)
+                print(hex(file.tell()))
+                if shader_info == b'lcps':
+                    file.read(12)
+                    last_lcps = True
+                    print("lcsp")
+                elif shader_info == b'1tsc':
+                    file.read(tsc_counter)
+                    tsc_counter = tsc_counter + 8
+                    last_lcps = False
+                    print(tsc_counter)
+                    print("1tsc")                                               
+                else:
+                    looping = False
+                    if last_lcps:
+                        file.read(20) #read in rest of garbage
+                    else:
+                        file.seek(file.tell()-4)
+                print(hex(file.tell())) 
             print("STEP 3")
-            print(hex(file.tell()))
+            
         #next is some kind of lighting information, not parsed 
         
 
