@@ -31,7 +31,9 @@ Note, This loads mesh objects and materials only, nurbs and curves are not suppo
 https://github.com/sbobovyc/JA-BiA-Tools/wiki
 """
 
+import sys
 import os
+import fnmatch
 import time
 import bpy
 import mathutils
@@ -39,11 +41,28 @@ import struct
 from bpy_extras.io_utils import unpack_list, unpack_face_list
 from bpy_extras.image_utils import load_image
 
+def find_files(base, pattern):
+    '''Return list of files matching pattern in base folder.'''
+    return [n for n in fnmatch.filter(os.listdir(base), pattern) if
+        os.path.isfile(os.path.join(base, n))]
 
-def createMaterial():    
+def findTextureFile(path, name):
+    obj_dir = os.path.dirname(path)
+    #search several locations
+    possible_locations = [obj_dir, os.path.join(os.path.dirname(obj_dir), "textures"),
+                          os.path.join(os.path.dirname(obj_dir), "textures", "items"),
+                          os.path.join(os.path.dirname(obj_dir), "textures", "interface"),
+                          os.path.join(os.path.dirname(obj_dir), "textures", "characters")]
+    for location in possible_locations:
+        filenames = find_files(location, "%s.*" % name)
+        if len(filenames) != 0:
+            file_path = os.path.join(location, filenames[0])
+            return file_path
+    
+def createMaterial(filepath):    
     # Create image texture from image. Change here if the snippet 
     # folder is not located in you home directory.
-    realpath = os.path.expanduser('C:\\Users\\sbobovyc\\Documents\\3DReaperDX\\office_assets_01_c.dds')
+    realpath = os.path.expanduser(filepath)
     tex = bpy.data.textures.new('ColorTex', type = 'IMAGE')
     tex.image = bpy.data.images.load(realpath)
     tex.use_alpha = True
@@ -60,7 +79,7 @@ def createMaterial():
 def createTextureLayer(name, me, texFaces):
     uvtex = me.uv_textures.new()
     uvtex.name = name
-    for n,tf in enumerate(texFaces):
+    for n,tf in enumerate(texFaces):        
         datum = uvtex.data[n]
         datum.uv1 = tf[0]
         datum.uv2 = tf[1]
@@ -122,6 +141,7 @@ def load(operator, context, filepath,
         verts_tex0 = []
         verts_tex1 = []
         faces = []  # tuples of the faces
+        face_tex = [] # tuples of uv coordinates for faces
         
 
         number_of_verteces, = struct.unpack("<I", file.read(4))
@@ -131,7 +151,9 @@ def load(operator, context, filepath,
                 v1, v2, v3 = struct.unpack("<HHH", file.read(6))
                 face_vert_loc_indices = [v1, v2, v3]
                 face_vert_tex_indices = [v1, v2, v3]
-                faces.append((v1, v2, v3, v1))
+                faces.append((v1, v2, v3))
+                if use_verbose:
+                    print("Face %s, (%s, %s, %s)" % (i, v1, v2, v3))
 
 
         #read start token     #0x0000200c01802102, 0x00
@@ -156,7 +178,7 @@ def load(operator, context, filepath,
                                     hex(specular_alpha), hex(specular_red), hex(specular_green), hex(specular_blue), \
                                     u0, v0, u1, v1))
             verts_loc.append((x,y,z))
-            verts_tex0.append((u0, v0))
+            verts_tex0.append((0.5+u0/2.0, 0.5-v0/2.0))
 
         #read in separator 0x000000080008000000
         separator = struct.unpack("<8B", file.read(8))
@@ -172,8 +194,7 @@ def load(operator, context, filepath,
             bounding_box = struct.unpack("<6f", file.read(24))
             if use_verbose:
                 print("Bounding box? ", bounding_box)
-        
-        # bpy.context.object.data.materials.append(bpy.data.materials['NewMat'])
+                
         #read in material information
         materials, = struct.unpack("2s", file.read(2))
         if materials == b'nm':
@@ -220,6 +241,10 @@ def load(operator, context, filepath,
         #next is some kind of lighting information, not parsed 
         
 
+        # fill face texture array
+##        for i in range(0, len(faces)):
+##            face_tex.append([ verts_tex0[faces[i][0]], verts_tex0[faces[i][1]], verts_tex0[faces[i][2]] ] )
+        
         # deselect all
         if bpy.ops.object.select_all.poll():
             bpy.ops.object.select_all(action='DESELECT')
@@ -233,10 +258,24 @@ def load(operator, context, filepath,
         me.from_pydata(verts_loc,[],faces)   # edges or faces should be [], or you ask for problems
         me.update(calc_edges=True)    # Update mesh with new data
 
-        #mat = createMaterial()
-        #ob.data.materials.append(mat)
+        # fill face uv texture array
+        for face in ob.data.faces:
+            verts_in_face = face.vertices[:]
+            if use_verbose:
+                print("face index", face.index)  
+                print("normal", face.normal)  
+                for vert in verts_in_face:  
+                    print("vert", vert, " vert co", ob.data.vertices[vert].co)
+            i = face.index
+            face_tex.append([ verts_tex0[faces[i][0]], verts_tex0[faces[i][1]], verts_tex0[faces[i][2]] ] )
+                
+        uvMain = createTextureLayer("UVMain", me, face_tex)
+        texture_filepath = findTextureFile(os.fsdecode(filepath),  texture_name.decode(sys.stdout.encoding))
+        print(texture_filepath)
+        mat = createMaterial(texture_filepath)
+        ob.data.materials.append(mat)
         new_objects.append(ob)
-        print("STEP 4")
+        # bpy.context.object.data.materials.append(bpy.data.materials['NewMat'])
 
     # end loop
     
