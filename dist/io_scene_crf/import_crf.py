@@ -59,21 +59,51 @@ def findTextureFile(path, name):
             file_path = os.path.join(location, filenames[0])
             return file_path
     
-def createMaterial(filepath):    
+##def createMaterial(filepath):    
+##    # Create image texture from image. Change here if the snippet 
+##    # folder is not located in you home directory.
+##    realpath = os.path.expanduser(filepath)
+##    tex = bpy.data.textures.new('ColorTex', type = 'IMAGE')
+##    tex.image = bpy.data.images.load(realpath)
+##    tex.use_alpha = True
+## 
+##    # Create shadeless material and MTex
+##    mat = bpy.data.materials.new('TexMat')
+##    mat.use_shadeless = True
+##    mtex = mat.texture_slots.add()
+##    mtex.texture = tex
+##    mtex.texture_coords = 'UV'
+##    mtex.use_map_color_diffuse = True 
+##    return mat
+
+def createMaterial(color_filepath, normals_filepath):    
     # Create image texture from image. Change here if the snippet 
     # folder is not located in you home directory.
-    realpath = os.path.expanduser(filepath)
+    realpath = os.path.expanduser(color_filepath)
     tex = bpy.data.textures.new('ColorTex', type = 'IMAGE')
     tex.image = bpy.data.images.load(realpath)
     tex.use_alpha = True
- 
+
+    realpath = os.path.expanduser(normals_filepath)
+    norm = bpy.data.textures.new('NormalsTex', type = 'IMAGE')
+    norm.image = bpy.data.images.load(realpath)
+    norm.use_alpha = True
+    norm.use_normal_map = True
+
+    
     # Create shadeless material and MTex
     mat = bpy.data.materials.new('TexMat')
     mat.use_shadeless = True
     mtex = mat.texture_slots.add()
     mtex.texture = tex
     mtex.texture_coords = 'UV'
-    mtex.use_map_color_diffuse = True 
+    mtex.use_map_color_diffuse = True
+
+    mnorm = mat.texture_slots.add()
+    mnorm.texture = norm
+    mnorm.texture_coords = 'UV'
+    mnorm.use_map_color_diffuse = False
+    mnorm.use_map_normal = True
     return mat
 
 def createTextureLayer(name, me, texFaces):
@@ -177,8 +207,12 @@ def load(operator, context, filepath,
                                     hex(diffuse_alpha), hex(diffuse_red), hex(diffuse_green), hex(diffuse_blue), \
                                     hex(specular_alpha), hex(specular_red), hex(specular_green), hex(specular_blue), \
                                     u0, v0, u1, v1))
-            verts_loc.append((x,y,z))
-            verts_tex0.append((0.5+u0/2.0, 0.5-v0/2.0))
+            # mirror vertex across x axis
+            verts_loc.append((-x,y,z))
+            # rectify UV map
+            uv0 = (0.5+u0/2.0, 0.5-v0/2.0)
+            print(uv0)
+            verts_tex0.append(uv0)
 
         #read in separator 0x000000080008000000
         separator = struct.unpack("<8B", file.read(8))
@@ -274,8 +308,9 @@ def load(operator, context, filepath,
                 
         uvMain = createTextureLayer("UVMain", me, face_tex)
         texture_filepath = findTextureFile(os.fsdecode(filepath),  texture_name.decode(sys.stdout.encoding))
-        print(texture_filepath)
-        mat = createMaterial(texture_filepath)
+        normals_filepath = findTextureFile(os.fsdecode(filepath),  normal_name.decode(sys.stdout.encoding))
+        print(texture_filepath, normals_filepath)
+        mat = createMaterial(texture_filepath, normals_filepath)
         ob.data.materials.append(mat)
         new_objects.append(ob)
         # bpy.context.object.data.materials.append(bpy.data.materials['NewMat'])
