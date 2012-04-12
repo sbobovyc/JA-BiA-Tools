@@ -69,39 +69,11 @@ class ImportOBJ(bpy.types.Operator, ImportHelper):
             description="Verbose output to console",
             default=False,
             )
-    use_ngons = BoolProperty(
-            name="NGons",
-            description="Import faces with more then 4 verts as fgons",
+    use_shadeless = BoolProperty(
+            name="Shadeless Materials",
+            description="Use shadeless materials",
             default=True,
             )
-    use_edges = BoolProperty(
-            name="Lines",
-            description="Import lines and faces with 2 verts as edge",
-            default=True,
-            )
-    use_smooth_groups = BoolProperty(
-            name="Smooth Groups",
-            description="Surround smooth groups by sharp edges",
-            default=True,
-            )
-
-    use_split_objects = BoolProperty(
-            name="Object",
-            description="Import OBJ Objects into Blender Objects",
-            default=True,
-            )
-    use_split_groups = BoolProperty(
-            name="Group",
-            description="Import OBJ Groups into Blender Objects",
-            default=True,
-            )
-
-    use_groups_as_vgroups = BoolProperty(
-            name="Poly Groups",
-            description="Import OBJ groups as vertex groups",
-            default=False,
-            )
-
     use_image_search = BoolProperty(
             name="Image Search",
             description="Search subdirs for any assosiated images " \
@@ -175,10 +147,7 @@ class ImportOBJ(bpy.types.Operator, ImportHelper):
 
         row = layout.row(align=True)
         row.prop(self, "use_verbose")
-        row.prop(self, "use_ngons")
-        row.prop(self, "use_edges")
-
-        layout.prop(self, "use_smooth_groups")
+        row.prop(self, "use_shadeless")
 
         box = layout.box()
         row = box.row()
@@ -187,8 +156,6 @@ class ImportOBJ(bpy.types.Operator, ImportHelper):
         row = box.row()
         if self.split_mode == 'ON':
             row.label(text="Split by:")
-            row.prop(self, "use_split_objects")
-            row.prop(self, "use_split_groups")
         else:
             row.prop(self, "use_groups_as_vgroups")
 

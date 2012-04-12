@@ -76,7 +76,7 @@ def findTextureFile(path, name):
 ##    mtex.use_map_color_diffuse = True 
 ##    return mat
 
-def createMaterial(color_filepath, normals_filepath):    
+def createMaterial(color_filepath, normals_filepath, use_shadeless):    
     # Create image texture from image. Change here if the snippet 
     # folder is not located in you home directory.
     realpath = os.path.expanduser(color_filepath)
@@ -93,7 +93,7 @@ def createMaterial(color_filepath, normals_filepath):
     
     # Create shadeless material and MTex
     mat = bpy.data.materials.new('TexMat')
-    mat.use_shadeless = True
+    mat.use_shadeless = use_shadeless
     mtex = mat.texture_slots.add()
     mtex.texture = tex
     mtex.texture_coords = 'UV'
@@ -104,6 +104,7 @@ def createMaterial(color_filepath, normals_filepath):
     mnorm.texture_coords = 'UV'
     mnorm.use_map_color_diffuse = False
     mnorm.use_map_normal = True
+    mnorm.normal_factor = 0.2
     return mat
 
 def createTextureLayer(name, me, texFaces):
@@ -120,13 +121,8 @@ def createTextureLayer(name, me, texFaces):
 def load(operator, context, filepath,
          global_clamp_size=0.0,
          use_verbose=False,
-         use_ngons=True,
-         use_smooth_groups=True,
-         use_edges=True,
-         use_split_objects=True,
-         use_split_groups=True,
          use_image_search=True,
-         use_groups_as_vgroups=False,
+         use_shadeless=True,
          global_matrix=None,
          ):
     '''
@@ -141,9 +137,6 @@ def load(operator, context, filepath,
 
     if global_matrix is None:
         global_matrix = mathutils.Matrix()
-
-    if use_split_objects or use_split_groups:
-        use_groups_as_vgroups = False
 
     new_objects = []  # put new objects here
     
@@ -305,13 +298,14 @@ def load(operator, context, filepath,
             v2 = verts_in_face[1]
             v3 = verts_in_face[2]
             face_tex.append([ verts_tex0[v1], verts_tex0[v2], verts_tex0[v3] ] )
-                
-        uvMain = createTextureLayer("UVMain", me, face_tex)
-        texture_filepath = findTextureFile(os.fsdecode(filepath),  texture_name.decode(sys.stdout.encoding))
-        normals_filepath = findTextureFile(os.fsdecode(filepath),  normal_name.decode(sys.stdout.encoding))
-        print(texture_filepath, normals_filepath)
-        mat = createMaterial(texture_filepath, normals_filepath)
-        ob.data.materials.append(mat)
+
+        if use_image_search:
+            uvMain = createTextureLayer("UVMain", me, face_tex)
+            texture_filepath = findTextureFile(os.fsdecode(filepath),  texture_name.decode(sys.stdout.encoding))
+            normals_filepath = findTextureFile(os.fsdecode(filepath),  normal_name.decode(sys.stdout.encoding))
+            print(texture_filepath, normals_filepath)
+            mat = createMaterial(texture_filepath, normals_filepath, use_shadeless)
+            ob.data.materials.append(mat)
         new_objects.append(ob)
         # bpy.context.object.data.materials.append(bpy.data.materials['NewMat'])
 
