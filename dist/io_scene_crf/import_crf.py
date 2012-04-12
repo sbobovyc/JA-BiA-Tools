@@ -267,7 +267,10 @@ def load(operator, context, filepath,
                 for vert in verts_in_face:  
                     print("vert", vert, " vert co", ob.data.vertices[vert].co)
             i = face.index
-            face_tex.append([ verts_tex0[faces[i][0]], verts_tex0[faces[i][1]], verts_tex0[faces[i][2]] ] )
+            v1 = verts_in_face[0]
+            v2 = verts_in_face[1]
+            v3 = verts_in_face[2]
+            face_tex.append([ verts_tex0[v1], verts_tex0[v2], verts_tex0[v3] ] )
                 
         uvMain = createTextureLayer("UVMain", me, face_tex)
         texture_filepath = findTextureFile(os.fsdecode(filepath),  texture_name.decode(sys.stdout.encoding))
