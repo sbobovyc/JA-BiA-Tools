@@ -81,13 +81,6 @@ class ImportOBJ(bpy.types.Operator, ImportHelper):
             default=True,
             )
 
-    split_mode = EnumProperty(
-            name="Split",
-            items=(('ON', "Split", "Split geometry, omits unused verts"),
-                   ('OFF', "Keep Vert Order", "Keep vertex order from file"),
-                   ),
-            )
-
     global_clamp_size = FloatProperty(
             name="Clamp Scale",
             description="Clamp the size to this maximum (Zero to Disable)",
@@ -123,12 +116,6 @@ class ImportOBJ(bpy.types.Operator, ImportHelper):
         # print("Selected: " + context.active_object.name)
         from . import import_crf
 
-        if self.split_mode == 'OFF':
-            self.use_split_objects = False
-            self.use_split_groups = False
-        else:
-            self.use_groups_as_vgroups = False
-
         keywords = self.as_keywords(ignore=("axis_forward",
                                             "axis_up",
                                             "filter_glob",
@@ -149,15 +136,6 @@ class ImportOBJ(bpy.types.Operator, ImportHelper):
         row.prop(self, "use_verbose")
         row.prop(self, "use_shadeless")
 
-        box = layout.box()
-        row = box.row()
-        row.prop(self, "split_mode", expand=True)
-
-        row = box.row()
-        if self.split_mode == 'ON':
-            row.label(text="Split by:")
-        else:
-            row.prop(self, "use_groups_as_vgroups")
 
         row = layout.split(percentage=0.67)
         row.prop(self, "global_clamp_size")
