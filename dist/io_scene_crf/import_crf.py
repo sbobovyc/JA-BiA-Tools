@@ -91,9 +91,10 @@ def createMaterial(color_filepath, normals_filepath, use_shadeless):
     norm.use_normal_map = True
 
     
-    # Create shadeless material and MTex
+    # Create shadeless or shaded material and MTex
     mat = bpy.data.materials.new('TexMat')
     mat.use_shadeless = use_shadeless
+    #mat.use_vertex_color_paint = True   # support per vertex 
     mtex = mat.texture_slots.add()
     mtex.texture = tex
     mtex.texture_coords = 'UV'
@@ -165,7 +166,7 @@ def load(operator, context, filepath,
         verts_tex1 = []
         faces = []  # tuples of the faces
         face_tex = [] # tuples of uv coordinates for faces
-        
+        vertex_diffuse = []
 
         number_of_verteces, = struct.unpack("<I", file.read(4))
         number_of_faces, = struct.unpack("<I", file.read(4))
@@ -206,6 +207,8 @@ def load(operator, context, filepath,
             uv0 = (0.5+u0/2.0, 0.5-v0/2.0)
             print(uv0)
             verts_tex0.append(uv0)
+
+            vertex_diffuse.append( (diffuse_blue, diffuse_green, diffuse_red, diffuse_alpha) )
 
         #read in separator 0x000000080008000000
         separator = struct.unpack("<8B", file.read(8))
@@ -293,6 +296,7 @@ def load(operator, context, filepath,
                 print("normal", face.normal)  
                 for vert in verts_in_face:  
                     print("vert", vert, " vert co", ob.data.vertices[vert].co)
+                    print("diffuse %s %s %s %s" % (hex(vertex_diffuse[vert][0]), hex(vertex_diffuse[vert][1]), hex(vertex_diffuse[vert][2]), hex(vertex_diffuse[vert][3])))
             i = face.index
             v1 = verts_in_face[0]
             v2 = verts_in_face[1]
