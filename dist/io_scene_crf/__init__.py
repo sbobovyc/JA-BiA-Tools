@@ -52,7 +52,7 @@ from bpy_extras.io_utils import (ExportHelper,
                                  )
 
 
-class ImportOBJ(bpy.types.Operator, ImportHelper):
+class ImportCRF(bpy.types.Operator, ImportHelper):
     '''Load a JABIA CRF File'''
     bl_idname = "import_scene.crf"
     bl_label = "Import CRF"
@@ -74,6 +74,11 @@ class ImportOBJ(bpy.types.Operator, ImportHelper):
             description="Use shadeless materials",
             default=True,
             )
+    use_vertex_colors = BoolProperty(
+        name="Vertex Colors",
+        description="Use vertex colors",
+        default=True,
+        )
     use_image_search = BoolProperty(
             name="Image Search",
             description="Search subdirs for any assosiated images " \
@@ -135,6 +140,9 @@ class ImportOBJ(bpy.types.Operator, ImportHelper):
         row = layout.row(align=True)
         row.prop(self, "use_verbose")
         row.prop(self, "use_shadeless")
+
+        row = layout.split(percentage=0.67)
+        row.prop(self, "use_vertex_colors")
 
 
         row = layout.split(percentage=0.67)
@@ -301,7 +309,7 @@ class ExportOBJ(bpy.types.Operator, ExportHelper):
 
 
 def menu_func_import(self, context):
-    self.layout.operator(ImportOBJ.bl_idname, text="Compiled Resource File (.crf)")
+    self.layout.operator(ImportCRF.bl_idname, text="Compiled Resource File (.crf)")
 
 
 def menu_func_export(self, context):

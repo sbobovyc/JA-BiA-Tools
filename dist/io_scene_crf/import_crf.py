@@ -76,7 +76,7 @@ def findTextureFile(path, name):
 ##    mtex.use_map_color_diffuse = True 
 ##    return mat
 
-def createMaterial(color_filepath, normals_filepath, use_shadeless):    
+def createMaterial(color_filepath, normals_filepath, use_shadeless, use_vertex_colors):    
     # Create image texture from image. Change here if the snippet 
     # folder is not located in you home directory.
     realpath = os.path.expanduser(color_filepath)
@@ -94,7 +94,7 @@ def createMaterial(color_filepath, normals_filepath, use_shadeless):
     # Create shadeless or shaded material and MTex
     mat = bpy.data.materials.new('TexMat')
     mat.use_shadeless = use_shadeless
-    #mat.use_vertex_color_paint = True   # support per vertex 
+    mat.use_vertex_color_paint = use_vertex_colors   # support per vertex 
     mtex = mat.texture_slots.add()
     mtex.texture = tex
     mtex.texture_coords = 'UV'
@@ -108,6 +108,13 @@ def createMaterial(color_filepath, normals_filepath, use_shadeless):
     mnorm.normal_factor = 0.2
     return mat
 
+def createSimpleMaterial(use_shadeless, use_vertex_colors):        
+    # Create shadeless or shaded material and MTex
+    mat = bpy.data.materials.new('SimpleMat')
+    mat.use_shadeless = use_shadeless
+    mat.use_vertex_color_paint = use_vertex_colors   # support per vertex 
+    return mat
+
 def createTextureLayer(name, me, texFaces):
     uvtex = me.uv_textures.new()
     uvtex.name = name
@@ -118,12 +125,27 @@ def createTextureLayer(name, me, texFaces):
         datum.uv3 = tf[2]
     return uvtex
 
+def setVertexColors(me, faces, vertex_diffuse):
+    vtex_diffuse = me.vertex_colors.new()
+    vtex_diffuse.name = "vertex_colors"
+    for face in faces:
+        verts_in_face = face.vertices[:]
+        vtex_diffuse.data[face.index].color1 = vertex_diffuse[verts_in_face[0]]
+        vtex_diffuse.data[face.index].color2 = vertex_diffuse[verts_in_face[1]]
+        vtex_diffuse.data[face.index].color3 = vertex_diffuse[verts_in_face[2]]
+
+##    for n in vtex_diffuse.data:
+##        print(n.color1, n.color2, n.color3)
+        
+    return vtex_diffuse
+
 
 def load(operator, context, filepath,
          global_clamp_size=0.0,
          use_verbose=False,
          use_image_search=True,
          use_shadeless=True,
+         use_vertex_colors=True,
          global_matrix=None,
          ):
     '''
@@ -205,10 +227,11 @@ def load(operator, context, filepath,
             verts_loc.append((-x,y,z))
             # rectify UV map
             uv0 = (0.5+u0/2.0, 0.5-v0/2.0)
-            print(uv0)
             verts_tex0.append(uv0)
 
-            vertex_diffuse.append( (diffuse_blue, diffuse_green, diffuse_red, diffuse_alpha) )
+            # convert 8 bit to float
+            # notice that I don't include alpha
+            vertex_diffuse.append( (diffuse_blue/255.0, diffuse_green/255.0, diffuse_red/255.0) )
 
         #read in separator 0x000000080008000000
         separator = struct.unpack("<8B", file.read(8))
@@ -308,10 +331,16 @@ def load(operator, context, filepath,
             texture_filepath = findTextureFile(os.fsdecode(filepath),  texture_name.decode(sys.stdout.encoding))
             normals_filepath = findTextureFile(os.fsdecode(filepath),  normal_name.decode(sys.stdout.encoding))
             print(texture_filepath, normals_filepath)
-            mat = createMaterial(texture_filepath, normals_filepath, use_shadeless)
+            mat = createMaterial(texture_filepath, normals_filepath, use_shadeless, use_vertex_colors)
             ob.data.materials.append(mat)
+
+        if use_vertex_colors:
+            setVertexColors(me, ob.data.faces, vertex_diffuse)
+            # if no materials exists, create one
+            if len(ob.data.materials) == 0 and not use_image_search:
+                mat = createSimpleMaterial(use_shadeless, use_vertex_colors)
+                ob.data.materials.append(mat)
         new_objects.append(ob)
-        # bpy.context.object.data.materials.append(bpy.data.materials['NewMat'])
 
     # end loop
     
