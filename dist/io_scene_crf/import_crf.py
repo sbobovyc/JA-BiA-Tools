@@ -184,13 +184,14 @@ def load(operator, context, filepath,
 
     #TODO I think some of the magick is bounding box
     footer_offset,magick2 = struct.unpack("<II", file.read(8))
-    magick3, magick4, num_models_in_file = struct.unpack("<III", file.read(12))
+    # so far found model type 0x2 and 0x4
+    object_type, magick4, num_models_in_file = struct.unpack("<III", file.read(12))
     last_x, last_y, last_z = struct.unpack("<fff", file.read(12))        
     last_i, last_j, last_k = struct.unpack("<fff", file.read(12)) #bounding box?
+    print("Object type", hex(object_type))
 
     # start unpacking loop here
     for model_number in range(0, num_models_in_file):
-        print("STEP 0")
         verts_loc = []
         verts_tex0 = []
         verts_tex1 = []
@@ -221,7 +222,7 @@ def load(operator, context, filepath,
             x, y, z, \
                 diffuse_blue, diffuse_green, diffuse_red, diffuse_alpha, \
                 specular_blue, specular_green, specular_red, specular_alpha, \
-                u0, v0, u1, v1, blendweights = struct.unpack("<fffBBBBBBBBhhhhI", file.read(32))
+                u0, v0, u1, v1, blendweights1 = struct.unpack("<fffBBBBBBBBhhhhI", file.read(32))
             # convert signed short to float
             u0 /= 32768
             v0 /= 32768
@@ -250,14 +251,24 @@ def load(operator, context, filepath,
         separator = struct.unpack("<8B", file.read(8))
 
         if use_verbose:
-            print("Second vertex data stream")
+            print("Second vertex data stream at", hex(file.tell()))
         #read in unknown tuples, somehow related to verteces
         for i in range(0, number_of_verteces):
             unknown0, unknown1 = struct.unpack("<ff", file.read(8))
             if use_verbose:
                 print("vert index=%s, x?=%s, y?=%s" % (i, unknown0, unknown1))
 
-
+        #if object type is 0x4, read in second set of blendweights
+        #TODO not sure how this data is used
+        if object_type == 0x4:
+            if use_verbose:
+                print("Second blendweight? list at", hex(file.tell()))
+            for i in range(0, number_of_verteces):
+                blendweights2, unknown = struct.unpack("<II", file.read(8))
+            # read in one more int
+            file.read(8)
+            print("Yay", hex(file.tell()))
+            
         #read in bounding box?
         if model_number == 0:
             bounding_box = struct.unpack("<6f", file.read(24))
@@ -307,7 +318,10 @@ def load(operator, context, filepath,
                 print(hex(file.tell())) 
             print("STEP 3")
             
-        #next is some kind of lighting information, not parsed 
+        elif materials == b'ts':
+            print("Object with these materials is not yet supported")
+            
+        #next is object bone information, not parsed
         
 
         # fill face texture array
