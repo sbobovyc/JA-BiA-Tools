@@ -43,8 +43,11 @@ from bpy_extras.image_utils import load_image
 
 def find_files(base, pattern):
     '''Return list of files matching pattern in base folder.'''
-    return [n for n in fnmatch.filter(os.listdir(base), pattern) if
-        os.path.isfile(os.path.join(base, n))]
+    try:
+        return [n for n in fnmatch.filter(os.listdir(base), pattern) if
+            os.path.isfile(os.path.join(base, n))]
+    except:
+        print("File not found")
 
 def findTextureFile(path, name):
     obj_dir = os.path.dirname(path)
@@ -55,7 +58,8 @@ def findTextureFile(path, name):
                           os.path.join(os.path.dirname(obj_dir), "textures", "characters")]
     for location in possible_locations:
         filenames = find_files(location, "%s.*" % name)
-        if len(filenames) != 0:
+        # relying on lazy evaluation of if statement to not cause a problem if filenames is None
+        if  filenames != None and len(filenames) != 0:
             file_path = os.path.join(location, filenames[0])
             return file_path
     
@@ -76,37 +80,38 @@ def findTextureFile(path, name):
 ##    mtex.use_map_color_diffuse = True 
 ##    return mat
 
-def createMaterial(color_filepath, normals_filepath, use_shadeless, use_vertex_colors):    
+def createMaterial(use_shadeless, use_vertex_colors):        
+    # Create shadeless or shaded material and MTex
+    mat = bpy.data.materials.new('TexMat')
+    mat.use_shadeless = use_shadeless
+    mat.use_vertex_color_paint = use_vertex_colors   # support per vertex
+    
+    return mat
+
+def addDiffuseTexture(color_filepath, mat):
     # Create image texture from image. Change here if the snippet 
     # folder is not located in you home directory.
     realpath = os.path.expanduser(color_filepath)
     tex = bpy.data.textures.new('ColorTex', type = 'IMAGE')
     tex.image = bpy.data.images.load(realpath)
     tex.use_alpha = True
-
-    realpath = os.path.expanduser(normals_filepath)
-    norm = bpy.data.textures.new('NormalsTex', type = 'IMAGE')
-    norm.image = bpy.data.images.load(realpath)
-    norm.use_alpha = True
-    norm.use_normal_map = True
-
-    
-    # Create shadeless or shaded material and MTex
-    mat = bpy.data.materials.new('TexMat')
-    mat.use_shadeless = use_shadeless
-    mat.use_vertex_color_paint = use_vertex_colors   # support per vertex 
     mtex = mat.texture_slots.add()
     mtex.texture = tex
     mtex.texture_coords = 'UV'
     mtex.use_map_color_diffuse = True
 
+def addNormalTexture(normals_filepath, mat):
+    realpath = os.path.expanduser(normals_filepath)
+    norm = bpy.data.textures.new('NormalsTex', type = 'IMAGE')
+    norm.image = bpy.data.images.load(realpath)
+    norm.use_alpha = True
+    norm.use_normal_map = True
     mnorm = mat.texture_slots.add()
     mnorm.texture = norm
     mnorm.texture_coords = 'UV'
     mnorm.use_map_color_diffuse = False
     mnorm.use_map_normal = True
     mnorm.normal_factor = 0.2
-    return mat
 
 def createSimpleMaterial(use_shadeless, use_vertex_colors):        
     # Create shadeless or shaded material and MTex
@@ -239,7 +244,7 @@ def load(operator, context, filepath,
         for i in range(0, number_of_verteces):
             unknown0, unknown1 = struct.unpack("<ff", file.read(8))
             if use_verbose:
-                print("uknown0=%s, unknown1=%s" % (unknown0, unknown1))
+                print("index=%s, uknown0=%s, unknown1=%s" % (i, unknown0, unknown1))
 
 
         #read in bounding box?
@@ -330,8 +335,12 @@ def load(operator, context, filepath,
             uvMain = createTextureLayer("UVMain", me, face_tex)
             texture_filepath = findTextureFile(os.fsdecode(filepath),  texture_name.decode(sys.stdout.encoding))
             normals_filepath = findTextureFile(os.fsdecode(filepath),  normal_name.decode(sys.stdout.encoding))
-            print(texture_filepath, normals_filepath)
-            mat = createMaterial(texture_filepath, normals_filepath, use_shadeless, use_vertex_colors)
+            print(texture_filepath, normals_filepath)            
+            mat = createMaterial(use_shadeless, use_vertex_colors)
+            if texture_filepath != None and texture_filepath != "":
+                addDiffuseTexture(texture_filepath, mat)
+            if normals_filepath != None and normals_filepath != "":
+                addNormalTexture(normals_filepath, mat)
             ob.data.materials.append(mat)
 
         if use_vertex_colors:
