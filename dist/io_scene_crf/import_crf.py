@@ -29,6 +29,9 @@ Run this script from "File->Import" menu and then load the desired CRF file.
 Note, This loads mesh objects and materials only, nurbs and curves are not supported.
 
 https://github.com/sbobovyc/JA-BiA-Tools/wiki
+
+Useful docs:
+http://msdn.microsoft.com/en-us/library/windows/desktop/bb173349%28v=vs.85%29.aspx
 """
 
 import sys
@@ -204,13 +207,15 @@ def load(operator, context, filepath,
                 face_vert_tex_indices = [v1, v2, v3]
                 faces.append((v1, v2, v3))
                 if use_verbose:
-                    print("Face %s, (%s, %s, %s)" % (i, v1, v2, v3))
+                    print("face index %s, verts (%s, %s, %s)" % (i, v1, v2, v3))
 
 
         #read start token     #0x0000200c01802102, 0x00
         start_token, = struct.unpack("<Qx", file.read(9)) 
 
 
+        if use_verbose:
+            print("Loading file, printing raw vertex information.")
         # read in verteces, kd, ks, and UVs
         for i in range(0, number_of_verteces):
             x, y, z, \
@@ -223,8 +228,8 @@ def load(operator, context, filepath,
             u1 /= 32768
             v1 /= 32768
             # distortions due to rounding by directx and not python
-            if use_verbose:
-                print("index=%s, xyz=(%s %s %s), Kd=(%s, %s, %s, %s), Ks=(%s, %s, %s, %s), uv0=(%s, %s), uv1=(%s, %s)" % (i, x,y,z, \
+            if use_verbose:                
+                print("vert index=%s, xyz=(%s %s %s), Kd=(%s, %s, %s, %s), Ks=(%s, %s, %s, %s), uv0=(%s, %s), uv1=(%s, %s)" % (i, x,y,z, \
                                     hex(diffuse_alpha), hex(diffuse_red), hex(diffuse_green), hex(diffuse_blue), \
                                     hex(specular_alpha), hex(specular_red), hex(specular_green), hex(specular_blue), \
                                     u0, v0, u1, v1))
@@ -234,17 +239,23 @@ def load(operator, context, filepath,
             uv0 = (0.5+u0/2.0, 0.5-v0/2.0)
             verts_tex0.append(uv0)
 
+            if use_verbose:
+                print("Rectified uv0:", uv0)
+
             # convert 8 bit to float
             # notice that I don't include alpha
             vertex_diffuse.append( (diffuse_blue/255.0, diffuse_green/255.0, diffuse_red/255.0) )
 
         #read in separator 0x000000080008000000
         separator = struct.unpack("<8B", file.read(8))
+
+        if use_verbose:
+            print("Second vertex data stream")
         #read in unknown tuples, somehow related to verteces
         for i in range(0, number_of_verteces):
             unknown0, unknown1 = struct.unpack("<ff", file.read(8))
             if use_verbose:
-                print("index=%s, uknown0=%s, unknown1=%s" % (i, unknown0, unknown1))
+                print("vert index=%s, x?=%s, y?=%s" % (i, unknown0, unknown1))
 
 
         #read in bounding box?
@@ -324,7 +335,7 @@ def load(operator, context, filepath,
                 print("normal", face.normal)  
                 for vert in verts_in_face:  
                     print("vert", vert, " vert co", ob.data.vertices[vert].co)
-                    print("diffuse %s %s %s %s" % (hex(vertex_diffuse[vert][0]), hex(vertex_diffuse[vert][1]), hex(vertex_diffuse[vert][2]), hex(vertex_diffuse[vert][3])))
+                    print("diffuse R:%s G:%s B:%s " % (vertex_diffuse[vert][0], vertex_diffuse[vert][1], vertex_diffuse[vert][2]))
             i = face.index
             v1 = verts_in_face[0]
             v2 = verts_in_face[1]
