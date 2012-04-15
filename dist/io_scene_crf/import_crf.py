@@ -148,6 +148,9 @@ def setVertexColors(me, faces, vertex_diffuse):
     return vtex_diffuse
 
 
+def parseShaderInfo(file, texture_name, normal_name, specular_name):
+    pass
+
 def load(operator, context, filepath,
          global_clamp_size=0.0,
          use_verbose=False,
@@ -287,9 +290,11 @@ def load(operator, context, filepath,
             print(texture_name)
             file.read(8)
             normal_name_length, = struct.unpack("<I", file.read(4))
-            normal_name, = struct.unpack("%is" % normal_name_length, file.read(normal_name_length))         
+            normal_name, = struct.unpack("%is" % normal_name_length, file.read(normal_name_length))
             print(normal_name)
-
+            #specular_name, = struct.unpack("%is" % specular_name_length, file.read(specular_name_length))
+            specular_name = None
+            
             #TODO write a better shader info parser
             file.read(4) # read in garbage
             looping = True
