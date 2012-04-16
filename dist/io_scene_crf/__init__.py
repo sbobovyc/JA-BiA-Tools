@@ -79,6 +79,11 @@ class ImportCRF(bpy.types.Operator, ImportHelper):
         description="Use vertex colors",
         default=True,
         )
+    use_specular = BoolProperty(
+        name="Specular colors",
+        description="Use specular colors",
+        default=True,
+        )
     use_image_search = BoolProperty(
             name="Image Search",
             description="Search subdirs for any assosiated images " \
@@ -139,11 +144,11 @@ class ImportCRF(bpy.types.Operator, ImportHelper):
 
         row = layout.row(align=True)
         row.prop(self, "use_verbose")
-        row.prop(self, "use_shadeless")
+        row.prop(self, "use_shadeless")        
 
         row = layout.split(percentage=0.67)
         row.prop(self, "use_vertex_colors")
-
+        row.prop(self, "use_specular")
 
         row = layout.split(percentage=0.67)
         row.prop(self, "global_clamp_size")

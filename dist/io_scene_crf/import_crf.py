@@ -83,12 +83,11 @@ def findTextureFile(path, name):
 ##    mtex.use_map_color_diffuse = True 
 ##    return mat
 
-def createMaterial(use_shadeless, use_vertex_colors):        
+def createMaterial(name, use_shadeless, use_vertex_colors):        
     # Create shadeless or shaded material and MTex
-    mat = bpy.data.materials.new('TexMat')
+    mat = bpy.data.materials.new(name)
     mat.use_shadeless = use_shadeless
-    mat.use_vertex_color_paint = use_vertex_colors   # support per vertex
-    
+    mat.use_vertex_color_paint = use_vertex_colors   # support per vertex    
     return mat
 
 def addDiffuseTexture(color_filepath, mat):
@@ -148,8 +147,109 @@ def setVertexColors(me, faces, vertex_diffuse):
     return vtex_diffuse
 
 
-def parseShaderInfo(file, texture_name, normal_name, specular_name):
-    pass
+def parseShaderInfo(file, specular_list):
+    texture_name = None
+    normals_name = None
+    specular_name = None
+    state = 0
+    flag = 0
+    #read in material information
+    materials, = struct.unpack("2s", file.read(2))
+    if materials == b'nm':
+        unknown, = struct.unpack("<I", file.read(4))
+        unknown, = struct.unpack("<I", file.read(4))
+    else:
+        state = -1
+
+    running = True
+    while running:
+        if state == 0:
+            print("STATE 0", flag)
+            variable, = struct.unpack("4s", file.read(4))
+            print(variable)
+            if variable == b'sffd':
+                state = 1
+                flag = "dffs"
+            elif variable == b'smrn':
+                state = 1
+                flag = "nrms"
+            elif variable == b'lcps':
+                state = 1
+                flag = "spcl"
+            elif variable == b'1tsc':
+                state = 3
+            else:
+                state = -1
+            
+        if state == 1:
+            print("STATE 1", flag)
+            length, = struct.unpack("<I", file.read(4))
+            if length > 0 and flag == "dffs":
+                state = 2
+            elif length > 0 and flag == "nrms":
+                state = 2
+            elif length > 0 and flag == "spcl":
+                state = 2
+            elif length == 0 and flag == "spcl":
+                state = 3
+            else:
+                state = -1
+
+        if state == 2:
+            print("STATE 2", flag)
+            if flag == "dffs":
+                texture_name, = struct.unpack("%ss" % length, file.read(length))
+                file.read(4)
+            elif flag == "nrms":
+                normals_name, = struct.unpack("%ss" % length, file.read(length))
+                file.read(4)
+            elif flag == "spcl":
+                specular_name, = struct.unpack("%ss" % length, file.read(length))
+                file.read(4)
+            flag = 0
+            state = 0
+
+        if state == 3:
+            print("STATE 3", flag)
+            int1, int2 = struct.unpack("<II", file.read(8))
+            if int1 == 0 and int2 == 0:
+                variable, = struct.unpack("4s", file.read(4))
+                print(variable, hex(file.tell()))
+                if variable == b'lcps':
+                    int1, int2, int3 = struct.unpack("<III", file.read(12))
+                    variable, = struct.unpack("4s", file.read(4))
+                    print(variable, hex(file.tell()))
+                    if variable == b'lcps':
+                        red,green,blue = struct.unpack("<fff", file.read(12))
+                        specular_list.append( (red, green, blue) )
+                    variable, = struct.unpack("4s", file.read(4))
+                    file.read(16)
+                    variable, = struct.unpack("4s", file.read(4))
+                    # read trailer
+                    file.read(24)
+                    state = 99
+                
+        # specular constant        
+        if state == 4:
+            print("STATE 4", flag)
+            if flag == "spcl":
+                garbage,const = struct.unpack("<II", file.read(8))
+                variable, = struct.unpack("4s", file.read(4))
+                if variable == b'lcps':
+                    red,green,blue = struct.read("<fff", file.read(12))
+                    specular_list.append( (red, green, blue) )
+                    state = 99
+                else:
+                    print("Error in state 4")
+                    return
+
+        if state == 99:
+            return texture_name, normals_name, specular_name
+        
+        if state == -1:
+            print("This object's materials format is unsupported")
+            return    
+        
 
 def load(operator, context, filepath,
          global_clamp_size=0.0,
@@ -157,6 +257,7 @@ def load(operator, context, filepath,
          use_image_search=True,
          use_shadeless=True,
          use_vertex_colors=True,
+         use_specular=True,
          global_matrix=None,
          ):
     '''
@@ -279,6 +380,13 @@ def load(operator, context, filepath,
                 print("Bounding box? ", bounding_box)
                 
         #read in material information
+##        texture_name = None
+##        normal_name = None
+##        specular_name = None
+##        specular_list = []
+##        texture_name, normal_name, specular_name = parseShaderInfo(file, specular_list)        
+##        print(texture_name, normal_name, specular_name, specular_list)
+        
         materials, = struct.unpack("2s", file.read(2))
         if materials == b'nm':
             number_of_materials, = struct.unpack("<I", file.read(4))
@@ -366,7 +474,7 @@ def load(operator, context, filepath,
             texture_filepath = findTextureFile(os.fsdecode(filepath),  texture_name.decode(sys.stdout.encoding))
             normals_filepath = findTextureFile(os.fsdecode(filepath),  normal_name.decode(sys.stdout.encoding))
             print(texture_filepath, normals_filepath)            
-            mat = createMaterial(use_shadeless, use_vertex_colors)
+            mat = createMaterial('TexMat', use_shadeless, use_vertex_colors)
             if texture_filepath != None and texture_filepath != "":
                 addDiffuseTexture(texture_filepath, mat)
             if normals_filepath != None and normals_filepath != "":
@@ -375,10 +483,21 @@ def load(operator, context, filepath,
 
         if use_vertex_colors:
             setVertexColors(me, ob.data.faces, vertex_diffuse)
-            # if no materials exists, create one
+            # if no materials exists, create one+
             if len(ob.data.materials) == 0 and not use_image_search:
-                mat = createSimpleMaterial(use_shadeless, use_vertex_colors)
+                mat = createMaterial('SimpleMat', use_shadeless, use_vertex_colors)
                 ob.data.materials.append(mat)
+                
+##        if use_specular:
+##            # if no materials exists, create one+
+##            if len(ob.data.materials) == 0 and not use_image_search:
+##                mat = createMaterial('Specular', use_shadeless, use_vertex_colors)
+##                mat.specular_color = specular_list[0]
+##                ob.data.materials.append(mat)
+##            else:
+##                #ob.data.materials[0] = specular_list[0]
+##                ob.data.materials[0].specular_color = specular_list[0]
+##                print(ob.data.materials[0].specular_color)
         new_objects.append(ob)
 
     # end loop
