@@ -115,6 +115,19 @@ def addNormalTexture(normals_filepath, mat):
     mnorm.use_map_normal = True
     mnorm.normal_factor = 0.2
 
+def addSpecularTexture(specular_filepath, mat):
+    realpath = os.path.expanduser(specular_filepath)
+    spec = bpy.data.textures.new('SpecularTex', type = 'IMAGE')
+    spec.image = bpy.data.images.load(realpath)
+    spec.use_alpha = True
+    mspec = mat.texture_slots.add()
+    mspec.texture = spec
+    mspec.texture_coords = 'UV'
+    mspec.use_map_color_diffuse = False
+    mspec.use_map_normal = False
+    mspec.use_map_specular = True
+    
+
 def createSimpleMaterial(use_shadeless, use_vertex_colors):        
     # Create shadeless or shaded material and MTex
     mat = bpy.data.materials.new('SimpleMat')
@@ -132,7 +145,21 @@ def createTextureLayer(name, me, texFaces):
         datum.uv3 = tf[2]
     return uvtex
 
-def setVertexColors(me, faces, vertex_diffuse):
+def setVertexDiffuseColors(me, faces, vertex_diffuse):
+    vtex_diffuse = me.vertex_colors.new()
+    vtex_diffuse.name = "vertex_colors"
+    for face in faces:
+        verts_in_face = face.vertices[:]
+        vtex_diffuse.data[face.index].color1 = vertex_diffuse[verts_in_face[0]]
+        vtex_diffuse.data[face.index].color2 = vertex_diffuse[verts_in_face[1]]
+        vtex_diffuse.data[face.index].color3 = vertex_diffuse[verts_in_face[2]]
+
+##    for n in vtex_diffuse.data:
+##        print(n.color1, n.color2, n.color3)
+        
+    return vtex_diffuse
+
+def setVertexSpecularColors(me, faces, vertex_specular):
     vtex_diffuse = me.vertex_colors.new()
     vtex_diffuse.name = "vertex_colors"
     for face in faces:
@@ -148,12 +175,13 @@ def setVertexColors(me, faces, vertex_diffuse):
 
 
 def parseShaderInfo(file, specular_list):
-    texture_name = None
-    normals_name = None
-    specular_name = None
+    texture_name = b''
+    normals_name = b''
+    specular_name = b''
     state = 0
     flag = 0
     #read in material information
+    print("Reading materials", hex(file.tell()))
     materials, = struct.unpack("2s", file.read(2))
     if materials == b'nm':
         unknown, = struct.unpack("<I", file.read(4))
@@ -191,7 +219,7 @@ def parseShaderInfo(file, specular_list):
             elif length > 0 and flag == "spcl":
                 state = 2
             elif length == 0 and flag == "spcl":
-                state = 3
+                state = 4
             else:
                 state = -1
 
@@ -200,14 +228,16 @@ def parseShaderInfo(file, specular_list):
             if flag == "dffs":
                 texture_name, = struct.unpack("%ss" % length, file.read(length))
                 file.read(4)
+                flag = 0
+                state = 0                
             elif flag == "nrms":
                 normals_name, = struct.unpack("%ss" % length, file.read(length))
                 file.read(4)
+                flag = 0
+                state = 0                
             elif flag == "spcl":
                 specular_name, = struct.unpack("%ss" % length, file.read(length))
-                file.read(4)
-            flag = 0
-            state = 0
+                state = 4
 
         if state == 3:
             print("STATE 3", flag)
@@ -216,37 +246,48 @@ def parseShaderInfo(file, specular_list):
                 variable, = struct.unpack("4s", file.read(4))
                 print(variable, hex(file.tell()))
                 if variable == b'lcps':
-                    int1, int2, int3 = struct.unpack("<III", file.read(12))
-                    variable, = struct.unpack("4s", file.read(4))
-                    print(variable, hex(file.tell()))
-                    if variable == b'lcps':
-                        red,green,blue = struct.unpack("<fff", file.read(12))
-                        specular_list.append( (red, green, blue) )
-                        if int3 == 2:
-                            variable, = struct.unpack("4s", file.read(4))
-                            file.read(16)
-                            variable, = struct.unpack("4s", file.read(4))
-                            # read trailer
-                            file.read(24)
-                            state = 99
-                        if int3 == 1:
-                            # read trailer
-                            file.read(24)
-                            state = 99                            
-                
-        # specular constant        
+                    length, = struct.unpack("<I", file.read(4))
+                    print("length", length)
+                    if length != 0:
+                        flag = "spcl"
+                        state = 2
+                    else:
+                        state = 4
+
         if state == 4:
             print("STATE 4", flag)
-            if flag == "spcl":
-                garbage,const = struct.unpack("<II", file.read(8))
-                variable, = struct.unpack("4s", file.read(4))
-                if variable == b'lcps':
-                    red,green,blue = struct.read("<fff", file.read(12))
-                    specular_list.append( (red, green, blue) )
+            int1, int2 = struct.unpack("<II", file.read(8))            
+            variable, = struct.unpack("4s", file.read(4))
+            print(variable, hex(file.tell()))
+            if variable == b'lcps':
+                red,green,blue = struct.unpack("<fff", file.read(12))
+                specular_list.append( (red, green, blue) )
+                if int2 == 2:
+                    variable, = struct.unpack("4s", file.read(4))
+                    file.read(16)
+                    variable, = struct.unpack("4s", file.read(4))
+                    # read trailer
+                    file.read(24)
                     state = 99
-                else:
-                    print("Error in state 4")
-                    return
+                if int2 == 1:
+                    # read trailer
+                    file.read(24)
+                    print("Int is one", hex(file.tell()))
+                    state = 99                            
+                
+        # specular constant        
+##        if state == 4:
+##            print("STATE 4", flag)
+##            if flag == "spcl":
+##                garbage,const = struct.unpack("<II", file.read(8))
+##                variable, = struct.unpack("4s", file.read(4))
+##                if variable == b'lcps':
+##                    red,green,blue = struct.read("<fff", file.read(12))
+##                    specular_list.append( (red, green, blue) )
+##                    state = 99
+##                else:
+##                    print("Error in state 4")
+##                    return
 
         if state == 99:
             return texture_name, normals_name, specular_name
@@ -307,6 +348,7 @@ def load(operator, context, filepath,
         faces = []  # tuples of the faces
         face_tex = [] # tuples of uv coordinates for faces
         vertex_diffuse = []
+        vertex_specular = []
 
         number_of_verteces, = struct.unpack("<I", file.read(4))
         number_of_faces, = struct.unpack("<I", file.read(4))
@@ -354,7 +396,8 @@ def load(operator, context, filepath,
 
             # convert 8 bit to float
             # notice that I don't include alpha
-            vertex_diffuse.append( (diffuse_blue/255.0, diffuse_green/255.0, diffuse_red/255.0) )
+            vertex_diffuse.append( (diffuse_red/255.0, diffuse_green/255.0, diffuse_blue/255.0) )
+            vertex_specular.append( (specular_red/255.0, specular_green/255.0, specular_blue/255.0) )
 
         #read in separator 0x000000080008000000
         separator = struct.unpack("<8B", file.read(8))
@@ -379,15 +422,14 @@ def load(operator, context, filepath,
             print("Yay", hex(file.tell()))
             
         #read in bounding box?
-        if model_number == 0:
-            bounding_box = struct.unpack("<6f", file.read(24))
-            if use_verbose:
-                print("Bounding box? ", bounding_box)
+        bounding_box = struct.unpack("<6f", file.read(24))
+        if use_verbose:
+            print("Bounding box? ", bounding_box)
                 
         #read in material information
-        texture_name = None
-        normal_name = None
-        specular_name = None
+        texture_name = b''
+        normal_name = b''
+        specular_name = b''
         specular_list = []
         texture_name, normal_name, specular_name = parseShaderInfo(file, specular_list)        
         print(texture_name, normal_name, specular_name, specular_list)
@@ -468,6 +510,7 @@ def load(operator, context, filepath,
                 for vert in verts_in_face:  
                     print("vert", vert, " vert co", ob.data.vertices[vert].co)
                     print("diffuse R:%s G:%s B:%s " % (vertex_diffuse[vert][0], vertex_diffuse[vert][1], vertex_diffuse[vert][2]))
+                    print("specular R:%s G:%s B:%s " % (vertex_specular[vert][0], vertex_specular[vert][1], vertex_specular[vert][2]))
             i = face.index
             v1 = verts_in_face[0]
             v2 = verts_in_face[1]
@@ -478,22 +521,26 @@ def load(operator, context, filepath,
             uvMain = createTextureLayer("UVMain", me, face_tex)
             texture_filepath = findTextureFile(os.fsdecode(filepath),  texture_name.decode(sys.stdout.encoding))
             normals_filepath = findTextureFile(os.fsdecode(filepath),  normal_name.decode(sys.stdout.encoding))
-            print(texture_filepath, normals_filepath)            
+            specular_filepath = findTextureFile(os.fsdecode(filepath),  specular_name.decode(sys.stdout.encoding))            
+            print(texture_filepath, normals_filepath, specular_filepath)            
             mat = createMaterial('TexMat', use_shadeless, use_vertex_colors)
             if texture_filepath != None and texture_filepath != "":
                 addDiffuseTexture(texture_filepath, mat)
             if normals_filepath != None and normals_filepath != "":
                 addNormalTexture(normals_filepath, mat)
+            if use_specular and specular_filepath != None and specular_filepath != "":
+                addSpecularTexture(specular_filepath, mat)                
             ob.data.materials.append(mat)
 
         if use_vertex_colors:
-            setVertexColors(me, ob.data.faces, vertex_diffuse)
+            setVertexDiffuseColors(me, ob.data.faces, vertex_diffuse)
             # if no materials exists, create one+
             if len(ob.data.materials) == 0 and not use_image_search:
                 mat = createMaterial('SimpleMat', use_shadeless, use_vertex_colors)
                 ob.data.materials.append(mat)
                 
         if use_specular:
+            #setVertexSpecularColors(me, ob.data.faces, vertex_specular)
             # if no materials exists, create one+
             if len(ob.data.materials) == 0 and not use_image_search:
                 mat = createMaterial('Specular', use_shadeless, use_vertex_colors)
