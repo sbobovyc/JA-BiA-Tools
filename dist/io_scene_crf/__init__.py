@@ -72,7 +72,7 @@ class ImportCRF(bpy.types.Operator, ImportHelper):
     use_shadeless = BoolProperty(
             name="Shadeless Materials",
             description="Use shadeless materials",
-            default=True,
+            default=False,
             )
     use_vertex_colors = BoolProperty(
         name="Vertex Colors",
@@ -80,7 +80,7 @@ class ImportCRF(bpy.types.Operator, ImportHelper):
         default=True,
         )
     use_specular = BoolProperty(
-        name="Specular colors",
+        name="Specular Colors",
         description="Use specular colors",
         default=True,
         )
@@ -144,17 +144,18 @@ class ImportCRF(bpy.types.Operator, ImportHelper):
 
         row = layout.row(align=True)
         row.prop(self, "use_verbose")
+        row = layout.split(percentage=0.67)
         row.prop(self, "use_shadeless")        
 
         row = layout.split(percentage=0.67)
         row.prop(self, "use_vertex_colors")
+        row = layout.split(percentage=0.67)
         row.prop(self, "use_specular")
 
         row = layout.split(percentage=0.67)
         row.prop(self, "global_clamp_size")
         layout.prop(self, "axis_forward")
         layout.prop(self, "axis_up")
-
         layout.prop(self, "use_image_search")
 
 

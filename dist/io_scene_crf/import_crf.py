@@ -222,12 +222,17 @@ def parseShaderInfo(file, specular_list):
                     if variable == b'lcps':
                         red,green,blue = struct.unpack("<fff", file.read(12))
                         specular_list.append( (red, green, blue) )
-                    variable, = struct.unpack("4s", file.read(4))
-                    file.read(16)
-                    variable, = struct.unpack("4s", file.read(4))
-                    # read trailer
-                    file.read(24)
-                    state = 99
+                        if int3 == 2:
+                            variable, = struct.unpack("4s", file.read(4))
+                            file.read(16)
+                            variable, = struct.unpack("4s", file.read(4))
+                            # read trailer
+                            file.read(24)
+                            state = 99
+                        if int3 == 1:
+                            # read trailer
+                            file.read(24)
+                            state = 99                            
                 
         # specular constant        
         if state == 4:
@@ -380,59 +385,59 @@ def load(operator, context, filepath,
                 print("Bounding box? ", bounding_box)
                 
         #read in material information
-##        texture_name = None
-##        normal_name = None
-##        specular_name = None
-##        specular_list = []
-##        texture_name, normal_name, specular_name = parseShaderInfo(file, specular_list)        
-##        print(texture_name, normal_name, specular_name, specular_list)
-        
-        materials, = struct.unpack("2s", file.read(2))
-        if materials == b'nm':
-            number_of_materials, = struct.unpack("<I", file.read(4))
-            print("Materials=", number_of_materials)
-            #it's unclear if object can have more than one uv map, so I am using a simple parsing approach
-            file.read(8)
-            texture_name_length, = struct.unpack("<I", file.read(4))
-            texture_name, = struct.unpack("%is" % texture_name_length, file.read(texture_name_length))         
-            print(texture_name)
-            file.read(8)
-            normal_name_length, = struct.unpack("<I", file.read(4))
-            normal_name, = struct.unpack("%is" % normal_name_length, file.read(normal_name_length))
-            print(normal_name)
-            #specular_name, = struct.unpack("%is" % specular_name_length, file.read(specular_name_length))
-            specular_name = None
-            
-            #TODO write a better shader info parser
-            file.read(4) # read in garbage
-            looping = True
-            tsc_counter = 8
-            last_lcps = False
-            while looping:
-                shader_info, = struct.unpack("4s", file.read(4))
-                print(shader_info)
-                print(hex(file.tell()))
-                if shader_info == b'lcps':
-                    file.read(12)
-                    last_lcps = True
-                    print("lcsp")
-                elif shader_info == b'1tsc':
-                    file.read(tsc_counter)
-                    tsc_counter = tsc_counter + 8
-                    last_lcps = False
-                    print(tsc_counter)
-                    print("1tsc")                                               
-                else:
-                    looping = False
-                    if last_lcps:
-                        file.read(20) #read in rest of garbage
-                    else:
-                        file.seek(file.tell()-4)
-                print(hex(file.tell())) 
-            print("STEP 3")
-            
-        elif materials == b'ts':
-            print("Object with these materials is not yet supported")
+        texture_name = None
+        normal_name = None
+        specular_name = None
+        specular_list = []
+        texture_name, normal_name, specular_name = parseShaderInfo(file, specular_list)        
+        print(texture_name, normal_name, specular_name, specular_list)
+        #return {'FINISHED'}        
+##        materials, = struct.unpack("2s", file.read(2))
+##        if materials == b'nm':
+##            number_of_materials, = struct.unpack("<I", file.read(4))
+##            print("Materials=", number_of_materials)
+##            #it's unclear if object can have more than one uv map, so I am using a simple parsing approach
+##            file.read(8)
+##            texture_name_length, = struct.unpack("<I", file.read(4))
+##            texture_name, = struct.unpack("%is" % texture_name_length, file.read(texture_name_length))         
+##            print(texture_name)
+##            file.read(8)
+##            normal_name_length, = struct.unpack("<I", file.read(4))
+##            normal_name, = struct.unpack("%is" % normal_name_length, file.read(normal_name_length))
+##            print(normal_name)
+##            #specular_name, = struct.unpack("%is" % specular_name_length, file.read(specular_name_length))
+##            specular_name = None
+##            
+##            #TODO write a better shader info parser
+##            file.read(4) # read in garbage
+##            looping = True
+##            tsc_counter = 8
+##            last_lcps = False
+##            while looping:
+##                shader_info, = struct.unpack("4s", file.read(4))
+##                print(shader_info)
+##                print(hex(file.tell()))
+##                if shader_info == b'lcps':
+##                    file.read(12)
+##                    last_lcps = True
+##                    print("lcsp")
+##                elif shader_info == b'1tsc':
+##                    file.read(tsc_counter)
+##                    tsc_counter = tsc_counter + 8
+##                    last_lcps = False
+##                    print(tsc_counter)
+##                    print("1tsc")                                               
+##                else:
+##                    looping = False
+##                    if last_lcps:
+##                        file.read(20) #read in rest of garbage
+##                    else:
+##                        file.seek(file.tell()-4)
+##                print(hex(file.tell())) 
+##            print("STEP 3")
+##            
+##        elif materials == b'ts':
+##            print("Object with these materials is not yet supported")
             
         #next is object bone information, not parsed
         
@@ -488,16 +493,16 @@ def load(operator, context, filepath,
                 mat = createMaterial('SimpleMat', use_shadeless, use_vertex_colors)
                 ob.data.materials.append(mat)
                 
-##        if use_specular:
-##            # if no materials exists, create one+
-##            if len(ob.data.materials) == 0 and not use_image_search:
-##                mat = createMaterial('Specular', use_shadeless, use_vertex_colors)
-##                mat.specular_color = specular_list[0]
-##                ob.data.materials.append(mat)
-##            else:
-##                #ob.data.materials[0] = specular_list[0]
-##                ob.data.materials[0].specular_color = specular_list[0]
-##                print(ob.data.materials[0].specular_color)
+        if use_specular:
+            # if no materials exists, create one+
+            if len(ob.data.materials) == 0 and not use_image_search:
+                mat = createMaterial('Specular', use_shadeless, use_vertex_colors)
+                mat.specular_color = specular_list[0]
+                ob.data.materials.append(mat)
+            else:
+                #ob.data.materials[0] = specular_list[0]
+                ob.data.materials[0].specular_color = specular_list[0]
+                print(ob.data.materials[0].specular_color)
         new_objects.append(ob)
 
     # end loop
