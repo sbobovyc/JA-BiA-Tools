@@ -109,24 +109,26 @@ class VTP_data:
         self.language_list.append(language)
     
     def unpack(self, file_pointer, peek=False, verbose=False):   
-        self.num_items,self.last_item_id = struct.unpack("<HxH", file_pointer.read(5))
+        self.num_items,self.num_items2 = struct.unpack("<HxH", file_pointer.read(5))
         print self.num_items, self.last_item_id
                 
-        for i in range(0, self.num_items):
+        for i in range(0, self.num_items+self.num_items2):
             id1,id2,length = struct.unpack("<IHI", file_pointer.read(10))
-            print id1,id2,length
+            print "Resource id",id1,id2,length
             varname, = struct.unpack("%ss" % length, file_pointer.read(length))
-            type_id, = struct.unpack("<Ix", file_pointer.read(5))
-            print varname, type_id
-            default, = struct.unpack("7s", file_pointer.read(7))
-            print default
-            resource_id, number_of_objects = struct.unpack("<BB", file_pointer.read(2))
-            print resource_id, number_of_objects, length
-            for i in range(0, number_of_objects):
-                length, = struct.unpack("<I", file_pointer.read(4))                
-                file_path, = struct.unpack("%ss" %length, file_pointer.read(length))
-                print file_path
-            # read in trailer
+            num_types, = struct.unpack("<B", file_pointer.read(1))
+            print "Varname", varname, num_types
+            for i in range(0, num_types):
+                length, =struct.unpack("<I", file_pointer.read(4))
+                object_type, = struct.unpack("%ss" % length, file_pointer.read(length))
+                print "Type", object_type
+                resource_id, number_of_objects = struct.unpack("<BB", file_pointer.read(2))
+                print resource_id, number_of_objects
+                for i in range(0, number_of_objects):
+                    length, = struct.unpack("<I", file_pointer.read(4))                
+                    file_path, = struct.unpack("%ss" %length, file_pointer.read(length))
+                    print file_path
+                    # read in trailer
             file_pointer.read(2)            
         return
     
