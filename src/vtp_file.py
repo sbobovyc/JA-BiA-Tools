@@ -109,51 +109,55 @@ class VTP_data:
         self.language_list.append(language)
     
     def unpack(self, file_pointer, peek=False, verbose=False):   
-        self.num_items,self.num_items2 = struct.unpack("<HxH", file_pointer.read(5))
-        print self.num_items, self.last_item_id
-                
-        for i in range(0, self.num_items+self.num_items2):
-            id1,id2,length = struct.unpack("<IHI", file_pointer.read(10))
-            print "Resource id",id1,id2,length
-            varname, = struct.unpack("%ss" % length, file_pointer.read(length))
-            num_types, = struct.unpack("<B", file_pointer.read(1))
-            print "Varname", varname, num_types
-            for i in range(0, num_types):
-                length, =struct.unpack("<I", file_pointer.read(4))
-                object_type, = struct.unpack("%ss" % length, file_pointer.read(length))
-                print "Type", object_type
-                resource_id, number_of_objects = struct.unpack("<BB", file_pointer.read(2))
-                print resource_id, number_of_objects
-                for i in range(0, number_of_objects):
-                    length, = struct.unpack("<I", file_pointer.read(4))                
-                    file_path, = struct.unpack("%ss" %length, file_pointer.read(length))
-                    print file_path
-                    # read in trailer
-            file_pointer.read(2)            
-        return
-    
-        self.data_offset = file_pointer.tell()
-        
-        if peek or verbose:
-            print "Number of itmes: %s" % self.num_items
-            print "Last item id: %i" % self.last_item_id
-            print "Number of languages in file: %i" % self.num_languages
-            print "Data offset: %s" % hex(self.data_offset).rstrip('L')
-            for each in self.language_list:
-                print each
-        if peek:
-            return 
-        
-        for language in self.language_list:
-            file_pointer.seek(self.data_offset + language.data_offset)
+        while file_pointer.read(1) != '':
+            file_pointer.seek(file_pointer.tell()-1)
+            self.magick,self.num_items = struct.unpack("<HxH", file_pointer.read(5))
+            print hex(self.magick), self.num_items
+            
+            # read in static 3d files
             for i in range(0, self.num_items):
-                id,item_length = struct.unpack("<II", file_pointer.read(8))
-                item_length = 2 * item_length               # multiply by two to compensate for the "\0"
-                item_raw_text = file_pointer.read(item_length)                
-                item_text = unicode(item_raw_text, "utf-16le")                
-                language.add_data(id, item_text)
-                if verbose:
-                    print id,item_text    
+                id1,id2,length = struct.unpack("<IHI", file_pointer.read(10))
+                print "Resource id",id1,id2,length
+                varname, = struct.unpack("%ss" % length, file_pointer.read(length))
+                num_types, = struct.unpack("<B", file_pointer.read(1))
+                print "Varname", varname, num_types
+                for i in range(0, num_types):
+                    length, =struct.unpack("<I", file_pointer.read(4))
+                    object_type, = struct.unpack("%ss" % length, file_pointer.read(length))
+                    print "Type", object_type
+                    resource_id, number_of_objects = struct.unpack("<BB", file_pointer.read(2))
+                    print resource_id, number_of_objects
+                    for i in range(0, number_of_objects):
+                        length, = struct.unpack("<I", file_pointer.read(4))                
+                        file_path, = struct.unpack("%ss" %length, file_pointer.read(length))
+                        print file_path
+                        print hex(file_pointer.tell())
+                        # read in trailer
+                file_pointer.read(2)                    
+            # read in animations
+            self.magick, = struct.unpack("<H", file_pointer.read(2))
+            print hex(self.magick)
+            for i in range(0, 1):
+                id1,id2,id3,length = struct.unpack("<HIBI", file_pointer.read(11))
+                print "Resource id",id1,id2,id3,length
+                varname, = struct.unpack("%ss" % length, file_pointer.read(length))
+                num_animations, = struct.unpack("<B", file_pointer.read(1))
+                print "Varname", varname, num_animations
+                for i in range(0, num_animations):
+                    length, = struct.unpack("<I", file_pointer.read(4))
+                    print length 
+                    animation_name, = struct.unpack("%ss" % length, file_pointer.read(length))
+                    print animation_name
+                    unknown, num_files = struct.unpack("<BB", file_pointer.read(2))
+                    print unknown, num_files
+                    for i in range(0, num_files):
+                        length, = struct.unpack("<I", file_pointer.read(4))
+                        path_name, = struct.unpack("%ss" % length, file_pointer.read(length))
+                        print "Path name", path_name
+        if peek or verbose:
+            pass
+        if peek:
+            return  
                     
     def get_packed_data(self):
         #1. check to see if all the language have the same amount of items
