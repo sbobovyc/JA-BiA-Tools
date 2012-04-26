@@ -131,21 +131,23 @@ class VTP_data:
                         length, = struct.unpack("<I", file_pointer.read(4))                
                         file_path, = struct.unpack("%ss" %length, file_pointer.read(length))
                         print file_path
-                        print hex(file_pointer.tell())
-                        # read in trailer
+                # read in trailer
                 file_pointer.read(2)                    
             # read in animations
-            self.magick, = struct.unpack("<H", file_pointer.read(2))
-            print hex(self.magick)
-            for i in range(0, 1):
-                id1,id2,id3,length = struct.unpack("<HIBI", file_pointer.read(11))
-                print "Resource id",id1,id2,id3,length
+            print hex(file_pointer.tell())
+            file_pointer.read(1)
+            self.num_animations, = struct.unpack("<H", file_pointer.read(2))
+            print "Number of animations", hex(self.num_animations)
+            for i in range(0, self.num_animations):
+                id1,id2,length = struct.unpack("<HII", file_pointer.read(10))
+                print "Animation resource id",id1,id2,length
+                print i, self.num_animations
                 varname, = struct.unpack("%ss" % length, file_pointer.read(length))
                 num_animations, = struct.unpack("<B", file_pointer.read(1))
                 print "Varname", varname, num_animations
                 for i in range(0, num_animations):
                     length, = struct.unpack("<I", file_pointer.read(4))
-                    print length 
+                    print "length", length 
                     animation_name, = struct.unpack("%ss" % length, file_pointer.read(length))
                     print animation_name
                     unknown, num_files = struct.unpack("<BB", file_pointer.read(2))
@@ -154,6 +156,37 @@ class VTP_data:
                         length, = struct.unpack("<I", file_pointer.read(4))
                         path_name, = struct.unpack("%ss" % length, file_pointer.read(length))
                         print "Path name", path_name
+                        # read in animations
+                # read in trailer
+                file_pointer.read(1)
+            
+            
+            print hex(file_pointer.tell())
+            file_pointer.read(1)
+            self.num_effects, = struct.unpack("<H", file_pointer.read(2))
+            print "Number of effects", hex(self.num_effects)
+            for i in range(0, self.num_effects):
+                id1,id2,length = struct.unpack("<HII", file_pointer.read(10))
+                print "Effect resource id",id1,id2,length
+                print i, self.num_effects
+                varname, = struct.unpack("%ss" % length, file_pointer.read(length))
+                num_effects, = struct.unpack("<B", file_pointer.read(1))
+                print "Varname", varname, num_effects    
+                for i in range(0, num_effects):
+                    length, = struct.unpack("<I", file_pointer.read(4))
+                    print "length", length 
+                    effect_name, = struct.unpack("%ss" % length, file_pointer.read(length))
+                    print effect_name
+                    unknown, num_files = struct.unpack("<BB", file_pointer.read(2))
+                    print unknown, num_files  
+                    for i in range(0, num_files):
+                        length, = struct.unpack("<I", file_pointer.read(4))
+                        path_name, = struct.unpack("%ss" % length, file_pointer.read(length))
+                        print "Path name", path_name          
+                # read in trailer
+                file_pointer.read(1)
+            
+            return
         if peek or verbose:
             pass
         if peek:
