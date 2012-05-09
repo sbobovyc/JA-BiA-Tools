@@ -109,70 +109,93 @@ class VTP_data:
         self.language_list.append(language)
     
     def unpack(self, file_pointer, peek=False, verbose=False):   
-        while file_pointer.read(1) != '':
-            file_pointer.seek(file_pointer.tell()-1)
-            self.magick,self.num_items = struct.unpack("<HxH", file_pointer.read(5))
-            print hex(self.magick), self.num_items
-            
-            # read in static 3d files
-            for i in range(0, self.num_items):
-                id1,id2,length = struct.unpack("<IHI", file_pointer.read(10))
-                print "Resource id",id1,id2,length
-                varname, = struct.unpack("%ss" % length, file_pointer.read(length))
-                num_types, = struct.unpack("<B", file_pointer.read(1))
-                print "Varname", varname, num_types
-                for i in range(0, num_types):
-                    length, =struct.unpack("<I", file_pointer.read(4))
-                    object_type, = struct.unpack("%ss" % length, file_pointer.read(length))
-                    print "Type", object_type
-                    resource_id, number_of_objects = struct.unpack("<BB", file_pointer.read(2))
-                    print resource_id, number_of_objects
-                    for i in range(0, number_of_objects):
-                        length, = struct.unpack("<I", file_pointer.read(4))                
-                        file_path, = struct.unpack("%ss" %length, file_pointer.read(length))
-                        print file_path
-                # read in trailer
-                file_pointer.read(2)                    
-            # read in animations
-            print hex(file_pointer.tell())
-            file_pointer.read(1)
-            self.num_animations, = struct.unpack("<H", file_pointer.read(2))
-            print "Number of animations", hex(self.num_animations)
-            for i in range(0, self.num_animations):
-                id1,id2,length = struct.unpack("<HII", file_pointer.read(10))
-                print "Animation resource id",id1,id2,length
-                print i, self.num_animations
-                varname, = struct.unpack("%ss" % length, file_pointer.read(length))
-                num_animations, = struct.unpack("<B", file_pointer.read(1))
-                print "Varname", varname, num_animations
-                for i in range(0, num_animations):
+                
+        # read in static 3d files
+        self.num_sections,self.section,self.num_items = struct.unpack("<xBBH", file_pointer.read(5))
+        print "Number of sections", self.num_sections, 
+        print "Number of static objects", self.num_items
+        for i in range(0, self.num_items):
+            id1,id2,length = struct.unpack("<IHI", file_pointer.read(10))
+            print "Resource id",id1,id2,length
+            varname, = struct.unpack("%ss" % length, file_pointer.read(length))
+            num_types, = struct.unpack("<B", file_pointer.read(1))
+            print "Varname", varname, num_types
+            for i in range(0, num_types):
+                length, =struct.unpack("<I", file_pointer.read(4))
+                object_type, = struct.unpack("%ss" % length, file_pointer.read(length))
+                print "Type", object_type
+                resource_id, number_of_objects = struct.unpack("<BB", file_pointer.read(2))
+                print resource_id, number_of_objects
+                for i in range(0, number_of_objects):
+                    length, = struct.unpack("<I", file_pointer.read(4))                
+                    file_path, = struct.unpack("%ss" %length, file_pointer.read(length))
+                    print file_path
+            # read in trailer
+            file_pointer.read(2)
+        print hex(file_pointer.tell())       
+        # read in animations
+        
+        self.section,self.num_animations, = struct.unpack("<BH", file_pointer.read(3))
+        print "Number of animations", hex(self.num_animations)
+        for i in range(0, self.num_animations):
+            id1,id2,length = struct.unpack("<HII", file_pointer.read(10))
+            print "Animation resource id",id1,id2,length
+            print i, self.num_animations
+            varname, = struct.unpack("%ss" % length, file_pointer.read(length))
+            num_animations, = struct.unpack("<B", file_pointer.read(1))
+            print "Varname", varname, num_animations
+            for i in range(0, num_animations):
+                length, = struct.unpack("<I", file_pointer.read(4))
+                print "length", length 
+                animation_name, = struct.unpack("%ss" % length, file_pointer.read(length))
+                print animation_name
+                unknown, num_files = struct.unpack("<BB", file_pointer.read(2))
+                print unknown, num_files
+                for i in range(0, num_files):
                     length, = struct.unpack("<I", file_pointer.read(4))
-                    print "length", length 
-                    animation_name, = struct.unpack("%ss" % length, file_pointer.read(length))
-                    print animation_name
-                    unknown, num_files = struct.unpack("<BB", file_pointer.read(2))
-                    print unknown, num_files
-                    for i in range(0, num_files):
-                        length, = struct.unpack("<I", file_pointer.read(4))
-                        path_name, = struct.unpack("%ss" % length, file_pointer.read(length))
-                        print "Path name", path_name
-                        # read in animations
-                # read in trailer
-                file_pointer.read(1)
-            
-            
-            print hex(file_pointer.tell())
+                    path_name, = struct.unpack("%ss" % length, file_pointer.read(length))
+                    print "Path name", path_name
+                    # read in animations
+            # read in trailer
             file_pointer.read(1)
-            self.num_effects, = struct.unpack("<H", file_pointer.read(2))
-            print "Number of effects", hex(self.num_effects)
-            for i in range(0, self.num_effects):
-                id1,id2,length = struct.unpack("<HII", file_pointer.read(10))
-                print "Effect resource id",id1,id2,length
-                print i, self.num_effects
-                varname, = struct.unpack("%ss" % length, file_pointer.read(length))
-                num_effects, = struct.unpack("<B", file_pointer.read(1))
-                print "Varname", varname, num_effects    
-                for i in range(0, num_effects):
+        
+        
+        print hex(file_pointer.tell())
+        self.section, self.num_effects, = struct.unpack("<BH", file_pointer.read(3))
+        print "Number of effects", hex(self.num_effects)
+        for i in range(0, self.num_effects):
+            id1,id2,length = struct.unpack("<HII", file_pointer.read(10))
+            print "Effect resource id",id1,id2,length
+            print i, self.num_effects
+            varname, = struct.unpack("%ss" % length, file_pointer.read(length))
+            num_effects, = struct.unpack("<B", file_pointer.read(1))
+            print "Varname", varname, num_effects    
+            for i in range(0, num_effects):
+                length, = struct.unpack("<I", file_pointer.read(4))
+                print "length", length 
+                effect_name, = struct.unpack("%ss" % length, file_pointer.read(length))
+                print effect_name
+                unknown, num_files = struct.unpack("<BB", file_pointer.read(2))
+                print unknown, num_files  
+                for i in range(0, num_files):
+                    length, = struct.unpack("<I", file_pointer.read(4))
+                    path_name, = struct.unpack("%ss" % length, file_pointer.read(length))
+                    print "Path name", path_name          
+            # read in trailer
+            file_pointer.read(1)
+        
+        print hex(file_pointer.tell())            
+        self.num_objects, = struct.unpack("<xH", file_pointer.read(3))
+        print "Number of objects", hex(self.num_objects)
+        for i in range(0, self.num_objects):
+            id1,id2,length = struct.unpack("<HII", file_pointer.read(10))
+            print "Object resource id",id1,id2,length
+            print i, self.num_effects
+            varname, = struct.unpack("%ss" % length, file_pointer.read(length))
+            print "Varname", varname    
+            num_physics_files, = struct.unpack("B", file_pointer.read(1))
+            if num_physics_files > 0:
+                for i in range(0, num_physics_files):
                     length, = struct.unpack("<I", file_pointer.read(4))
                     print "length", length 
                     effect_name, = struct.unpack("%ss" % length, file_pointer.read(length))
@@ -182,26 +205,22 @@ class VTP_data:
                     for i in range(0, num_files):
                         length, = struct.unpack("<I", file_pointer.read(4))
                         path_name, = struct.unpack("%ss" % length, file_pointer.read(length))
-                        print "Path name", path_name          
-                # read in trailer
-                file_pointer.read(1)
-            
-            print hex(file_pointer.tell())            
-            self.num_objects, = struct.unpack("<H", file_pointer.read(2))
-            print "Number of objects", hex(self.num_objects)
-            for i in range(0, 1):
-                id1,id2,length = struct.unpack("<HxII", file_pointer.read(11))
-                print "Object resource id",id1,id2,length
-                print i, self.num_effects
-                varname, = struct.unpack("%ss" % length, file_pointer.read(length))
-                print "Varname", varname    
-                file_pointer.read(5)
-                length, = struct.unpack("<I", file_pointer.read(4))
+                        print "Path name", path_name
+                    print hex(file_pointer.tell()) 
+            # check for non-files materials                                            
+            num_materials, = struct.unpack("<xBx", file_pointer.read(3))
+            print "Number of materials", num_materials
+            for i in range(0, num_materials):
+                length, = struct.unpack("<xI", file_pointer.read(5))
                 material_name, = struct.unpack("%ss" % length, file_pointer.read(length))
                 print "Material", material_name
                 a,b,c,d,e,f = struct.unpack("<ffffff", file_pointer.read(24))
                 print a,b,c,d,e,f
-                return
+                g,h,j = struct.unpack("<fff", file_pointer.read(12))
+                print g,h,j
+                print hex(file_pointer.tell()) 
+            
+            # read multi-crf objects
         if peek or verbose:
             pass
         if peek:
