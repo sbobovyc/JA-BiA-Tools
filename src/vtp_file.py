@@ -186,7 +186,22 @@ class VTP_data:
                 # read in trailer
                 file_pointer.read(1)
             
-            return
+            print hex(file_pointer.tell())            
+            self.num_objects, = struct.unpack("<H", file_pointer.read(2))
+            print "Number of objects", hex(self.num_objects)
+            for i in range(0, 1):
+                id1,id2,length = struct.unpack("<HxII", file_pointer.read(11))
+                print "Object resource id",id1,id2,length
+                print i, self.num_effects
+                varname, = struct.unpack("%ss" % length, file_pointer.read(length))
+                print "Varname", varname    
+                file_pointer.read(5)
+                length, = struct.unpack("<I", file_pointer.read(4))
+                material_name, = struct.unpack("%ss" % length, file_pointer.read(length))
+                print "Material", material_name
+                a,b,c,d,e,f = struct.unpack("<ffffff", file_pointer.read(24))
+                print a,b,c,d,e,f
+                return
         if peek or verbose:
             pass
         if peek:
