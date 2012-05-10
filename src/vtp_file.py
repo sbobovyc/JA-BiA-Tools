@@ -24,17 +24,34 @@ import struct
 from collections import OrderedDict
 from jabia_file import JABIA_file
 
-class CTX_ID:
-    def __init__(self, id, id_name, path):
-        self.id = id
-        self.id_name = id_name
-        self.path = path
- 
+class VTP_constant:
+    def __init__(self, name):
+        self.name = name
+        self.unknown3 = None
+        self.unknown_params_list = None
+
     def get_packed_data(self): 
         import binascii       
-        data_buffer = struct.pack("<II%isI%is" % (len(self.id_name), len(self.path)), 
-                                  self.id, len(self.id_name), self.id_name, len(self.path), self.path)
-#        print binascii.hexlify(data_buffer)
+        data_buffer = struct.pack("<I%isBB" % len(self.name), 
+                                  len(self.name), self.name, self.unknown, len(self.path_list))
+        for path in self.path_list:
+            data_buffer += struct.pack("<I%is" % len(path), len(path), path)
+        print binascii.hexlify(data_buffer)
+        return data_buffer
+        
+class VTP_variable:
+    def __init__(self, name, unknown):
+        self.name = name
+        self.unknown = unknown
+        self.path_list = []
+        
+    def get_packed_data(self): 
+        import binascii       
+        data_buffer = struct.pack("<I%isBB" % len(self.name), 
+                                  len(self.name), self.name, self.unknown, len(self.path_list))
+        for path in self.path_list:
+            data_buffer += struct.pack("<I%is" % len(path), len(path), path)
+        print binascii.hexlify(data_buffer)
         return data_buffer
     
     def __repr__(self):
@@ -43,72 +60,45 @@ class CTX_ID:
    
     def __str__(self):
         return "CTX ID: %s, %s = %s" % (self.id, self.id_name, self.path)
- 
-         
-class CTX_language:
-    def __init__(self, description_string, data_offset=0):
-        self.description_string = description_string
-        self.data_offset = data_offset
-        self.data_dictionary = OrderedDict()   # {text id : data} mapping
-    
-    def add_data(self, id, text):
-        self.data_dictionary[id] = text
-    
-    def get_description(self):
-        return self.description_string
-    
-    def get_data(self):
-        return self.data_dictionary
-    
-    def get_num_items(self):
-        return len(self.data_dictionary)
-    
-    def get_last_item_id(self):
-        last_item = self.data_dictionary.popitem()  # get last item in ordered dictionary        
-        # put item back
-        self.add_data(last_item[0], last_item[1])
-        last_item_id = last_item[0]
-        return last_item_id
-    
-    def get_description_length(self):
-        return len(self.description_string)
-    
-    def get_packed_data(self):        
-        data_buffer = ""
-        for key, value in self.data_dictionary.items():       
-            encoded_value = value.encode('utf-16le')     
-            encoded_size = len(encoded_value)         
-            data_packed = struct.pack("<II%is" % encoded_size, key, encoded_size/2, encoded_value)
-            #print binascii.hexlify(data_packed)
-            data_buffer = data_buffer + data_packed
-            #print binascii.hexlify(data_buffer)
+        
+class VTP_item:
+    def __init__(self, id, id_name):
+        self.id = id
+        self.unknown_const = 256
+        self.id_name = id_name
+        self.variable_list = []
+        self.constant_list = []
+        
+    def get_packed_data(self, section): 
+        import binascii       
+        data_buffer = struct.pack("<IHI%is" % len(self.id_name), 
+                                  self.id, self.unknown_const, len(self.id_name), self.id_name)
+        data_buffer += struct.pack("<B", len(self.variable_list))
+        for variable in self.variable_list:
+            data_buffer += variable.get_packed_data()
+        if section == 0 or section == 4:
+            data_buffer += "\x00\x00"
+        if section == 1 or section == 2:
+            data_buffer += "\x00"
+        print binascii.hexlify(data_buffer)
         return data_buffer
     
     def __repr__(self):
-        return "%s(name=%r, language=%r, data=%r)" % (
-             self.__class__.__name__, self.description_string, self.data_dictionary)
+        return "%s(name=%r, id=%r, id_name=%r, path=%r)" % (
+             self.__class__.__name__, self.id, self.id_name, self.path)
    
     def __str__(self):
-        return "Language: %s, data offset: %s bytes" % (self.description_string, hex(self.data_offset).rstrip('L'))
-        
+        return "CTX ID: %s, %s = %s" % (self.id, self.id_name, self.path)
+             
 class VTP_data:
     def __init__(self):
-        self.num_items = None
-        self.last_item_id = 0
-        self.num_languages = None
-        self.data_offset = 0 
-        self.language_list = []
+        self.object_3d_list1 = []
+        self.animation_list = []
+        self.effects_list = []
+        self.materials_list = []
+        self.object_3d_list2 = []
     
-    def get_languages(self):
-        return self.language_list
-    
-    def get_num_languages(self):
-        return len(self.language_list)
-    
-    def insert_language(self, language):
-        self.language_list.append(language)
-    
-    def parse(self, file_pointer):
+    def parse(self, file_pointer, list):
         # section, number of entries
         self.section,self.num_items = struct.unpack("<BH", file_pointer.read(3))
         print
@@ -122,6 +112,7 @@ class VTP_data:
             num_types, = struct.unpack("<B", file_pointer.read(1))
             print "\tItem name", varname
             print "\tNumber of variables",num_types
+            item = VTP_item(id1, varname)
             if num_types != 0:
                 for i in range(0, num_types):
                     length, =struct.unpack("<I", file_pointer.read(4))
@@ -130,10 +121,13 @@ class VTP_data:
                     unknown0, number_of_objects = struct.unpack("<BB", file_pointer.read(2))
                     print "\tUnknown",unknown0 
                     print "\tNumber of objects",number_of_objects
+                    variable = VTP_variable(variable_name, unknown0)
                     for i in range(0, number_of_objects):
                         length, = struct.unpack("<I", file_pointer.read(4))                
                         file_path, = struct.unpack("%ss" %length, file_pointer.read(length))
                         print "\t\t",file_path
+                        variable.path_list.append(file_path)
+                    item.variable_list.append(variable)
             if self.section == 3:
                 unknown1,num_constants,unknown2 = struct.unpack("<BBB", file_pointer.read(3))
                 print "\tUnknown", unknown1
@@ -153,14 +147,15 @@ class VTP_data:
             if self.section == 1 or self.section == 2:
                 file_pointer.read(1)
             print "}"
+            list.append(item)
         return 
     def unpack(self, file_pointer, peek=False, verbose=False):   
         self.num_sections, = struct.unpack("<xB", file_pointer.read(2))
-        self.parse(file_pointer)    # read in static 3d objects
-        self.parse(file_pointer)    # read in animations
-        self.parse(file_pointer)    # read in effects
-        self.parse(file_pointer)    # read in material info
-        self.parse(file_pointer)    # read in another set of 3d objects
+        self.parse(file_pointer, self.object_3d_list1)    # read in static 3d objects
+        self.parse(file_pointer, self.animation_list)    # read in animations
+        self.parse(file_pointer, self.effects_list)    # read in effects
+        self.parse(file_pointer, self.materials_list)    # read in material info
+        self.parse(file_pointer, self.object_3d_list2)    # read in another set of 3d objects
         
         return 
 #        # read in static 3d files
@@ -281,32 +276,29 @@ class VTP_data:
             return  
                     
     def get_packed_data(self):
-        #1. check to see if all the language have the same amount of items
-        #2. check that all languages have the same last item id
-        self.num_languages = self.get_num_languages()
-        self.num_items = self.language_list[0].get_num_items()
-        self.last_item_id = self.language_list[0].get_last_item_id()        
+        # header, 1 and number of sections
+        data_buffer = "\x01\x05"
         
-        for i in range(1, len(self.language_list)):
-            if self.language_list[i].get_num_items() != self.num_items:
-                raise  Exception("Languages do not contain same amount of items!")
-            if self.language_list[i].get_last_item_id()  != self.last_item_id:
-                raise  Exception("The last item in each language does not contain the same id!")
-            
-        #3. pack each language into a byte string and create the data 
-        header_buffer = struct.pack("<III", self.num_items, self.last_item_id, self.num_languages)
-        data_buffer = ""
-        previous_buffer_length = 0
-        for language in self.language_list:
-            length = language.get_description_length()
-            description = language.get_description()
-            header_buffer = header_buffer + struct.pack("<I%isI" % length, length, description, previous_buffer_length)
-            #print binascii.hexlify(header_buffer)
-            data_buffer = data_buffer + language.get_packed_data()
-            previous_buffer_length = len(data_buffer)
-            
-        #4. concatenate the byte strings and return     
-        return (header_buffer + data_buffer)            
+        # first section 3d objects
+        data_buffer += "\x00"
+        data_buffer += struct.pack("<H", len(self.object_3d_list1))
+        for object in self.object_3d_list1:
+            data_buffer += object.get_packed_data(0)            
+        
+        # second section animations
+        data_buffer += "\x01"
+        data_buffer += struct.pack("<H", len(self.animation_list))
+        for object in self.animation_list:
+            data_buffer += object.get_packed_data(1)
+    
+        # third section effects
+        data_buffer += "\x02"
+        data_buffer += struct.pack("<H", len(self.effects_list))
+        for object in self.effects_list:
+            data_buffer += object.get_packed_data(2)
+#            
+        # return     
+        return data_buffer            
 
     def __repr__(self):
         return "%s(name=%r, languages=%r)" % (
@@ -322,20 +314,17 @@ class VTP_file(JABIA_file):
         self.data = VTP_data()
 
 if __name__ == "__main__":
-    pass
+#    var = VTP_variable("default", 2)
+#    var.path_list.append("environment/pipeline_02_edge_round_01.crf")
+#    var.get_packed_data()
+#    item = VTP_item(1, "pipeline_02_edge_round_01", 0)
+#    item.variable_list.append(var)
+#    item.get_packed_data()
     vtp = VTP_file("C:\\Program Files (x86)\\Jagged Alliance Back in Action Demo\\bin_win32\main.vtp")
-    #cF = CTX_file("/media/Acer/Users/sbobovyc/Desktop/test/bin_win32/interface/equipment.ctx")
     vtp.open()        
     vtp.unpack(verbose=False)    
+    vtp.filepath = "test.bin"
+    vtp.pack()
     #vtp.dump2yaml(".")
-#    cF.pack(verbose=False)
-    # pack
-#    cFnew = CTX_file("new_equipment.ctx")
-#    cFnew.yaml2bin("equipment.ctx.txt")
+    pass
 
-    # create a file programmatically
-#    cTest = CTX_file("test.ctx")
-#    english = CTX_language("eng")
-#    english.add_data(0, u"Officer's key")
-#    cTest.data.insert_language(english)
-#    cTest.dump2yaml(".")
