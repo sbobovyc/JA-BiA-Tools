@@ -32,11 +32,9 @@ class VTP_constant:
 
     def get_packed_data(self): 
         import binascii       
-        data_buffer = struct.pack("<I%isBB" % len(self.name), 
-                                  len(self.name), self.name, self.unknown, len(self.path_list))
-        for path in self.path_list:
-            data_buffer += struct.pack("<I%is" % len(path), len(path), path)
-        print binascii.hexlify(data_buffer)
+        data_buffer = struct.pack("<BI%isfffffffff" % len(self.name), 
+                                  self.unknown3, len(self.name), self.name, *self.unknown_params_list)
+        #print binascii.hexlify(data_buffer)
         return data_buffer
         
 class VTP_variable:
@@ -51,7 +49,7 @@ class VTP_variable:
                                   len(self.name), self.name, self.unknown, len(self.path_list))
         for path in self.path_list:
             data_buffer += struct.pack("<I%is" % len(path), len(path), path)
-        print binascii.hexlify(data_buffer)
+        #print binascii.hexlify(data_buffer)
         return data_buffer
     
     def __repr__(self):
@@ -67,6 +65,8 @@ class VTP_item:
         self.unknown_const = 256
         self.id_name = id_name
         self.variable_list = []
+        self.unknown1 = None
+        self.unknown2 = None
         self.constant_list = []
         
     def get_packed_data(self, section): 
@@ -80,7 +80,11 @@ class VTP_item:
             data_buffer += "\x00\x00"
         if section == 1 or section == 2:
             data_buffer += "\x00"
-        print binascii.hexlify(data_buffer)
+        if section == 3:
+            data_buffer += struct.pack("<BBB", self.unknown1, len(self.constant_list), self.unknown2)
+        for constant in self.constant_list:
+            data_buffer += constant.get_packed_data()
+        #print binascii.hexlify(data_buffer)
         return data_buffer
     
     def __repr__(self):
@@ -133,6 +137,8 @@ class VTP_data:
                 print "\tUnknown", unknown1
                 print "\tNumber of constants",num_constants
                 print "\tUnknown", unknown2
+                item.unknown1 = unknown1
+                item.unknown2 = unknown2
                 
                 for i in range(0, num_constants):                    
                     unknown3,length = struct.unpack("<BI", file_pointer.read(5))
@@ -141,12 +147,17 @@ class VTP_data:
                     print "\tConstant", material_name,
                     prop = struct.unpack("<fffffffff", file_pointer.read(36))
                     print prop
-
+                    const = VTP_constant(material_name)
+                    const.unknown3 = unknown3
+                    const.unknown_params_list = prop
+                    item.constant_list.append(const)
+                    
             if self.section == 0 or self.section == 4:
                 file_pointer.read(2)
             if self.section == 1 or self.section == 2:
                 file_pointer.read(1)
             print "}"
+            
             list.append(item)
         return 
     def unpack(self, file_pointer, peek=False, verbose=False):   
@@ -279,24 +290,36 @@ class VTP_data:
         # header, 1 and number of sections
         data_buffer = "\x01\x05"
         
-        # first section 3d objects
+        # first section, 3d objects
         data_buffer += "\x00"
         data_buffer += struct.pack("<H", len(self.object_3d_list1))
         for object in self.object_3d_list1:
             data_buffer += object.get_packed_data(0)            
         
-        # second section animations
+        # second section, animations
         data_buffer += "\x01"
         data_buffer += struct.pack("<H", len(self.animation_list))
         for object in self.animation_list:
             data_buffer += object.get_packed_data(1)
     
-        # third section effects
+        # third section, effects
         data_buffer += "\x02"
         data_buffer += struct.pack("<H", len(self.effects_list))
         for object in self.effects_list:
             data_buffer += object.get_packed_data(2)
-#            
+            
+        # fourth section, materials
+        data_buffer += "\x03"
+        data_buffer += struct.pack("<H", len(self.materials_list))
+        for object in self.materials_list:
+            data_buffer += object.get_packed_data(3)
+        
+        # fifth section, second set of 3d objects
+        data_buffer += "\x04"
+        data_buffer += struct.pack("<H", len(self.object_3d_list2))
+        for object in self.object_3d_list2:
+            data_buffer += object.get_packed_data(4)    
+                                
         # return     
         return data_buffer            
 
