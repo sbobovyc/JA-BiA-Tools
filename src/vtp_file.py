@@ -21,7 +21,6 @@ Created on February 6, 2012
 """
 
 import struct          
-from collections import OrderedDict
 from jabia_file import JABIA_file
 
 class VTP_constant:
@@ -31,12 +30,14 @@ class VTP_constant:
         self.unknown_params_list = None
 
     def get_packed_data(self): 
-        import binascii       
         data_buffer = struct.pack("<BI%isfffffffff" % len(self.name), 
                                   self.unknown3, len(self.name), self.name, *self.unknown_params_list)
         #print binascii.hexlify(data_buffer)
         return data_buffer
-        
+
+    def __str__(self):
+        return "Constant: %s = %s" % (self.name, self.unknown_params_list)
+            
 class VTP_variable:
     def __init__(self, name, unknown):
         self.name = name
@@ -44,7 +45,6 @@ class VTP_variable:
         self.path_list = []
         
     def get_packed_data(self): 
-        import binascii       
         data_buffer = struct.pack("<I%isBB" % len(self.name), 
                                   len(self.name), self.name, self.unknown, len(self.path_list))
         for path in self.path_list:
@@ -52,12 +52,12 @@ class VTP_variable:
         #print binascii.hexlify(data_buffer)
         return data_buffer
     
-    def __repr__(self):
-        return "%s(name=%r, id=%r, id_name=%r, path=%r)" % (
-             self.__class__.__name__, self.id, self.id_name, self.path)
-   
-    def __str__(self):
-        return "CTX ID: %s, %s = %s" % (self.id, self.id_name, self.path)
+#    def __repr__(self):
+#        return "%s(name=%r, id=%r, id_name=%r, path=%r)" % (
+#             self.__class__.__name__, self.id, self.id_name, self.path)
+#   
+    def __str__(self):     
+        return "Variable: %s = %s" % (self.name, self.path_list)
         
 class VTP_item:
     def __init__(self, id, id_name):
@@ -70,7 +70,6 @@ class VTP_item:
         self.constant_list = []
         
     def get_packed_data(self, section): 
-        import binascii       
         data_buffer = struct.pack("<IHI%is" % len(self.id_name), 
                                   self.id, self.unknown_const, len(self.id_name), self.id_name)
         data_buffer += struct.pack("<B", len(self.variable_list))
@@ -87,12 +86,20 @@ class VTP_item:
         #print binascii.hexlify(data_buffer)
         return data_buffer
     
-    def __repr__(self):
-        return "%s(name=%r, id=%r, id_name=%r, path=%r)" % (
-             self.__class__.__name__, self.id, self.id_name, self.path)
-   
+#    def __repr__(self):
+#        return "%s(name=%r, id=%r, id_name=%r, path=%r)" % (
+#             self.__class__.__name__, self.id, self.id_name, self.path)
+#   
     def __str__(self):
-        return "CTX ID: %s, %s = %s" % (self.id, self.id_name, self.path)
+        string = ""
+        string += "VTP ID: %s, %s" % (self.id, self.id_name)
+        for variable in self.variable_list:
+            string += "\n"
+            string += variable.__str__()
+        for constant in self.constant_list:
+            string += "\n"
+            string += constant.__str__()
+        return string
              
 class VTP_data:
     def __init__(self):
@@ -102,51 +109,54 @@ class VTP_data:
         self.materials_list = []
         self.object_3d_list2 = []
     
-    def parse(self, file_pointer, list):
+    def parse(self, file_pointer, list_pointer, peek=False, verbose=False):
         # section, number of entries
         self.section,self.num_items = struct.unpack("<BH", file_pointer.read(3))
-        print
-        print "Section %s, number of items %s" % (self.section, self.num_items)        
+        if verbose:
+            print "################################"
+        print "Section %s, number of items %s" % (self.section, self.num_items)
+        if verbose:
+            print "################################"        
         for i in range(0, self.num_items):
             id1,id2,length = struct.unpack("<IHI", file_pointer.read(10))
-            print 
-            print "{"
-            print "\tResource id",id1,id2
+            #print 
+            #print "{"
+            #print "\tResource id",id1,id2
             varname, = struct.unpack("%ss" % length, file_pointer.read(length))
             num_types, = struct.unpack("<B", file_pointer.read(1))
-            print "\tItem name", varname
-            print "\tNumber of variables",num_types
+            #print "\tItem name", varname
+            #print "\tNumber of variables",num_types
             item = VTP_item(id1, varname)
             if num_types != 0:
                 for i in range(0, num_types):
                     length, =struct.unpack("<I", file_pointer.read(4))
                     variable_name, = struct.unpack("%ss" % length, file_pointer.read(length))
-                    print "\tVariable", variable_name
+                    #print "\tVariable", variable_name
                     unknown0, number_of_objects = struct.unpack("<BB", file_pointer.read(2))
-                    print "\tUnknown",unknown0 
-                    print "\tNumber of objects",number_of_objects
+                    #print "\tUnknown",unknown0 
+                    #print "\tNumber of objects",number_of_objects
                     variable = VTP_variable(variable_name, unknown0)
                     for i in range(0, number_of_objects):
                         length, = struct.unpack("<I", file_pointer.read(4))                
                         file_path, = struct.unpack("%ss" %length, file_pointer.read(length))
-                        print "\t\t",file_path
+                        #print "\t\t",file_path
                         variable.path_list.append(file_path)
                     item.variable_list.append(variable)
             if self.section == 3:
                 unknown1,num_constants,unknown2 = struct.unpack("<BBB", file_pointer.read(3))
-                print "\tUnknown", unknown1
-                print "\tNumber of constants",num_constants
-                print "\tUnknown", unknown2
+                #print "\tUnknown", unknown1
+                #print "\tNumber of constants",num_constants
+                #print "\tUnknown", unknown2
                 item.unknown1 = unknown1
                 item.unknown2 = unknown2
                 
                 for i in range(0, num_constants):                    
                     unknown3,length = struct.unpack("<BI", file_pointer.read(5))
                     material_name, = struct.unpack("%ss" % length, file_pointer.read(length))
-                    print "\tUnknown", unknown3
-                    print "\tConstant", material_name,
+                    #print "\tUnknown", unknown3
+                    #print "\tConstant", material_name,
                     prop = struct.unpack("<fffffffff", file_pointer.read(36))
-                    print prop
+                    #print prop
                     const = VTP_constant(material_name)
                     const.unknown3 = unknown3
                     const.unknown_params_list = prop
@@ -156,131 +166,23 @@ class VTP_data:
                 file_pointer.read(2)
             if self.section == 1 or self.section == 2:
                 file_pointer.read(1)
-            print "}"
+            #print "}"
             
-            list.append(item)
+            list_pointer.append(item)
+            if verbose:
+                print
+                print item
         return 
+    
     def unpack(self, file_pointer, peek=False, verbose=False):   
         self.num_sections, = struct.unpack("<xB", file_pointer.read(2))
-        self.parse(file_pointer, self.object_3d_list1)    # read in static 3d objects
-        self.parse(file_pointer, self.animation_list)    # read in animations
-        self.parse(file_pointer, self.effects_list)    # read in effects
-        self.parse(file_pointer, self.materials_list)    # read in material info
-        self.parse(file_pointer, self.object_3d_list2)    # read in another set of 3d objects
+        self.parse(file_pointer, self.object_3d_list1, peek=peek, verbose=verbose)    # read in static 3d objects
+        self.parse(file_pointer, self.animation_list, peek=peek, verbose=verbose)    # read in animations
+        self.parse(file_pointer, self.effects_list, peek=peek, verbose=verbose)    # read in effects
+        self.parse(file_pointer, self.materials_list, peek=peek, verbose=verbose)    # read in material info
+        self.parse(file_pointer, self.object_3d_list2, peek=peek, verbose=verbose)    # read in another set of 3d objects
         
         return 
-#        # read in static 3d files
-#        self.num_sections,self.section,self.num_items = struct.unpack("<xBBH", file_pointer.read(5))
-#        print "Number of sections", self.num_sections, 
-#        print "Number of static objects", self.num_items
-#        for i in range(0, self.num_items):
-#            id1,id2,length = struct.unpack("<IHI", file_pointer.read(10))
-#            print "Resource id",id1,id2,length
-#            varname, = struct.unpack("%ss" % length, file_pointer.read(length))
-#            num_types, = struct.unpack("<B", file_pointer.read(1))
-#            print "Varname", varname, num_types
-#            for i in range(0, num_types):
-#                length, =struct.unpack("<I", file_pointer.read(4))
-#                object_type, = struct.unpack("%ss" % length, file_pointer.read(length))
-#                print "Type", object_type
-#                resource_id, number_of_objects = struct.unpack("<BB", file_pointer.read(2))
-#                print resource_id, number_of_objects
-#                for i in range(0, number_of_objects):
-#                    length, = struct.unpack("<I", file_pointer.read(4))                
-#                    file_path, = struct.unpack("%ss" %length, file_pointer.read(length))
-#                    print file_path
-#            # read in trailer
-#            file_pointer.read(2)
-#        print hex(file_pointer.tell())       
-#        
-#        
-#        # read in animations        
-#        self.section,self.num_animations, = struct.unpack("<BH", file_pointer.read(3))
-#        print "Number of animations", hex(self.num_animations)
-#        for i in range(0, self.num_animations):
-#            id1,id2,length = struct.unpack("<HII", file_pointer.read(10))
-#            print "Animation resource id",id1,id2,length
-#            print i, self.num_animations
-#            varname, = struct.unpack("%ss" % length, file_pointer.read(length))
-#            num_animations, = struct.unpack("<B", file_pointer.read(1))
-#            print "Varname", varname, num_animations
-#            for i in range(0, num_animations):
-#                length, = struct.unpack("<I", file_pointer.read(4))
-#                print "length", length 
-#                animation_name, = struct.unpack("%ss" % length, file_pointer.read(length))
-#                print animation_name
-#                unknown, num_files = struct.unpack("<BB", file_pointer.read(2))
-#                print unknown, num_files
-#                for i in range(0, num_files):
-#                    length, = struct.unpack("<I", file_pointer.read(4))
-#                    path_name, = struct.unpack("%ss" % length, file_pointer.read(length))
-#                    print "Path name", path_name
-#                    # read in animations
-#            # read in trailer
-#            file_pointer.read(1)
-#        
-#        
-#        print hex(file_pointer.tell())
-#        self.section, self.num_effects, = struct.unpack("<BH", file_pointer.read(3))
-#        print "Number of effects", hex(self.num_effects)
-#        for i in range(0, self.num_effects):
-#            id1,id2,length = struct.unpack("<HII", file_pointer.read(10))
-#            print "Effect resource id",id1,id2,length
-#            print i, self.num_effects
-#            varname, = struct.unpack("%ss" % length, file_pointer.read(length))
-#            num_effects, = struct.unpack("<B", file_pointer.read(1))
-#            print "Varname", varname, num_effects    
-#            for i in range(0, num_effects):
-#                length, = struct.unpack("<I", file_pointer.read(4))
-#                print "length", length 
-#                effect_name, = struct.unpack("%ss" % length, file_pointer.read(length))
-#                print effect_name
-#                unknown, num_files = struct.unpack("<BB", file_pointer.read(2))
-#                print unknown, num_files  
-#                for i in range(0, num_files):
-#                    length, = struct.unpack("<I", file_pointer.read(4))
-#                    path_name, = struct.unpack("%ss" % length, file_pointer.read(length))
-#                    print "Path name", path_name          
-#            # read in trailer
-#            file_pointer.read(1)
-#        
-#        print hex(file_pointer.tell())           
-#        self.num_objects, = struct.unpack("<xH", file_pointer.read(3))
-#        print "Number of objects", hex(self.num_objects)
-#        for i in range(0, self.num_objects):
-#            id1,id2,length = struct.unpack("<HII", file_pointer.read(10))
-#            print "Object resource id",id1,id2,length
-#            print i, self.num_effects
-#            varname, = struct.unpack("%ss" % length, file_pointer.read(length))
-#            print "Varname", varname    
-#            num_physics_files, = struct.unpack("B", file_pointer.read(1))
-#            if num_physics_files > 0:
-#                for i in range(0, num_physics_files):
-#                    length, = struct.unpack("<I", file_pointer.read(4))
-#                    print "length", length 
-#                    effect_name, = struct.unpack("%ss" % length, file_pointer.read(length))
-#                    print effect_name
-#                    unknown, num_files = struct.unpack("<BB", file_pointer.read(2))
-#                    print unknown, num_files  
-#                    for i in range(0, num_files):
-#                        length, = struct.unpack("<I", file_pointer.read(4))
-#                        path_name, = struct.unpack("%ss" % length, file_pointer.read(length))
-#                        print "Path name", path_name
-#                    print hex(file_pointer.tell()) 
-#            # check for non-files materials                                            
-#            num_materials, = struct.unpack("<xBx", file_pointer.read(3))
-#            print "Number of materials", num_materials
-#            for i in range(0, num_materials):
-#                length, = struct.unpack("<xI", file_pointer.read(5))
-#                material_name, = struct.unpack("%ss" % length, file_pointer.read(length))
-#                print "Material", material_name
-#                a,b,c,d,e,f = struct.unpack("<ffffff", file_pointer.read(24))
-#                print a,b,c,d,e,f
-#                g,h,j = struct.unpack("<fff", file_pointer.read(12))
-#                print g,h,j
-#                print hex(file_pointer.tell()) 
-#            
-#            # read multi-crf objects
         if peek or verbose:
             pass
         if peek:
@@ -337,17 +239,10 @@ class VTP_file(JABIA_file):
         self.data = VTP_data()
 
 if __name__ == "__main__":
-#    var = VTP_variable("default", 2)
-#    var.path_list.append("environment/pipeline_02_edge_round_01.crf")
-#    var.get_packed_data()
-#    item = VTP_item(1, "pipeline_02_edge_round_01", 0)
-#    item.variable_list.append(var)
-#    item.get_packed_data()
     vtp = VTP_file("C:\\Program Files (x86)\\Jagged Alliance Back in Action Demo\\bin_win32\main.vtp")
     vtp.open()        
-    vtp.unpack(verbose=False)    
-    vtp.filepath = "test.bin"
-    vtp.pack()
+    vtp.unpack(verbose=False)        
+    #vtp.pack()
     #vtp.dump2yaml(".")
     pass
 

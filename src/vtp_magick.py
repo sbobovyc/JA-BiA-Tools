@@ -46,19 +46,18 @@ if file != None and os.path.splitext(file)[1][1:].strip() == "vtp":
     vtp_file.open()
     vtp_file.unpack(peek=info, verbose=debug)
 
-#    if not info:
-#        output_filepath = os.path.abspath(outdir)
-#        vtp_file.dump2yaml(outdir)
+    if not info:
+        output_filepath = os.path.abspath(outdir)
+        vtp_file.dump2yaml(outdir)
     
-elif file != None and os.path.splitext(file)[1][1:].strip() == "txt":
-    print "Not implemented"       
-#    yaml_vtp_filepath = os.path.abspath(file)
-#    vtp_file_name = os.path.basename(file).split('.')[0] + ".vtp"    
-#    vtp_filepath = os.path.join(os.path.abspath(outdir), vtp_file_name)
-#        
-#    print "Packing %s" % yaml_vtp_filepath
-#    vtp_file = VTP_file(filepath=vtp_filepath)
-#    vtp_file.yaml2bin(yaml_vtp_filepath)
+elif file != None and os.path.splitext(file)[1][1:].strip() == "txt":    
+    yaml_vtp_filepath = os.path.abspath(file)
+    vtp_file_name = os.path.basename(file).split('.')[0] + ".vtp"    
+    vtp_filepath = os.path.join(os.path.abspath(outdir), vtp_file_name)
+        
+    print "Packing %s" % yaml_vtp_filepath
+    vtp_file = VTP_file(filepath=vtp_filepath)
+    vtp_file.yaml2bin(yaml_vtp_filepath)
 
 else:
     print "Nothing happened"
