@@ -10,5 +10,6 @@
     python %PIP%pyinstaller.py --onefile --console --icon %ICON3% --name find_pkle -p src\ src\find_pkle.py
     python %PIP%pyinstaller.py --onefile --console --icon %ICON4% --name deg_magick -p src\ src\deg_magick.py
     python %PIP%pyinstaller.py --onefile --console --icon %ICON5% --name cui_magick -p src\ src\cui_magick.py
-    python %PIP%pyinstaller.py --onefile --console --name crf2obj -p src\ src\crf2obj.py
+    python %PIP%pyinstaller.py --onefile --console --name vtp_magick -p src\ src\vtp_magick.py
+    REM python %PIP%pyinstaller.py --onefile --console --name crf2obj -p src\ src\crf2obj.py
     REM python %PIP%pyinstaller.py --onefile --console --name jabia_wizard -p src\ src\jabia_wizard.py
