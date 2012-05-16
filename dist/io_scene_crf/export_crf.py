@@ -639,45 +639,18 @@ def _write(context, filepath,
 
     orig_frame = scene.frame_current
 
-    # Export an animation?
-    if EXPORT_ANIMATION:
-        scene_frames = range(scene.frame_start, scene.frame_end + 1)  # Up to and including the end frame.
-    else:
-        scene_frames = [orig_frame]  # Dont export an animation.
+    print(base_name, ext)
+    ob = bpy.context.object
+    print(ob)
+    mesh = ob.data
+    for vert in mesh.vertices:
+        print( 'v %f %f %f\n' % (vert.co.x, vert.co.y, vert.co.z) )
 
-    # Loop through all frames in the scene and export.
-    for frame in scene_frames:
-        if EXPORT_ANIMATION:  # Add frame to the filepath.
-            context_name[2] = '_%.6d' % frame
-
-        scene.frame_set(frame, 0.0)
-        if EXPORT_SEL_ONLY:
-            objects = context.selected_objects
-        else:
-            objects = scene.objects
-
-        full_path = ''.join(context_name)
-
-        # erm... bit of a problem here, this can overwrite files when exporting frames. not too bad.
-        # EXPORT THE FILE.
-        write_file(full_path, objects, scene,
-                   EXPORT_TRI,
-                   EXPORT_EDGES,
-                   EXPORT_NORMALS,
-                   EXPORT_UV,
-                   EXPORT_MTL,
-                   EXPORT_APPLY_MODIFIERS,
-                   EXPORT_BLEN_OBS,
-                   EXPORT_GROUP_BY_OB,
-                   EXPORT_GROUP_BY_MAT,
-                   EXPORT_KEEP_VERT_ORDER,
-                   EXPORT_POLYGROUPS,
-                   EXPORT_CURVE_AS_NURBS,
-                   EXPORT_GLOBAL_MATRIX,
-                   EXPORT_PATH_MODE,
-                   )
-
-    scene.frame_set(orig_frame, 0.0)
+    for face in mesh.faces:
+                print('face index', face.index)                
+                for vert in face.vertices:
+                        print( '%i' % (vert) )
+                print('\n')
 
     # Restore old active scene.
 #   orig_scene.makeCurrent()
