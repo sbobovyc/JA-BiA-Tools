@@ -633,7 +633,11 @@ def _write(context, filepath,
     file = open(filepath, "wb")
 
     scene = context.scene
-
+    # convert from quads to triangles
+    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.mesh.select_all(action='SELECT')
+    bpy.ops.mesh.quads_convert_to_tris()
+    
     # Exit edit mode before exporting, so current object states are exported properly.
     if bpy.ops.object.mode_set.poll():
         bpy.ops.object.mode_set(mode='OBJECT')
@@ -644,15 +648,6 @@ def _write(context, filepath,
     ob = bpy.context.object
     print(ob)
     mesh = ob.data
-##    for vert in mesh.vertices:
-##        print( 'v %f %f %f\n' % (vert.co.x, vert.co.y, vert.co.z) )
-##
-##    for face in mesh.faces:
-##                print('face index', face.index)                
-##                for vert in face.vertices:
-##                        print( '%i' % (vert) )
-##                print('\n')
-
 
     # write header
     file.write(b"fknc")
@@ -672,6 +667,75 @@ def _write(context, filepath,
     number_of_verteces = len(mesh.vertices)
     number_of_faces = len(mesh.faces)
     file.write(struct.pack("<II", *(number_of_verteces, number_of_faces))) # number for vertices and faces
+    # face/vertex index list
+    #TODO, the first face always has the first two vertices switched. Don't know if this will affect
+    # anything. Need to verify that this does not cause a problem.
+    for face in mesh.faces:
+        for vert in face.vertices:
+                print( '%i ' % (vert), end=" " )
+                file.write(struct.pack("<H", vert))
+        print('\n')
+    # start token?
+    file.write(struct.pack("<Qx", 0x0000200c01802102))
+    # write out verteces, kd, ks, and UVs
+    if len(mesh.vertex_colors) == 2:
+        vtex_diffuse = mesh.vertex_colors[0] # only consider first layer for diffuse
+        vtex_specular = mesh.vertex_colors[1] # only consider second layer for specular
+    elif len(mesh.vertex_colors) == 1:
+        vtex_diffuse = mesh.vertex_colors[0] # only consider first layer for diffuse
+        vtex_specular = vertex_colors.new()
+        vtex_specular.name = "vertex_colors"
+    else:                                       # if no vertex colors, create default layers
+        vtex_diffuse = mesh.vertex_colors.new()
+        vtex_diffuse.name = "vertex_colors"
+        vtex_specular = mesh.vertex_colors.new()
+        vtex_specular.name = "vertex_colors"
+
+    if len(mesh.uv_textures) == 2:
+        uv_tex0 = mesh.uv_textures[0]
+        uv_tex1 = mesh.uv_textures[1]
+    elif len(mesh.uv_textures) == 1:
+        uv_tex0 = mesh.uv_textures[0]
+        uv_tex1 = mesh.uv_textures.new()
+        uv_tex1.name = "UV_Secondary"
+    else:
+        uv_tex0 = mesh.uv_textures.new()
+        uv_tex0.name = "UV_Main"
+        uv_tex1 = mesh.uv_textures.new()
+        uv_tex1.name = "UV_Secondary"
+        
+    for face in mesh.faces:
+        verts_in_face = face.vertices[:]
+        print(verts_in_face)
+
+        #TODO make this into a function that creates a binary string
+        x_1, y_1, z_1, = mesh.vertices[verts_in_face[0]].co.xyz
+        diffuse_blue_1 = vtex_diffuse.data[face.index].color1[2] * 255
+        diffuse_green_1 = vtex_diffuse.data[face.index].color1[1] * 255
+        diffuse_red_1 = vtex_diffuse.data[face.index].color1[0] * 255
+        diffuse_alpha_1 = 255
+        specular_blue_1 = vtex_specular.data[face.index].color1[2] * 255
+        specular_green_1 = vtex_specular.data[face.index].color1[1] * 255
+        specular_red_1 = vtex_specular.data[face.index].color1[0] * 255
+        specular_alpha_1 = 255       
+        u0_1 = ((uv_tex0.data[face.index].uv1[0] * 2) - 0.5) * 32768
+        v0_1 = ((uv_tex0.data[face.index].uv1[1] * 2) - 0.5) * 32768
+        u1_1 = ((uv_tex1.data[face.index].uv1[0] * 2) - 0.5) * 32768
+        v1_1 = ((uv_tex1.data[face.index].uv1[0] * 2) - 0.5) * 32768
+        blendweights1 = 1 #TODO change from constant
+            
+        print(vtex_diffuse.data[face.index].color1)
+        print(vtex_diffuse.data[face.index].color2)
+        print(vtex_diffuse.data[face.index].color3)
+
+        print(uv_tex0.data[face.index].uv1)
+        print(uv_tex0.data[face.index].uv2)
+        print(uv_tex0.data[face.index].uv3)
+
+        print(vtex_specular.data[face.index].color1)
+        print(vtex_specular.data[face.index].color2)
+        print(vtex_specular.data[face.index].color3)
+        
 
     file.close()
     # Restore old active scene.
