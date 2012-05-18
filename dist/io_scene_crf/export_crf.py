@@ -20,7 +20,7 @@
 
 import os
 import time
-
+import struct
 import bpy
 import mathutils
 import bpy_extras.io_utils
@@ -630,6 +630,7 @@ def _write(context, filepath,
 
     base_name, ext = os.path.splitext(filepath)
     context_name = [base_name, '', '', ext]  # Base name, scene name, frame number, extension
+    file = open(filepath, "wb")
 
     scene = context.scene
 
@@ -643,15 +644,36 @@ def _write(context, filepath,
     ob = bpy.context.object
     print(ob)
     mesh = ob.data
-    for vert in mesh.vertices:
-        print( 'v %f %f %f\n' % (vert.co.x, vert.co.y, vert.co.z) )
+##    for vert in mesh.vertices:
+##        print( 'v %f %f %f\n' % (vert.co.x, vert.co.y, vert.co.z) )
+##
+##    for face in mesh.faces:
+##                print('face index', face.index)                
+##                for vert in face.vertices:
+##                        print( '%i' % (vert) )
+##                print('\n')
 
-    for face in mesh.faces:
-                print('face index', face.index)                
-                for vert in face.vertices:
-                        print( '%i' % (vert) )
-                print('\n')
 
+    # write header
+    file.write(b"fknc")
+    file.write(struct.pack("<I", 1))
+    file.write(struct.pack("<II", *(0xFFFF, 0xFFFF))) #TODO footer 1 and 2
+    file.write(struct.pack("<IHH", *(2, 6, 0xFFFF)))# object type 2, magick 6, magick 0xFFFF
+    file.write(struct.pack("<I", 1))    #number of meshes in file, for now just one
+    LoX = ob.bound_box[0][0]
+    LoY = ob.bound_box[0][1]
+    LoZ = ob.bound_box[0][2]
+    HiX = ob.bound_box[6][0]
+    HiY = ob.bound_box[6][1]
+    HiZ = ob.bound_box[6][2]   
+
+    print("Bounding box (%f, %f, %f) (%f, %f, %f)" % (LoX, LoY, LoZ, HiX, HiY, HiZ))
+    file.write(struct.pack("<ffffff", *(LoX, LoY, LoZ, HiX, HiY, HiZ))) # bounding box
+    number_of_verteces = len(mesh.vertices)
+    number_of_faces = len(mesh.faces)
+    file.write(struct.pack("<II", *(number_of_verteces, number_of_faces))) # number for vertices and faces
+
+    file.close()
     # Restore old active scene.
 #   orig_scene.makeCurrent()
 #   Window.WaitCursor(0)
