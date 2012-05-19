@@ -16,8 +16,6 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-# <pep8 compliant>
-
 import os
 import time
 import struct
@@ -609,24 +607,6 @@ def write_file(filepath, objects, scene,
     print("OBJ Export time: %.2f" % (time.time() - time1))
 
 
-def make_face(mesh, face):
-        verts_in_face = face.vertices[:]
-        #TODO make this into a function that creates a binary string
-        x, y, z, = mesh.vertices[verts_in_face[0]].co.xyz
-        diffuse_blue = vtex_diffuse.data[face.index].color1[2] * 255
-        diffuse_green = vtex_diffuse.data[face.index].color1[1] * 255
-        diffuse_red = vtex_diffuse.data[face.index].color1[0] * 255
-        diffuse_alpha = 255
-        specular_blue = vtex_specular.data[face.index].color1[2] * 255
-        specular_green = vtex_specular.data[face.index].color1[1] * 255
-        specular_red = vtex_specular.data[face.index].color1[0] * 255
-        specular_alpha = 255       
-        u0 = ((uv_tex0.data[face.index].uv1[0] * 2) - 0.5) * 32768
-        v0 = ((uv_tex0.data[face.index].uv1[1] * 2) - 0.5) * 32768
-        u1 = ((uv_tex1.data[face.index].uv1[0] * 2) - 0.5) * 32768
-        v1 = ((uv_tex1.data[face.index].uv1[0] * 2) - 0.5) * 32768
-        blendweights1 = 1 #TODO change from constant
-
 class CRF_vertex(object):
     def __str__(self):
         string = ""
@@ -641,11 +621,22 @@ class CRF_vertex(object):
         return string
 
     
-    def convert2bin(self):     
-        binstring = struct.pack("<fffBBBBBBBBhhhhI", self.x, self.y, self.z,
-                                                         self.diffuse_blue, self.diffuse_green, self.diffuse_red, self.diffuse_alpha,
-                                                         self.specular_blue, self.specular_green, self.specular_red, self.specular_alpha,
-                                                         self.u0, self.v0, self.u1, self.v1, self.blendweights1)
+    def convert2bin(self):
+        print("Converting", self.index)
+##        binstring = struct.pack("<fffBBBBBBBBhhhhI", self.x, self.y, self.z,
+##                                                         self.diffuse_blue, self.diffuse_green, self.diffuse_red, self.diffuse_alpha,
+##                                                         self.specular_blue, self.specular_green, self.specular_red, self.specular_alpha,
+##                                                         self.u0, self.v0, self.u1, self.v1, self.blendweights1)
+        binstring = b""
+        binstring += struct.pack("<fff", self.x, self.y, self.z)
+        binstring += struct.pack("<BBBBBBBB", self.diffuse_blue, self.diffuse_green, self.diffuse_red, self.diffuse_alpha,
+                                                         self.specular_blue, self.specular_green, self.specular_red, self.specular_alpha)
+        binstring += struct.pack("<hhhhI", self.u0, self.v0, self.u1, self.v1, self.blendweights1)
+
+                                              
+        
+                                                   
+
         return binstring
     
 def _write(context, filepath,
@@ -688,6 +679,7 @@ def _write(context, filepath,
     ob = bpy.context.object
     print(ob)
     mesh = ob.data
+    matrix_world = ob.matrix_world # world matrix so we can transform from local to global coordinates
 
     # write header
     file.write(b"fknc")
@@ -743,7 +735,7 @@ def _write(context, filepath,
         vtex_specular = mesh.vertex_colors[1] # only consider second layer for specular
     elif len(mesh.vertex_colors) == 1:
         vtex_diffuse = mesh.vertex_colors[0] # only consider first layer for diffuse
-        vtex_specular = vertex_colors.new()
+        vtex_specular = mesh.vertex_colors.new()
         vtex_specular.name = "vertex_colors"
     else:                                       # if no vertex colors, create default layers
         vtex_diffuse = mesh.vertex_colors.new()
@@ -772,7 +764,8 @@ def _write(context, filepath,
         if not verts_in_face[0] in vert_dict:
             vert_1 = CRF_vertex()
             vert_1.index = verts_in_face[0]
-            vert_1.x, vert_1.y, vert_1.z = mesh.vertices[verts_in_face[0]].co.xyz
+            # get vertex coords and make sure to translate from global to local
+            vert_1.x, vert_1.y, vert_1.z = matrix_world * mesh.vertices[verts_in_face[0]].co.xyz
             vert_1.x = -1 * vert_1.x # mirror vertex across x axis
             vert_1.diffuse_blue = int(vtex_diffuse.data[face.index].color1[2] * 255)
             vert_1.diffuse_green = int(vtex_diffuse.data[face.index].color1[1] * 255)
@@ -793,7 +786,8 @@ def _write(context, filepath,
         if not verts_in_face[1] in vert_dict:
             vert_2 = CRF_vertex()
             vert_2.index = verts_in_face[1]
-            vert_2.x, vert_2.y, vert_2.z = mesh.vertices[verts_in_face[1]].co.xyz
+            # get vertex coords and make sure to translate from global to local
+            vert_2.x, vert_2.y, vert_2.z = matrix_world * mesh.vertices[verts_in_face[1]].co.xyz
             vert_2.x = -1 * vert_2.x # mirror vertex across x axis
             vert_2.diffuse_blue = int(vtex_diffuse.data[face.index].color2[2] * 255)
             vert_2.diffuse_green = int(vtex_diffuse.data[face.index].color2[1] * 255)
@@ -814,7 +808,8 @@ def _write(context, filepath,
         if not verts_in_face[2] in vert_dict:
             vert_3 = CRF_vertex()
             vert_3.index = verts_in_face[2]
-            vert_3.x, vert_3.y, vert_3.z = mesh.vertices[verts_in_face[2]].co.xyz
+            # get vertex coords and make sure to translate from global to local
+            vert_3.x, vert_3.y, vert_3.z = matrix_world * mesh.vertices[verts_in_face[2]].co.xyz
             vert_3.x = -1 * vert_3.x # mirror vertex across x axis            
             vert_3.diffuse_blue = int(vtex_diffuse.data[face.index].color3[2] * 255)
             vert_3.diffuse_green = int(vtex_diffuse.data[face.index].color3[1] * 255)
@@ -837,8 +832,9 @@ def _write(context, filepath,
     print()
     # write out vertices
     for key, vertex in vert_dict.items():
-        file.write(vertex.convert2bin())
         print(vertex)
+        file.write(vertex.convert2bin())
+
     # write separator 0x000000080008000000
     file.write(struct.pack("<II", 0x00080000, 0x00000008))
     # write out second dummy vertex stream
@@ -846,7 +842,70 @@ def _write(context, filepath,
         file.write(struct.pack("<ff", 0, 0))
     # write bounding box again
     file.write(struct.pack("<ffffff", *(LoX, LoY, LoZ, HiX, HiY, HiZ))) # bounding box
+
+
+    # get textures
+    diffuse_texture_file = mesh.materials[0].texture_slots[0].texture.image.name
+    normals_texture_file = mesh.materials[0].texture_slots[1].texture.image.name
+    specular_texture_file = mesh.materials[0].texture_slots[2].texture.image.name
+
+    # strip extension from filenames
+    diffuse_texture_file = os.path.splitext(diffuse_texture_file)[0]
+    normals_texture_file = os.path.splitext(normals_texture_file)[0]
+    specular_texture_file = os.path.splitext(specular_texture_file)[0]
+
+    # get diffuse and specular material color
+    diffuse_material_color = mesh.materials[0].diffuse_color
+    specular_material_color = mesh.materials[0].specular_color
+    print(diffuse_texture_file, normals_texture_file, specular_texture_file)
+
+    # write out textures and materials
+    #TODO turn this into a state machine
+    file.write(b"nm")
+    file.write(struct.pack("<II", *(1, 4))) 
+    file.write(b"sffd") #diffuse
+    file.write(struct.pack("<I%is" % len(diffuse_texture_file), len(diffuse_texture_file), diffuse_texture_file.encode()))
+    file.write(struct.pack("<I", 0))
+    file.write(b"smrn") #normals           
+    file.write(struct.pack("<I%ss" % len(normals_texture_file), len(normals_texture_file), normals_texture_file.encode()))
+    file.write(struct.pack("<I", 0))
+    file.write(b"1tsc") #const1
+    file.write(struct.pack("<II", 0,0))
+    file.write(b"lcps") #specular
+    file.write(struct.pack("<I%is" % len(specular_texture_file), len(specular_texture_file), specular_texture_file.encode()))
+    file.write(struct.pack("<II", 0,2))
+    file.write(b"lcps") #specular constant
+    file.write(struct.pack("<fff", *specular_material_color))
+    file.write(b"1tsc") #const1
+    file.write(struct.pack("<II", 0,0))
+    file.write(struct.pack("<I", 0))
+    file.write(struct.pack("<I", 1))
+    file.write(b"1tsc") #const1
+    file.write(struct.pack("<II", 0,0))
+
+    # trailer 1
+    #TODO this info should be represented by a data structure
+    trailer_1 = file.tell() 
+    meshfile_size = trailer_1 - 0x14 # calculate size of meshfile 
+    file.write(struct.pack("<IIIIIIII", *(0, 0, 0, 0, 0xFFFFFFFF, 1, 1, 0)))
+    file.write(struct.pack("IIII", *(0x1b4f7cc7, 1, 0x14, meshfile_size)))
+    file.write(struct.pack("IIII", *(0,0,0, 0)))
+    trailer_1_end = file.tell()
+
+    # put trailer1 and trailer2 offsets into the file header
+    file.seek(0x08)
+    file.write(struct.pack("<I", trailer_1)) # trailer1 file offset
+    file.write(struct.pack("<I", trailer_1_end)) # trailer2 file offset
+
+    # trailer 2
+    file.seek(trailer_1_end)
+    file.write(struct.pack("<III", *(0,0,9)))
+    file.write(b"root node")
+    file.write(struct.pack("<II", *(1, 8)))
+    file.write(b"meshfile")
+    file.write(struct.pack("<I", 0))
     
+
     file.close()
     # Restore old active scene.
 #   orig_scene.makeCurrent()
