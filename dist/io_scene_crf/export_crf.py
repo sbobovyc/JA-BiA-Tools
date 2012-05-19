@@ -609,6 +609,45 @@ def write_file(filepath, objects, scene,
     print("OBJ Export time: %.2f" % (time.time() - time1))
 
 
+def make_face(mesh, face):
+        verts_in_face = face.vertices[:]
+        #TODO make this into a function that creates a binary string
+        x, y, z, = mesh.vertices[verts_in_face[0]].co.xyz
+        diffuse_blue = vtex_diffuse.data[face.index].color1[2] * 255
+        diffuse_green = vtex_diffuse.data[face.index].color1[1] * 255
+        diffuse_red = vtex_diffuse.data[face.index].color1[0] * 255
+        diffuse_alpha = 255
+        specular_blue = vtex_specular.data[face.index].color1[2] * 255
+        specular_green = vtex_specular.data[face.index].color1[1] * 255
+        specular_red = vtex_specular.data[face.index].color1[0] * 255
+        specular_alpha = 255       
+        u0 = ((uv_tex0.data[face.index].uv1[0] * 2) - 0.5) * 32768
+        v0 = ((uv_tex0.data[face.index].uv1[1] * 2) - 0.5) * 32768
+        u1 = ((uv_tex1.data[face.index].uv1[0] * 2) - 0.5) * 32768
+        v1 = ((uv_tex1.data[face.index].uv1[0] * 2) - 0.5) * 32768
+        blendweights1 = 1 #TODO change from constant
+
+class CRF_vertex(object):
+    def __str__(self):
+        string = ""
+        string += "Index = %s, xyz = %f %f %f\n" % (self.index, self.x, self.y, self.z)
+        string += "\tdiffuse BGRA  = %i %i %i %i, %s %s %s %s\n" % (self.diffuse_blue, self.diffuse_green, self.diffuse_red, self.diffuse_alpha,
+                                                                     hex(self.diffuse_blue), hex(self.diffuse_green), hex(self.diffuse_red), hex(self.diffuse_alpha))
+        string += "\tspecular BGRA  = %i %i %i %i, %s %s %s %s\n" % (self.diffuse_blue, self.diffuse_green, self.diffuse_red, self.diffuse_alpha,
+                                                                     hex(self.specular_blue), hex(self.specular_green), hex(self.specular_red), hex(self.specular_alpha))
+        string += "\tuv0 = %i %i, 0x%x 0x%x\n" % (self.u0 & 0xffff, self.v0 & 0xffff, self.u0 & 0xffff, self.v0 & 0xffff)
+        string += "\tuv1 = %i %i, 0x%x 0x%x\n" % (self.u1 & 0xffff, self.v1 & 0xffff, self.u1 & 0xffff, self.v1 & 0xffff)
+        string += "\tblendeweight = 0x%x\n" % (self.blendweights1 & 0xffffffff)       
+        return string
+
+    
+    def convert2bin(self):     
+        binstring = struct.pack("<fffBBBBBBBBhhhhI", self.x, self.y, self.z,
+                                                         self.diffuse_blue, self.diffuse_green, self.diffuse_red, self.diffuse_alpha,
+                                                         self.specular_blue, self.specular_green, self.specular_red, self.specular_alpha,
+                                                         self.u0, self.v0, self.u1, self.v1, self.blendweights1)
+        return binstring
+    
 def _write(context, filepath,
               EXPORT_TRI,  # ok
               EXPORT_EDGES,
@@ -633,6 +672,7 @@ def _write(context, filepath,
     file = open(filepath, "wb")
 
     scene = context.scene
+    orig_frame = scene.frame_current
     # convert from quads to triangles
     bpy.ops.object.mode_set(mode='EDIT')
     bpy.ops.mesh.select_all(action='SELECT')
@@ -642,7 +682,7 @@ def _write(context, filepath,
     if bpy.ops.object.mode_set.poll():
         bpy.ops.object.mode_set(mode='OBJECT')
 
-    orig_frame = scene.frame_current
+    
 
     print(base_name, ext)
     ob = bpy.context.object
@@ -671,12 +711,32 @@ def _write(context, filepath,
     #TODO, the first face always has the first two vertices switched. Don't know if this will affect
     # anything. Need to verify that this does not cause a problem.
     for face in mesh.faces:
-        for vert in face.vertices:
-                print( '%i ' % (vert), end=" " )
-                file.write(struct.pack("<H", vert))
-        print('\n')
+        verts_in_face = face.vertices[:]
+        print("face index %s, verts %s" % (face.index, verts_in_face))
+        file.write(struct.pack("<HHH", *verts_in_face))
+        #for vert in face.vertices:
+        #        print( '%i ' % (vert), end=" " )
+        #        file.write(struct.pack("<H", vert))
+        
     # start token?
     file.write(struct.pack("<Qx", 0x0000200c01802102))
+
+
+    # make sure to create uv texture layers before vertex color layers, otherwise uv layer will overwrite a vertex color layer
+    if len(mesh.uv_textures) == 2:
+        uv_tex0 = mesh.uv_textures[0]
+        uv_tex1 = mesh.uv_textures[1]
+    elif len(mesh.uv_textures) == 1:
+        uv_tex0 = mesh.uv_textures[0]
+        uv_tex1 = mesh.uv_textures.new()
+        uv_tex1.name = "UV_Secondary"
+    else:
+        uv_tex0 = mesh.uv_textures.new()
+        uv_tex0.name = "UV_Main"
+        uv_tex1 = mesh.uv_textures.new()
+        uv_tex1.name = "UV_Secondary"
+
+
     # write out verteces, kd, ks, and UVs
     if len(mesh.vertex_colors) == 2:
         vtex_diffuse = mesh.vertex_colors[0] # only consider first layer for diffuse
@@ -691,52 +751,102 @@ def _write(context, filepath,
         vtex_specular = mesh.vertex_colors.new()
         vtex_specular.name = "vertex_colors"
 
-    if len(mesh.uv_textures) == 2:
-        uv_tex0 = mesh.uv_textures[0]
-        uv_tex1 = mesh.uv_textures[1]
-    elif len(mesh.uv_textures) == 1:
-        uv_tex0 = mesh.uv_textures[0]
-        uv_tex1 = mesh.uv_textures.new()
-        uv_tex1.name = "UV_Secondary"
-    else:
-        uv_tex0 = mesh.uv_textures.new()
-        uv_tex0.name = "UV_Main"
-        uv_tex1 = mesh.uv_textures.new()
-        uv_tex1.name = "UV_Secondary"
-        
+    vert_dict = {} # will store CRF_vertex objects
     for face in mesh.faces:
         verts_in_face = face.vertices[:]
-        print(verts_in_face)
-
-        #TODO make this into a function that creates a binary string
-        x_1, y_1, z_1, = mesh.vertices[verts_in_face[0]].co.xyz
-        diffuse_blue_1 = vtex_diffuse.data[face.index].color1[2] * 255
-        diffuse_green_1 = vtex_diffuse.data[face.index].color1[1] * 255
-        diffuse_red_1 = vtex_diffuse.data[face.index].color1[0] * 255
-        diffuse_alpha_1 = 255
-        specular_blue_1 = vtex_specular.data[face.index].color1[2] * 255
-        specular_green_1 = vtex_specular.data[face.index].color1[1] * 255
-        specular_red_1 = vtex_specular.data[face.index].color1[0] * 255
-        specular_alpha_1 = 255       
-        u0_1 = ((uv_tex0.data[face.index].uv1[0] * 2) - 0.5) * 32768
-        v0_1 = ((uv_tex0.data[face.index].uv1[1] * 2) - 0.5) * 32768
-        u1_1 = ((uv_tex1.data[face.index].uv1[0] * 2) - 0.5) * 32768
-        v1_1 = ((uv_tex1.data[face.index].uv1[0] * 2) - 0.5) * 32768
-        blendweights1 = 1 #TODO change from constant
-            
-        print(vtex_diffuse.data[face.index].color1)
-        print(vtex_diffuse.data[face.index].color2)
-        print(vtex_diffuse.data[face.index].color3)
-
+        print(verts_in_face[0], verts_in_face[1], verts_in_face[2])
+##        print("Diffuse", vtex_diffuse.data[face.index].color1)
+##        print("Face index", face.index)
+##        print(mesh.vertex_colors[0].data[0].color1)
+##        print("Diffuse", vtex_diffuse.data[face.index].color2)
+##        print("Diffuse", vtex_diffuse.data[face.index].color3)
+##
         print(uv_tex0.data[face.index].uv1)
         print(uv_tex0.data[face.index].uv2)
         print(uv_tex0.data[face.index].uv3)
+##
+##        print(vtex_specular.data[face.index].color1)
+##        print(vtex_specular.data[face.index].color2)
+##        print(vtex_specular.data[face.index].color3)
 
-        print(vtex_specular.data[face.index].color1)
-        print(vtex_specular.data[face.index].color2)
-        print(vtex_specular.data[face.index].color3)
-        
+        if not verts_in_face[0] in vert_dict:
+            vert_1 = CRF_vertex()
+            vert_1.index = verts_in_face[0]
+            vert_1.x, vert_1.y, vert_1.z = mesh.vertices[verts_in_face[0]].co.xyz
+            vert_1.x = -1 * vert_1.x # mirror vertex across x axis
+            vert_1.diffuse_blue = int(vtex_diffuse.data[face.index].color1[2] * 255)
+            vert_1.diffuse_green = int(vtex_diffuse.data[face.index].color1[1] * 255)
+            vert_1.diffuse_red = int(vtex_diffuse.data[face.index].color1[0] * 255)
+            vert_1.diffuse_alpha = 0
+            vert_1.specular_blue = int(vtex_specular.data[face.index].color1[2] * 255)
+            vert_1.specular_green = int(vtex_specular.data[face.index].color1[1] * 255)
+            vert_1.specular_red = int(vtex_specular.data[face.index].color1[0] * 255)
+            vert_1.specular_alpha = 0       
+            vert_1.u0 = int(((uv_tex0.data[face.index].uv1[0] - 0.5) * 2) * 32768)
+            vert_1.v0 = int(((0.5 - uv_tex0.data[face.index].uv1[1]) * 2) * 32768)
+            vert_1.u1 = int(((uv_tex1.data[face.index].uv1[0] - 0.5) * 2) * 32768)
+            vert_1.v1 = int(((0.5 - uv_tex1.data[face.index].uv1[1]) * 2) * 32768)
+            vert_1.blendweights1 = 0x00018080 #TODO change from constant
+            vert_dict[verts_in_face[0]] = vert_1 # put object in dictionary
+            #print(vert_1)
 
+        if not verts_in_face[1] in vert_dict:
+            vert_2 = CRF_vertex()
+            vert_2.index = verts_in_face[1]
+            vert_2.x, vert_2.y, vert_2.z = mesh.vertices[verts_in_face[1]].co.xyz
+            vert_2.x = -1 * vert_2.x # mirror vertex across x axis
+            vert_2.diffuse_blue = int(vtex_diffuse.data[face.index].color2[2] * 255)
+            vert_2.diffuse_green = int(vtex_diffuse.data[face.index].color2[1] * 255)
+            vert_2.diffuse_red = int(vtex_diffuse.data[face.index].color2[0] * 255)
+            vert_2.diffuse_alpha = 0
+            vert_2.specular_blue = int(vtex_specular.data[face.index].color2[2] * 255)
+            vert_2.specular_green = int(vtex_specular.data[face.index].color2[1] * 255)
+            vert_2.specular_red = int(vtex_specular.data[face.index].color2[0] * 255)
+            vert_2.specular_alpha = 0       
+            vert_2.u0 = int(((uv_tex0.data[face.index].uv2[0] - 0.5) * 2) * 32768)
+            vert_2.v0 = int(((0.5 - uv_tex0.data[face.index].uv2[1]) * 2) * 32768)
+            vert_2.u1 = int(((uv_tex1.data[face.index].uv2[0] - 0.5) * 2) * 32768)
+            vert_2.v1 = int(((0.5 - uv_tex1.data[face.index].uv2[1]) * 2) * 32768)
+            vert_2.blendweights1 = 0x00018080 #TODO change from constant
+            vert_dict[verts_in_face[1]] = vert_2 # put object in dictionary
+            #print(vert_2)            
+
+        if not verts_in_face[2] in vert_dict:
+            vert_3 = CRF_vertex()
+            vert_3.index = verts_in_face[2]
+            vert_3.x, vert_3.y, vert_3.z = mesh.vertices[verts_in_face[2]].co.xyz
+            vert_3.x = -1 * vert_3.x # mirror vertex across x axis            
+            vert_3.diffuse_blue = int(vtex_diffuse.data[face.index].color3[2] * 255)
+            vert_3.diffuse_green = int(vtex_diffuse.data[face.index].color3[1] * 255)
+            vert_3.diffuse_red = int(vtex_diffuse.data[face.index].color3[0] * 255)
+            vert_3.diffuse_alpha = 0
+            vert_3.specular_blue = int(vtex_specular.data[face.index].color3[2] * 255)
+            vert_3.specular_green = int(vtex_specular.data[face.index].color3[1] * 255)
+            vert_3.specular_red = int(vtex_specular.data[face.index].color3[0] * 255)
+            vert_3.specular_alpha = 0       
+            vert_3.u0 = int(((uv_tex0.data[face.index].uv3[0] - 0.5) * 2) * 32768)
+            vert_3.v0 = int(((0.5 - uv_tex0.data[face.index].uv3[1]) * 2) * 32768)
+            vert_3.u1 = int(((uv_tex1.data[face.index].uv3[0] - 0.5) * 2) * 32768)
+            vert_3.v1 = int(((0.5 - uv_tex1.data[face.index].uv3[1]) * 2) * 32768)
+            vert_3.blendweights1 = 0x00018080 #TODO change from constant
+            vert_dict[verts_in_face[2]] = vert_3 # put object in dictionary
+            #print(vert_3)            
+
+
+
+    print()
+    # write out vertices
+    for key, vertex in vert_dict.items():
+        file.write(vertex.convert2bin())
+        print(vertex)
+    # write separator 0x000000080008000000
+    file.write(struct.pack("<II", 0x00080000, 0x00000008))
+    # write out second dummy vertex stream
+    for i in range(0, number_of_verteces):
+        file.write(struct.pack("<ff", 0, 0))
+    # write bounding box again
+    file.write(struct.pack("<ffffff", *(LoX, LoY, LoZ, HiX, HiY, HiZ))) # bounding box
+    
     file.close()
     # Restore old active scene.
 #   orig_scene.makeCurrent()

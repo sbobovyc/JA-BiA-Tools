@@ -19,7 +19,6 @@
 # <pep8 compliant>
 
 # Script copyright (C) Stanislav Bobovych
-# Contributors(Wavefront OBJ): Campbell Barton, Jiri Hnidek, Paolo Ciccone
 
 """
 This script imports a JABIA CRF files to Blender.
@@ -147,7 +146,7 @@ def createTextureLayer(name, me, texFaces):
 
 def setVertexDiffuseColors(me, faces, vertex_diffuse):
     vtex_diffuse = me.vertex_colors.new()
-    vtex_diffuse.name = "vertex_colors"
+    vtex_diffuse.name = "vertex_diffuse_colors"
     for face in faces:
         verts_in_face = face.vertices[:]
         vtex_diffuse.data[face.index].color1 = vertex_diffuse[verts_in_face[0]]
@@ -161,7 +160,7 @@ def setVertexDiffuseColors(me, faces, vertex_diffuse):
 
 def setVertexSpecularColors(me, faces, vertex_specular):
     vtex_specular = me.vertex_colors.new()
-    vtex_specular.name = "vertex_colors"
+    vtex_specular.name = "vertex_specular_colors"
     for face in faces:
         verts_in_face = face.vertices[:]
         vtex_specular.data[face.index].color1 = vertex_specular[verts_in_face[0]]
@@ -391,7 +390,7 @@ def load(operator, context, filepath,
             # rectify UV map
             uv0 = (0.5+u0/2.0, 0.5-v0/2.0)
             verts_tex0.append(uv0)
-
+            #TODO, add support for the second UV map
             if use_verbose:
                 print("Rectified uv0:", uv0)
 
@@ -406,7 +405,8 @@ def load(operator, context, filepath,
 
         if use_verbose:
             print("Second vertex data stream at", hex(file.tell()))
-        #read in unknown tuples, somehow related to verteces
+        #read in second vertex stream, but don't use it for anything
+        #TODO figure out why this is here
         for i in range(0, number_of_verteces):
             unknown0, unknown1 = struct.unpack("<ff", file.read(8))
             if use_verbose:
@@ -465,6 +465,8 @@ def load(operator, context, filepath,
                     print("vert", vert, " vert co", ob.data.vertices[vert].co)
                     print("diffuse R:%s G:%s B:%s " % (vertex_diffuse[vert][0], vertex_diffuse[vert][1], vertex_diffuse[vert][2]))
                     print("specular R:%s G:%s B:%s " % (vertex_specular[vert][0], vertex_specular[vert][1], vertex_specular[vert][2]))
+                    print("UV0: ", verts_tex0[vert])
+                    print()
             i = face.index
             v1 = verts_in_face[0]
             v2 = verts_in_face[1]
