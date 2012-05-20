@@ -608,9 +608,50 @@ def write_file(filepath, objects, scene,
 
 
 class CRF_vertex(object):
+    """
+        Common variables:
+        CRF_vertex.index
+        
+        Raw CRF variables:
+        CRF_vertex.x, vert.y, vert.z 
+        CRF_vertex.diffuse_blue 
+        CRF_vertex.diffuse_green 
+        CRF_vertex.diffuse_red 
+        CRF_vertex.diffuse_alpha 
+        CRF_vertex.specular_blue 
+        CRF_vertex.specular_green
+        CRF_vertex.specular_red 
+        CRF_vertex.specular_alpha      
+        CRF_vertex.u0 
+        CRF_vertex.v0 
+        CRF_vertex.u1 
+        CRF_vertex.v1 
+        CRF_vertex.blendweights1
+
+        Blender variables
+        CRF_vertex.x_blend, vert.y_blend, vert.z_blend 
+        CRF_vertex.diffuse_blue_blend 
+        CRF_vertex.diffuse_green_blend 
+        CRF_vertex.diffuse_red_blend 
+        CRF_vertex.diffuse_alpha_blend #Not iplemented
+        CRF_vertex.specular_blue_blend 
+        CRF_vertex.specular_green_blend
+        CRF_vertex.specular_red_blend 
+        CRF_vertex.specular_alpha_blend #Not iplemented      
+        CRF_vertex.u0_blend 
+        CRF_vertex.v0_blend 
+        CRF_vertex.u1_blend 
+        CRF_vertex.v1_blend 
+        CRF_vertex.blendweights1_blend #Not implemeted 
+
+            
+    """
     def __str__(self):
         string = ""
         string += "Index = %s, xyz = %f %f %f\n" % (self.index, self.x, self.y, self.z)
+        string += "\Blender values\n"
+        #TODO put blender stuff here
+        string += "\CRF values\n"
         string += "\tdiffuse BGRA  = %i %i %i %i, %s %s %s %s\n" % (self.diffuse_blue, self.diffuse_green, self.diffuse_red, self.diffuse_alpha,
                                                                      hex(self.diffuse_blue), hex(self.diffuse_green), hex(self.diffuse_red), hex(self.diffuse_alpha))
         string += "\tspecular BGRA  = %i %i %i %i, %s %s %s %s\n" % (self.diffuse_blue, self.diffuse_green, self.diffuse_red, self.diffuse_alpha,
@@ -620,7 +661,24 @@ class CRF_vertex(object):
         string += "\tblendeweight = 0x%x\n" % (self.blendweights1 & 0xffffffff)       
         return string
 
-    
+    def blend2raw(self):
+        """ Convert blender values to raw values """
+        self.x, self.y, self.z = self.x_blend, self.y_blend, self.z_blend
+        self.x = -self.x # mirror vertex across x axis
+        self.diffuse_blue = int(self.diffuse_blue_blend * 255)
+        self.diffuse_green = int(self.diffuse_green_blend * 255)
+        self.diffuse_red = int(self.diffuse_red_blend * 255)
+        self.diffuse_alpha = 0 #TODO change from constant
+        self.specular_blue = int(self.specular_blue_blend * 255)
+        self.specular_green = int(self.specular_green_blend * 255)
+        self.specular_red = int(self.specular_red_blend * 255)
+        self.specular_alpha = 0 #TODO change from constant      
+        self.u0 = int(((self.u0_blend - 0.5) * 2) * 32768)
+        self.v0 = int(((0.5 - self.v0_blend) * 2) * 32768)
+        self.u1 = int(((self.u1_blend - 0.5) * 2) * 32768)
+        self.v1 = int(((0.5 - self.v1_blend) * 2) * 32768)
+        self.blendweights1 = 0x00018080 #TODO change from constant
+        
     def convert2bin(self):
         print("Converting", self.index)
 ##        binstring = struct.pack("<fffBBBBBBBBhhhhI", self.x, self.y, self.z,
@@ -746,16 +804,17 @@ def _write(context, filepath,
     vert_dict = {} # will store CRF_vertex objects
     for face in mesh.faces:
         verts_in_face = face.vertices[:]
-        print(verts_in_face[0], verts_in_face[1], verts_in_face[2])
+##        print("Faces")
+##        print(verts_in_face[0], verts_in_face[1], verts_in_face[2])
 ##        print("Diffuse", vtex_diffuse.data[face.index].color1)
 ##        print("Face index", face.index)
 ##        print(mesh.vertex_colors[0].data[0].color1)
 ##        print("Diffuse", vtex_diffuse.data[face.index].color2)
 ##        print("Diffuse", vtex_diffuse.data[face.index].color3)
 ##
-        print(uv_tex0.data[face.index].uv1)
-        print(uv_tex0.data[face.index].uv2)
-        print(uv_tex0.data[face.index].uv3)
+##        print(uv_tex0.data[face.index].uv1)
+##        print(uv_tex0.data[face.index].uv2)
+##        print(uv_tex0.data[face.index].uv3)
 ##
 ##        print(vtex_specular.data[face.index].color1)
 ##        print(vtex_specular.data[face.index].color2)
@@ -780,6 +839,23 @@ def _write(context, filepath,
             vert_1.u1 = int(((uv_tex1.data[face.index].uv1[0] - 0.5) * 2) * 32768)
             vert_1.v1 = int(((0.5 - uv_tex1.data[face.index].uv1[1]) * 2) * 32768)
             vert_1.blendweights1 = 0x00018080 #TODO change from constant
+
+##            # get vertex coords and make sure to translate from local to global
+##            vert_1.x, vert_1.y, vert_1.z = matrix_world * mesh.vertices[verts_in_face[0]].co.xyz
+##            vert_1.diffuse_blue = vtex_diffuse.data[face.index].color1[2] 
+##            vert_1.diffuse_green = vtex_diffuse.data[face.index].color1[1] 
+##            vert_1.diffuse_red = vtex_diffuse.data[face.index].color1[0] 
+##            vert_1.diffuse_alpha = 0
+##            vert_1.specular_blue = vtex_specular.data[face.index].color1[2] 
+##            vert_1.specular_green = vtex_specular.data[face.index].color1[1] 
+##            vert_1.specular_red = vtex_specular.data[face.index].color1[0] 
+##            vert_1.specular_alpha = 0       
+##            vert_1.u0 = uv_tex0.data[face.index].uv1[0] 
+##            vert_1.v0 = uv_tex0.data[face.index].uv1[1]
+##            vert_1.u1 = uv_tex1.data[face.index].uv1[0] 
+##            vert_1.v1 = 0.5 - uv_tex1.data[face.index].uv1[1]
+##            vert_1.blendweights1 = 0x00018080 #TODO change from constant
+            
             vert_dict[verts_in_face[0]] = vert_1 # put object in dictionary
             #print(vert_1)
 
