@@ -647,11 +647,17 @@ class CRF_vertex(object):
             
     """
     def __str__(self):
-        string = ""
-        string += "Index = %s, xyz = %f %f %f\n" % (self.index, self.x, self.y, self.z)
-        string += "\Blender values\n"
-        #TODO put blender stuff here
-        string += "\CRF values\n"
+        string = "Index = %s\n" % (self.index)
+        string += "Blender values:\n"
+        string += "xyz = %f %f %f\n" % (self.x_blend, self.y_blend, self.z_blend)
+        string += "\tdiffuse BGRA  = %f %f %f %f\n" % (self.diffuse_blue_blend, self.diffuse_green_blend, self.diffuse_red_blend, self.diffuse_alpha_blend)                                                                    
+        string += "\tspecular BGRA  = %f %f %f %f\n" % (self.diffuse_blue_blend, self.diffuse_green_blend, self.diffuse_red_blend, self.diffuse_alpha_blend)                                                 
+        string += "\tuv0 = %f %f\n" % (self.u0_blend, self.v0_blend)
+        string += "\tuv1 = %f %f\n" % (self.u1_blend, self.v1_blend)
+        string += "\tblendeweight = 0x%x\n" % (self.blendweights1_blend & 0xffffffff)     
+
+        string += "CRF values:\n"
+        string += "xyz = %f %f %f\n" % (self.x, self.y, self.z)        
         string += "\tdiffuse BGRA  = %i %i %i %i, %s %s %s %s\n" % (self.diffuse_blue, self.diffuse_green, self.diffuse_red, self.diffuse_alpha,
                                                                      hex(self.diffuse_blue), hex(self.diffuse_green), hex(self.diffuse_red), hex(self.diffuse_alpha))
         string += "\tspecular BGRA  = %i %i %i %i, %s %s %s %s\n" % (self.diffuse_blue, self.diffuse_green, self.diffuse_red, self.diffuse_alpha,
@@ -663,7 +669,9 @@ class CRF_vertex(object):
 
     def blend2raw(self):
         """ Convert blender values to raw values """
-        self.x, self.y, self.z = self.x_blend, self.y_blend, self.z_blend
+        self.x = self.x_blend
+        self.y = self.y_blend
+        self.z = self.z_blend
         self.x = -self.x # mirror vertex across x axis
         self.diffuse_blue = int(self.diffuse_blue_blend * 255)
         self.diffuse_green = int(self.diffuse_green_blend * 255)
@@ -737,7 +745,7 @@ def _write(context, filepath,
     ob = bpy.context.object
     print(ob)
     mesh = ob.data
-    matrix_world = ob.matrix_world # world matrix so we can transform from local to global coordinates
+    matrix_world = ob.matrix_basis # world matrix so we can transform from local to global coordinates
 
     # write header
     file.write(b"fknc")
@@ -821,91 +829,71 @@ def _write(context, filepath,
 ##        print(vtex_specular.data[face.index].color3)
 
         if not verts_in_face[0] in vert_dict:
-            vert_1 = CRF_vertex()
-            vert_1.index = verts_in_face[0]
-            # get vertex coords and make sure to translate from global to local
-            vert_1.x, vert_1.y, vert_1.z = matrix_world * mesh.vertices[verts_in_face[0]].co.xyz
-            vert_1.x = -1 * vert_1.x # mirror vertex across x axis
-            vert_1.diffuse_blue = int(vtex_diffuse.data[face.index].color1[2] * 255)
-            vert_1.diffuse_green = int(vtex_diffuse.data[face.index].color1[1] * 255)
-            vert_1.diffuse_red = int(vtex_diffuse.data[face.index].color1[0] * 255)
-            vert_1.diffuse_alpha = 0
-            vert_1.specular_blue = int(vtex_specular.data[face.index].color1[2] * 255)
-            vert_1.specular_green = int(vtex_specular.data[face.index].color1[1] * 255)
-            vert_1.specular_red = int(vtex_specular.data[face.index].color1[0] * 255)
-            vert_1.specular_alpha = 0       
-            vert_1.u0 = int(((uv_tex0.data[face.index].uv1[0] - 0.5) * 2) * 32768)
-            vert_1.v0 = int(((0.5 - uv_tex0.data[face.index].uv1[1]) * 2) * 32768)
-            vert_1.u1 = int(((uv_tex1.data[face.index].uv1[0] - 0.5) * 2) * 32768)
-            vert_1.v1 = int(((0.5 - uv_tex1.data[face.index].uv1[1]) * 2) * 32768)
-            vert_1.blendweights1 = 0x00018080 #TODO change from constant
-
-##            # get vertex coords and make sure to translate from local to global
-##            vert_1.x, vert_1.y, vert_1.z = matrix_world * mesh.vertices[verts_in_face[0]].co.xyz
-##            vert_1.diffuse_blue = vtex_diffuse.data[face.index].color1[2] 
-##            vert_1.diffuse_green = vtex_diffuse.data[face.index].color1[1] 
-##            vert_1.diffuse_red = vtex_diffuse.data[face.index].color1[0] 
-##            vert_1.diffuse_alpha = 0
-##            vert_1.specular_blue = vtex_specular.data[face.index].color1[2] 
-##            vert_1.specular_green = vtex_specular.data[face.index].color1[1] 
-##            vert_1.specular_red = vtex_specular.data[face.index].color1[0] 
-##            vert_1.specular_alpha = 0       
-##            vert_1.u0 = uv_tex0.data[face.index].uv1[0] 
-##            vert_1.v0 = uv_tex0.data[face.index].uv1[1]
-##            vert_1.u1 = uv_tex1.data[face.index].uv1[0] 
-##            vert_1.v1 = 0.5 - uv_tex1.data[face.index].uv1[1]
-##            vert_1.blendweights1 = 0x00018080 #TODO change from constant
-            
-            vert_dict[verts_in_face[0]] = vert_1 # put object in dictionary
-            #print(vert_1)
+            vert = CRF_vertex()
+            vert.index = verts_in_face[0]
+            # get vertex coords and make sure to translate from local to global
+            vert.x_blend, vert.z_blend, vert.y_blend = matrix_world * mesh.vertices[verts_in_face[0]].co.xyz #TODO find out how CRF object coordinates work (global or local)
+            vert.diffuse_blue_blend = vtex_diffuse.data[face.index].color1[2] 
+            vert.diffuse_green_blend = vtex_diffuse.data[face.index].color1[1] 
+            vert.diffuse_red_blend = vtex_diffuse.data[face.index].color1[0] 
+            vert.diffuse_alpha_blend = 0
+            vert.specular_blue_blend = vtex_specular.data[face.index].color1[2] 
+            vert.specular_green_blend = vtex_specular.data[face.index].color1[1] 
+            vert.specular_red_blend = vtex_specular.data[face.index].color1[0] 
+            vert.specular_alpha_blend = 0       
+            vert.u0_blend = uv_tex0.data[face.index].uv1[0] 
+            vert.v0_blend = uv_tex0.data[face.index].uv1[1]
+            vert.u1_blend = uv_tex1.data[face.index].uv1[0] 
+            vert.v1_blend = uv_tex1.data[face.index].uv1[1]
+            vert.blendweights1_blend = 0x00018080 #TODO change from constant
+            vert.blend2raw()
+            vert_dict[verts_in_face[0]] = vert # put object in dictionary
+            #print(vert)
 
         if not verts_in_face[1] in vert_dict:
-            vert_2 = CRF_vertex()
-            vert_2.index = verts_in_face[1]
-            # get vertex coords and make sure to translate from global to local
-            vert_2.x, vert_2.y, vert_2.z = matrix_world * mesh.vertices[verts_in_face[1]].co.xyz
-            vert_2.x = -1 * vert_2.x # mirror vertex across x axis
-            vert_2.diffuse_blue = int(vtex_diffuse.data[face.index].color2[2] * 255)
-            vert_2.diffuse_green = int(vtex_diffuse.data[face.index].color2[1] * 255)
-            vert_2.diffuse_red = int(vtex_diffuse.data[face.index].color2[0] * 255)
-            vert_2.diffuse_alpha = 0
-            vert_2.specular_blue = int(vtex_specular.data[face.index].color2[2] * 255)
-            vert_2.specular_green = int(vtex_specular.data[face.index].color2[1] * 255)
-            vert_2.specular_red = int(vtex_specular.data[face.index].color2[0] * 255)
-            vert_2.specular_alpha = 0       
-            vert_2.u0 = int(((uv_tex0.data[face.index].uv2[0] - 0.5) * 2) * 32768)
-            vert_2.v0 = int(((0.5 - uv_tex0.data[face.index].uv2[1]) * 2) * 32768)
-            vert_2.u1 = int(((uv_tex1.data[face.index].uv2[0] - 0.5) * 2) * 32768)
-            vert_2.v1 = int(((0.5 - uv_tex1.data[face.index].uv2[1]) * 2) * 32768)
-            vert_2.blendweights1 = 0x00018080 #TODO change from constant
-            vert_dict[verts_in_face[1]] = vert_2 # put object in dictionary
-            #print(vert_2)            
+            vert = CRF_vertex()
+            vert.index = verts_in_face[1]
+            # get vertex coords and make sure to translate from local to global
+            vert.x_blend, vert.z_blend, vert.y_blend = matrix_world * mesh.vertices[verts_in_face[1]].co.xyz
+            vert.diffuse_blue_blend = vtex_diffuse.data[face.index].color2[2] 
+            vert.diffuse_green_blend = vtex_diffuse.data[face.index].color2[1] 
+            vert.diffuse_red_blend = vtex_diffuse.data[face.index].color2[0] 
+            vert.diffuse_alpha_blend = 0
+            vert.specular_blue_blend = vtex_specular.data[face.index].color2[2] 
+            vert.specular_green_blend = vtex_specular.data[face.index].color2[1] 
+            vert.specular_red_blend = vtex_specular.data[face.index].color2[0] 
+            vert.specular_alpha_blend = 0       
+            vert.u0_blend = uv_tex0.data[face.index].uv2[0] 
+            vert.v0_blend = uv_tex0.data[face.index].uv2[1]
+            vert.u1_blend = uv_tex1.data[face.index].uv2[0] 
+            vert.v1_blend = uv_tex1.data[face.index].uv2[1]
+            vert.blendweights1_blend = 0x00018080 #TODO change from constant
+            vert.blend2raw()
+            vert_dict[verts_in_face[1]] = vert # put object in dictionary
+            #print(vert)     
 
         if not verts_in_face[2] in vert_dict:
-            vert_3 = CRF_vertex()
-            vert_3.index = verts_in_face[2]
-            # get vertex coords and make sure to translate from global to local
-            vert_3.x, vert_3.y, vert_3.z = matrix_world * mesh.vertices[verts_in_face[2]].co.xyz
-            vert_3.x = -1 * vert_3.x # mirror vertex across x axis            
-            vert_3.diffuse_blue = int(vtex_diffuse.data[face.index].color3[2] * 255)
-            vert_3.diffuse_green = int(vtex_diffuse.data[face.index].color3[1] * 255)
-            vert_3.diffuse_red = int(vtex_diffuse.data[face.index].color3[0] * 255)
-            vert_3.diffuse_alpha = 0
-            vert_3.specular_blue = int(vtex_specular.data[face.index].color3[2] * 255)
-            vert_3.specular_green = int(vtex_specular.data[face.index].color3[1] * 255)
-            vert_3.specular_red = int(vtex_specular.data[face.index].color3[0] * 255)
-            vert_3.specular_alpha = 0       
-            vert_3.u0 = int(((uv_tex0.data[face.index].uv3[0] - 0.5) * 2) * 32768)
-            vert_3.v0 = int(((0.5 - uv_tex0.data[face.index].uv3[1]) * 2) * 32768)
-            vert_3.u1 = int(((uv_tex1.data[face.index].uv3[0] - 0.5) * 2) * 32768)
-            vert_3.v1 = int(((0.5 - uv_tex1.data[face.index].uv3[1]) * 2) * 32768)
-            vert_3.blendweights1 = 0x00018080 #TODO change from constant
-            vert_dict[verts_in_face[2]] = vert_3 # put object in dictionary
-            #print(vert_3)            
+            vert = CRF_vertex()
+            vert.index = verts_in_face[2]
+            # get vertex coords and make sure to translate from local to global
+            vert.x_blend, vert.z_blend, vert.y_blend = matrix_world * mesh.vertices[verts_in_face[2]].co.xyz
+            vert.diffuse_blue_blend = vtex_diffuse.data[face.index].color3[2] 
+            vert.diffuse_green_blend = vtex_diffuse.data[face.index].color3[1] 
+            vert.diffuse_red_blend = vtex_diffuse.data[face.index].color3[0] 
+            vert.diffuse_alpha_blend = 0
+            vert.specular_blue_blend = vtex_specular.data[face.index].color3[2] 
+            vert.specular_green_blend = vtex_specular.data[face.index].color3[1] 
+            vert.specular_red_blend = vtex_specular.data[face.index].color3[0] 
+            vert.specular_alpha_blend = 0       
+            vert.u0_blend = uv_tex0.data[face.index].uv3[0] 
+            vert.v0_blend = uv_tex0.data[face.index].uv3[1]
+            vert.u1_blend = uv_tex1.data[face.index].uv3[0] 
+            vert.v1_blend = uv_tex1.data[face.index].uv3[1]
+            vert.blendweights1_blend = 0x00018080 #TODO change from constant
+            vert.blend2raw()
+            vert_dict[verts_in_face[2]] = vert # put object in dictionary
+            #print(vert)    
 
-
-
-    print()
     # write out vertices
     for key, vertex in vert_dict.items():
         print(vertex)
