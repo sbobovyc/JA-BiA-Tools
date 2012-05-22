@@ -647,7 +647,7 @@ class CRF_vertex(object):
             
     """
     def __str__(self):
-        string = "Index = %s\n" % (self.index)
+        string = "Vertex index = %s\n" % (self.index)
         string += "Blender values:\n"
         string += "xyz = %f %f %f\n" % (self.x_blend, self.y_blend, self.z_blend)
         string += "\tdiffuse BGRA  = %f %f %f %f\n" % (self.diffuse_blue_blend, self.diffuse_green_blend, self.diffuse_red_blend, self.diffuse_alpha_blend)                                                                    
@@ -662,8 +662,8 @@ class CRF_vertex(object):
                                                                      hex(self.diffuse_blue), hex(self.diffuse_green), hex(self.diffuse_red), hex(self.diffuse_alpha))
         string += "\tspecular BGRA  = %i %i %i %i, %s %s %s %s\n" % (self.diffuse_blue, self.diffuse_green, self.diffuse_red, self.diffuse_alpha,
                                                                      hex(self.specular_blue), hex(self.specular_green), hex(self.specular_red), hex(self.specular_alpha))
-        string += "\tuv0 = %i %i, 0x%x 0x%x\n" % (self.u0 & 0xffff, self.v0 & 0xffff, self.u0 & 0xffff, self.v0 & 0xffff)
-        string += "\tuv1 = %i %i, 0x%x 0x%x\n" % (self.u1 & 0xffff, self.v1 & 0xffff, self.u1 & 0xffff, self.v1 & 0xffff)
+        string += "\tuv0 = %i %i, 0x%x 0x%x\n" % (self.u0, self.v0, self.u0, self.v0)
+        string += "\tuv1 = %i %i, 0x%x 0x%x\n" % (self.u1, self.v1, self.u1, self.v1)        
         string += "\tblendeweight = 0x%x\n" % (self.blendweights1 & 0xffffffff)       
         return string
 
@@ -686,6 +686,26 @@ class CRF_vertex(object):
         self.u1 = int(((self.u1_blend - 0.5) * 2) * 32768)
         self.v1 = int(((0.5 - self.v1_blend) * 2) * 32768)
         self.blendweights1 = 0x00018080 #TODO change from constant
+
+        print(self.u0, self.v0)
+        print(self.u1, self.v1)
+        # clamp uv values to be <= 32768 and >=-32768
+        if self.u0 >= 32768:
+            self.u0 = 32767
+        if self.v0 >= 32767:
+            self.v0 = 32767
+        if self.u1 >= 32768:
+            self.u1 = 32767
+        if self.v1 >= 32768:
+            self.v1 = 32767
+        if self.u0 <= -32768:
+            self.u0 = -32767
+        if self.v0 <= -32768:
+            self.v0 = -32767
+        if self.u1 <= -32768:
+            self.u1 = -32767
+        if self.v1 <= -32768:
+            self.v1 = -32767               
         
     def convert2bin(self):
         print("Converting", self.index)

@@ -374,25 +374,31 @@ def load(operator, context, filepath,
                 diffuse_blue, diffuse_green, diffuse_red, diffuse_alpha, \
                 specular_blue, specular_green, specular_red, specular_alpha, \
                 u0, v0, u1, v1, blendweights1 = struct.unpack("<fffBBBBBBBBhhhhI", file.read(32))
-            # convert signed short to float
-            u0 /= 32768
-            v0 /= 32768
-            u1 /= 32768
-            v1 /= 32768
-            # distortions due to rounding by directx and not python
+            
             if use_verbose:                
                 print("vert index=%s, xyz=(%s %s %s), Kd=(%s, %s, %s, %s), Ks=(%s, %s, %s, %s), uv0=(%s, %s), uv1=(%s, %s)" % (i, x,y,z, \
                                     hex(diffuse_alpha), hex(diffuse_red), hex(diffuse_green), hex(diffuse_blue), \
                                     hex(specular_alpha), hex(specular_red), hex(specular_green), hex(specular_blue), \
-                                    u0, v0, u1, v1))
+                                    hex(u0), hex(v0), hex(u1), hex(v1)))
+            # convert signed short to float
+            # distortions due to rounding by directx and not python
+            u0 /= 32768
+            v0 /= 32768
+            u1 /= 32768
+            v1 /= 32768
+            
             # mirror vertex across x axis
             verts_loc.append((-x,y,z))
+            print("uv0", u0, v0)
             # rectify UV map
             uv0 = (0.5+u0/2.0, 0.5-v0/2.0)
+
             verts_tex0.append(uv0)
+            
             #TODO, add support for the second UV map
             if use_verbose:
                 print("Rectified uv0:", uv0)
+                print()
 
             # convert 8 bit to float
             # notice that I don't include alpha
