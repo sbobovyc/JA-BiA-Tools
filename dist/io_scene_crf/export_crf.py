@@ -914,20 +914,33 @@ def _write(context, filepath,
     file.write(struct.pack("<ffffff", *(LoX, LoY, LoZ, HiX, HiY, HiZ))) # bounding box
 
 
+    diffuse_texture_file = None
+    normals_texture_file = None
+    specular_texture_file = None
+    
     # get textures
-    diffuse_texture_file = mesh.materials[0].texture_slots[0].texture.image.name
-    normals_texture_file = mesh.materials[0].texture_slots[1].texture.image.name
-    specular_texture_file = mesh.materials[0].texture_slots[2].texture.image.name
+    if mesh.materials[0].texture_slots[0] == None and mesh.materials[0].texture_slots[1] == None:
+           raise Exception("Missing a diffuse or normal texture")
+    else:
+        diffuse_texture_file = mesh.materials[0].texture_slots[0].texture.image.name
+        normals_texture_file = mesh.materials[0].texture_slots[1].texture.image.name
+        
+    if mesh.materials[0].texture_slots[2] == None:
+        print("Using a constant specular value")
+    else:
+        specular_texture_file = mesh.materials[0].texture_slots[2].texture.image.name
+
 
     # strip extension from filenames
     diffuse_texture_file = os.path.splitext(diffuse_texture_file)[0]
     normals_texture_file = os.path.splitext(normals_texture_file)[0]
-    specular_texture_file = os.path.splitext(specular_texture_file)[0]
+    if specular_texture_file != None:
+        specular_texture_file = os.path.splitext(specular_texture_file)[0]
 
     # get diffuse and specular material color
     diffuse_material_color = mesh.materials[0].diffuse_color
     specular_material_color = mesh.materials[0].specular_color
-    print(diffuse_texture_file, normals_texture_file, specular_texture_file)
+    print("Textures:", diffuse_texture_file, normals_texture_file, specular_texture_file)
 
     # write out textures and materials
     #TODO turn this into a state machine
@@ -941,17 +954,30 @@ def _write(context, filepath,
     file.write(struct.pack("<I", 0))
     file.write(b"1tsc") #const1
     file.write(struct.pack("<II", 0,0))
-    file.write(b"lcps") #specular
-    file.write(struct.pack("<I%is" % len(specular_texture_file), len(specular_texture_file), specular_texture_file.encode()))
-    file.write(struct.pack("<II", 0,2))
-    file.write(b"lcps") #specular constant
-    file.write(struct.pack("<fff", *specular_material_color))
-    file.write(b"1tsc") #const1
-    file.write(struct.pack("<II", 0,0))
-    file.write(struct.pack("<I", 0))
-    file.write(struct.pack("<I", 1))
-    file.write(b"1tsc") #const1
-    file.write(struct.pack("<II", 0,0))
+    
+    if specular_texture_file != None:
+        file.write(b"lcps") #specular
+        file.write(struct.pack("<I%is" % len(specular_texture_file), len(specular_texture_file), specular_texture_file.encode()))
+        file.write(struct.pack("<II", 0,2))
+        file.write(b"lcps") #specular constant
+        file.write(struct.pack("<fff", *specular_material_color))
+        file.write(b"1tsc") #const1
+        file.write(struct.pack("<II", 0,0))
+        file.write(struct.pack("<I", 0))
+        file.write(struct.pack("<I", 1))
+        file.write(b"1tsc") #const1
+        file.write(struct.pack("<II", 0,0))
+    else:
+        file.write(b"lcps") #specular
+        file.write(struct.pack("<II", 0,0))
+        file.write(struct.pack("<I", 2))
+        file.write(b"lcps") #specular
+        file.write(struct.pack("<fff", *specular_material_color))
+        file.write(b"1tsc") #const1
+        file.write(struct.pack("<II", 0,0))
+        file.write(struct.pack("<II", 0,1))
+        file.write(b"1tsc") #const1        
+        file.write(struct.pack("<II", 0,2))        
 
     # trailer 1
     #TODO this info should be represented by a data structure
