@@ -27,9 +27,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.35"
-     inkscape:cx="723.72878"
-     inkscape:cy="904.9749"
+     inkscape:zoom="0.49497475"
+     inkscape:cx="212.62012"
+     inkscape:cy="692.30187"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -37,8 +37,8 @@
      fit-margin-left="0"
      fit-margin-right="0"
      fit-margin-bottom="0"
-     inkscape:window-width="1600"
-     inkscape:window-height="838"
+     inkscape:window-width="1920"
+     inkscape:window-height="1018"
      inkscape:window-x="-8"
      inkscape:window-y="-8"
      inkscape:window-maximized="1"
@@ -53,7 +53,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -269,7 +269,7 @@
            height="100"
            x="794.28571"
            y="1426.8738" /></flowRegion><flowPara
-         id="flowPara3184"></flowPara></flowRoot>    <flowRoot
+         id="flowPara3184" /></flowRoot>    <flowRoot
        xml:space="preserve"
        id="flowRoot4051-9-2-2"
        style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#d93631;fill-opacity:1;stroke:#d93531;stroke-opacity:1;font-family:Sans"
@@ -313,5 +313,32 @@
            x="937.42157"
            y="-127.49599"
            style="fill:#d93631;fill-opacity:1;stroke:#d93531;stroke-opacity:1" /></flowRegion><flowPara
-         id="flowPara4057-8-5-5-7">x, y, z (all relative to the weapon)</flowPara></flowRoot>  </g>
+         id="flowPara4057-8-5-5-7">x, y, z (all relative to the weapon)</flowPara></flowRoot>    <path
+       sodipodi:type="arc"
+       style="fill:none;stroke:#d93631;stroke-width:29.78078079;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       id="path3199-1-1"
+       sodipodi:cx="-1583.9192"
+       sodipodi:cy="599.81384"
+       sodipodi:rx="452.54834"
+       sodipodi:ry="226.27417"
+       d="m -1131.3708,599.81384 a 452.54834,226.27417 0 1 1 -905.0967,0 452.54834,226.27417 0 1 1 905.0967,0 z"
+       transform="matrix(0.16190164,0,0,0.17410715,577.80039,222.80511)" />
+    <path
+       style="fill:#d93531;fill-opacity:1;stroke:#d93531;stroke-width:5;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       d="M 394.20201,317.71887 675.06209,251.68234"
+       id="path4005-4-7"
+       inkscape:connector-curvature="0" />
+    <flowRoot
+       xml:space="preserve"
+       id="flowRoot4051-9-4"
+       style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#d93631;fill-opacity:1;stroke:#d93531;stroke-opacity:1;font-family:Sans"
+       transform="translate(-262.34416,345.75939)"><flowRegion
+         id="flowRegion4053-4-0"><rect
+           id="rect4055-8-9"
+           width="699.02557"
+           height="113.13708"
+           x="937.42157"
+           y="-127.49599"
+           style="fill:#d93631;fill-opacity:1;stroke:#d93531;stroke-opacity:1" /></flowRegion><flowPara
+         id="flowPara4057-8-4">(crf object id found in main.vtp)</flowPara></flowRoot>  </g>
 </svg>
