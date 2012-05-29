@@ -389,7 +389,7 @@ def load(operator, context, filepath,
             
             # mirror vertex across x axis
             verts_loc.append((-x,y,z))
-            print("uv0", u0, v0)
+            
             # rectify UV map
             uv0 = (0.5+u0/2.0, 0.5-v0/2.0)
 
@@ -407,6 +407,7 @@ def load(operator, context, filepath,
             vertex_specular.append( (specular_red/255.0, specular_green/255.0, specular_blue/255.0) )
 
         #read in separator 0x000000080008000000
+        print("Separator at", hex(file.tell()))
         separator = struct.unpack("<8B", file.read(8))
 
         if use_verbose:

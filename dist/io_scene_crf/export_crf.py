@@ -689,8 +689,6 @@ class CRF_vertex(object):
         self.v1 = int(((self.v1_blend - 0.5) * -2) * 32768)
         self.blendweights1 = 0x00018080 #TODO change from constant
 
-        print(self.u0, self.v0)
-        print(self.u1, self.v1)
         # clamp uv values to be <= 32768 and >=-32768
         if self.u0 >= 32768:
             self.u0 = 32767
@@ -709,17 +707,16 @@ class CRF_vertex(object):
         if self.v1 <= -32768:
             self.v1 = -32767               
         
-    def convert2bin(self):
-        print("Converting", self.index)
-##        binstring = struct.pack("<fffBBBBBBBBhhhhI", self.x, self.y, self.z,
-##                                                         self.diffuse_blue, self.diffuse_green, self.diffuse_red, self.diffuse_alpha,
-##                                                         self.specular_blue, self.specular_green, self.specular_red, self.specular_alpha,
-##                                                         self.u0, self.v0, self.u1, self.v1, self.blendweights1)
-        binstring = b""
-        binstring += struct.pack("<fff", self.x, self.y, self.z)
-        binstring += struct.pack("<BBBBBBBB", self.diffuse_blue, self.diffuse_green, self.diffuse_red, self.diffuse_alpha,
-                                                         self.specular_blue, self.specular_green, self.specular_red, self.specular_alpha)
-        binstring += struct.pack("<hhhhI", self.u0, self.v0, self.u1, self.v1, self.blendweights1)
+    def convert2bin(self):        
+        binstring = struct.pack("<fffBBBBBBBBhhhhI", self.x, self.y, self.z,
+                                                         self.diffuse_blue, self.diffuse_green, self.diffuse_red, self.diffuse_alpha,
+                                                         self.specular_blue, self.specular_green, self.specular_red, self.specular_alpha,
+                                                         self.u0, self.v0, self.u1, self.v1, self.blendweights1)
+##        binstring = b""
+##        binstring += struct.pack("<fff", self.x, self.y, self.z)
+##        binstring += struct.pack("<BBBBBBBB", self.diffuse_blue, self.diffuse_green, self.diffuse_red, self.diffuse_alpha,
+##                                                         self.specular_blue, self.specular_green, self.specular_red, self.specular_alpha)
+##        binstring += struct.pack("<hhhhI", self.u0, self.v0, self.u1, self.v1, self.blendweights1)
 
                                               
         
@@ -728,6 +725,7 @@ class CRF_vertex(object):
         return binstring
     
 def _write(context, filepath,
+              EXPORT_USE_VERBOSE,
               EXPORT_TRI,  # ok
               EXPORT_EDGES,
               EXPORT_NORMALS,  # not yet
@@ -746,16 +744,19 @@ def _write(context, filepath,
               EXPORT_PATH_MODE,
               ):  # Not used
 
+    verbose = EXPORT_USE_VERBOSE
     base_name, ext = os.path.splitext(filepath)
     context_name = [base_name, '', '', ext]  # Base name, scene name, frame number, extension
     file = open(filepath, "wb")
 
     scene = context.scene
     orig_frame = scene.frame_current
+
+    #TODO converting from quads to triangles when object is already made of triangles deletes faces
     # convert from quads to triangles
-    bpy.ops.object.mode_set(mode='EDIT')
-    bpy.ops.mesh.select_all(action='SELECT')
-    bpy.ops.mesh.quads_convert_to_tris()
+##    bpy.ops.object.mode_set(mode='EDIT')
+##    bpy.ops.mesh.select_all(action='SELECT')
+##    bpy.ops.mesh.quads_convert_to_tris()
     
     # Exit edit mode before exporting, so current object states are exported properly.
     if bpy.ops.object.mode_set.poll():
@@ -782,6 +783,7 @@ def _write(context, filepath,
     HiY = ob.bound_box[6][1]
     HiZ = ob.bound_box[6][2]   
 
+    print("Model: 0, vertices: %i, faces: %i" % (len(mesh.vertices), len(mesh.faces)))
     print("Bounding box (%f, %f, %f) (%f, %f, %f)" % (LoX, LoY, LoZ, HiX, HiY, HiZ))
     file.write(struct.pack("<ffffff", *(LoX, LoY, LoZ, HiX, HiY, HiZ))) # bounding box
     number_of_verteces = len(mesh.vertices)
@@ -792,13 +794,13 @@ def _write(context, filepath,
     # anything. Need to verify that this does not cause a problem.
     for face in mesh.faces:
         verts_in_face = face.vertices[:]
-        print("face index %s, verts %s" % (face.index, verts_in_face))
+        if verbose:
+            print("face index %s, verts %s" % (face.index, verts_in_face))
         file.write(struct.pack("<HHH", *verts_in_face))
-        #for vert in face.vertices:
-        #        print( '%i ' % (vert), end=" " )
-        #        file.write(struct.pack("<H", vert))
+
         
     # start token?
+    print("Writing verts at", hex(file.tell()))
     file.write(struct.pack("<Qx", 0x0000200c01802102))
 
 
@@ -902,7 +904,8 @@ def _write(context, filepath,
 
     # write out vertices
     for key, vertex in vert_dict.items():
-        print(vertex)
+        if verbose:
+            print(vertex)
         file.write(vertex.convert2bin())
 
     # write separator 0x000000080008000000
@@ -1016,6 +1019,7 @@ Currently the exporter lacks these features:
 
 
 def save(operator, context, filepath="",
+         use_verbose=False,
          use_triangles=False,
          use_edges=True,
          use_normals=False,
@@ -1035,6 +1039,7 @@ def save(operator, context, filepath="",
          ):
 
     _write(context, filepath,
+           EXPORT_USE_VERBOSE=use_verbose,
            EXPORT_TRI=use_triangles,
            EXPORT_EDGES=use_edges,
            EXPORT_NORMALS=use_normals,
