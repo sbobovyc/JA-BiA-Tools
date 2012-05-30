@@ -311,7 +311,7 @@ def load(operator, context, filepath,
     This function passes the file and sends the data off
         to be split into objects and then converted into mesh objects
     '''
-    print('\nimporting obj %r' % filepath)
+    print('\nimporting crf %r' % filepath)
 
     filepath = os.fsencode(filepath)
 

@@ -758,37 +758,44 @@ def _write(context, filepath,
 ##    bpy.ops.mesh.select_all(action='SELECT')
 ##    bpy.ops.mesh.quads_convert_to_tris()
     
+
+
+    print('\nexporting crf %r' % filepath)
+    num_meshes = len(bpy.context.selected_objects)
+    if num_meshes < 1:
+        raise Exception("Must select at least one object to export CRF")
+    print("Number of meshes", num_meshes)
+    ob_primary = bpy.context.selected_objects[0]
+    print(ob_primary)
+
     # Exit edit mode before exporting, so current object states are exported properly.
     if bpy.ops.object.mode_set.poll():
         bpy.ops.object.mode_set(mode='OBJECT')
+        
 
-    
-
-    print(base_name, ext)
-    ob = bpy.context.object
-    print(ob)
-    mesh = ob.data
-    matrix_world = ob.matrix_basis # world matrix so we can transform from local to global coordinates
+    matrix_world = ob_primary.matrix_basis # world matrix so we can transform from local to global coordinates
 
     # write header
     file.write(b"fknc")
     file.write(struct.pack("<I", 1))
     file.write(struct.pack("<II", *(0xFFFF, 0xFFFF))) #TODO footer 1 and 2
     file.write(struct.pack("<IHH", *(2, 6, 0xFFFF)))# object type 2, magick 6, magick 0xFFFF
-    file.write(struct.pack("<I", 1))    #number of meshes in file, for now just one
-    LoX = ob.bound_box[0][0]
-    LoY = ob.bound_box[0][1]
-    LoZ = ob.bound_box[0][2]
-    HiX = ob.bound_box[6][0]
-    HiY = ob.bound_box[6][1]
-    HiZ = ob.bound_box[6][2]   
-
-    print("Model: 0, vertices: %i, faces: %i" % (len(mesh.vertices), len(mesh.faces)))
+    file.write(struct.pack("<I", num_meshes))    #number of meshes in file, for now just one
+    LoX = ob_primary.bound_box[0][0]
+    LoY = ob_primary.bound_box[0][1]
+    LoZ = ob_primary.bound_box[0][2]
+    HiX = ob_primary.bound_box[6][0]
+    HiY = ob_primary.bound_box[6][1]
+    HiZ = ob_primary.bound_box[6][2]   
     print("Bounding box (%f, %f, %f) (%f, %f, %f)" % (LoX, LoY, LoZ, HiX, HiY, HiZ))
     file.write(struct.pack("<ffffff", *(LoX, LoY, LoZ, HiX, HiY, HiZ))) # bounding box
+    # end of header
+    
+    mesh = ob_primary.data
     number_of_verteces = len(mesh.vertices)
     number_of_faces = len(mesh.faces)
     file.write(struct.pack("<II", *(number_of_verteces, number_of_faces))) # number for vertices and faces
+    print("Model: 0, vertices: %i, faces: %i" % (len(mesh.vertices), len(mesh.faces)))
     # face/vertex index list
     #TODO, the first face always has the first two vertices switched. Don't know if this will affect
     # anything. Need to verify that this does not cause a problem.
