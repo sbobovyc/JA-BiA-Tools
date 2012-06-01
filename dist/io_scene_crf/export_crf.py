@@ -678,11 +678,11 @@ class CRF_vertex(object):
         self.diffuse_blue = int(self.diffuse_blue_blend * 255)
         self.diffuse_green = int(self.diffuse_green_blend * 255)
         self.diffuse_red = int(self.diffuse_red_blend * 255)
-        self.diffuse_alpha = 0 #TODO change from constant
+        self.diffuse_alpha = int(self.diffuse_alpha_blend * 255)
         self.specular_blue = int(self.specular_blue_blend * 255)
         self.specular_green = int(self.specular_green_blend * 255)
         self.specular_red = int(self.specular_red_blend * 255)
-        self.specular_alpha = 0 #TODO change from constant      
+        self.specular_alpha = int(self.specular_alpha_blend * 255)
         self.u0 = int(((self.u0_blend - 0.5) * 2) * 32768)
         self.v0 = int(((self.v0_blend - 0.5) * -2) * 32768)
         self.u1 = int(((self.u1_blend - 0.5) * 2) * 32768)
@@ -839,18 +839,41 @@ def _write(context, filepath,
 
 
         # write out verteces, kd, ks, and UVs
-        if len(mesh.vertex_colors) == 2:
-            vtex_diffuse = mesh.vertex_colors[0] # only consider first layer for diffuse
-            vtex_specular = mesh.vertex_colors[1] # only consider second layer for specular
+        if len(mesh.vertex_colors) <= 4:
+            vtex_diffuse_colors = mesh.vertex_colors[0] # only consider first layer for diffuse
+            vtex_diffuse_alpha = mesh.vertex_colors[1] # only consider second layer for diffuse alpha
+            vtex_specular_colors = mesh.vertex_colors[2] # only consider third layer for specular
+            vtex_specular_alpha = mesh.vertex_colors[3] # only consider second layer for specular alpha
+        elif len(mesh.vertex_colors) == 3:
+            vtex_diffuse_colors = mesh.vertex_colors[0] # only consider first layer for diffuse
+            vtex_diffuse_alpha = mesh.vertex_colors[1] # only consider second layer for diffuse alpha
+            vtex_specular_colors = mesh.vertex_colors[2] # only consider third layer for specular
+            vtex_specular_alpha = mesh.vertex_colors.new()
+            vtex_specular_alpha.name = "vertex_specular_alpha"            
+        elif len(mesh.vertex_colors) == 2:
+            vtex_diffuse_colors = mesh.vertex_colors[0] # only consider first layer for diffuse
+            vtex_specular_colors = mesh.vertex_colors[1] # only consider second layer for specular
+            vtex_diffuse_alpha = mesh.vertex_colors.new()
+            vtex_diffuse_alpha.name = "vertex_diffuse_alpha"  
+            vtex_specular_alpha = mesh.vertex_colors.new()
+            vtex_specular_alpha.name = "vertex_specular_alpha"              
         elif len(mesh.vertex_colors) == 1:
-            vtex_diffuse = mesh.vertex_colors[0] # only consider first layer for diffuse
-            vtex_specular = mesh.vertex_colors.new()
-            vtex_specular.name = "vertex_colors"
+            vtex_diffuse_colors = mesh.vertex_colors[0] # only consider first layer for diffuse
+            vtex_specular_colors = mesh.vertex_colors.new()
+            vtex_specular_colors.name = "vertex_specular_colors"
+            vtex_diffuse_alpha = mesh.vertex_colors.new()
+            vtex_diffuse_alpha.name = "vertex_diffuse_alpha"  
+            vtex_specular_alpha = mesh.vertex_colors.new()
+            vtex_specular_alpha.name = "vertex_specular_alpha"               
         else:                                       # if no vertex colors, create default layers
-            vtex_diffuse = mesh.vertex_colors.new()
-            vtex_diffuse.name = "vertex_colors"
-            vtex_specular = mesh.vertex_colors.new()
-            vtex_specular.name = "vertex_colors"
+            vtex_diffuse_colors = mesh.vertex_colors.new()
+            vtex_diffuse_colors.name = "vertex_diffuse_colors"
+            vtex_specular_colors = mesh.vertex_colors.new()
+            vtex_specular_colors.name = "vertex_specular_colors"
+            vtex_diffuse_alpha = mesh.vertex_colors.new()
+            vtex_diffuse_alpha.name = "vertex_diffuse_alpha"  
+            vtex_specular_alpha = mesh.vertex_colors.new()
+            vtex_specular_alpha.name = "vertex_specular_alpha" 
 
         vert_dict = {} # will store CRF_vertex objects
         for face in mesh.faces:
@@ -860,14 +883,14 @@ def _write(context, filepath,
                 vert.index = verts_in_face[0]
                 # get vertex coords and make sure to translate from local to global
                 vert.x_blend, vert.y_blend, vert.z_blend = matrix_world * mesh.vertices[verts_in_face[0]].co.xyz 
-                vert.diffuse_blue_blend = vtex_diffuse.data[face.index].color1[2] 
-                vert.diffuse_green_blend = vtex_diffuse.data[face.index].color1[1] 
-                vert.diffuse_red_blend = vtex_diffuse.data[face.index].color1[0] 
-                vert.diffuse_alpha_blend = 0
-                vert.specular_blue_blend = vtex_specular.data[face.index].color1[2] 
-                vert.specular_green_blend = vtex_specular.data[face.index].color1[1] 
-                vert.specular_red_blend = vtex_specular.data[face.index].color1[0] 
-                vert.specular_alpha_blend = 0       
+                vert.diffuse_blue_blend = vtex_diffuse_colors.data[face.index].color1[2] 
+                vert.diffuse_green_blend = vtex_diffuse_colors.data[face.index].color1[1] 
+                vert.diffuse_red_blend = vtex_diffuse_colors.data[face.index].color1[0] 
+                vert.diffuse_alpha_blend = vtex_diffuse_alpha.data[face.index].color1[0] # only use the first color for alpha
+                vert.specular_blue_blend = vtex_specular_colors.data[face.index].color1[2] 
+                vert.specular_green_blend = vtex_specular_colors.data[face.index].color1[1] 
+                vert.specular_red_blend = vtex_specular_colors.data[face.index].color1[0] 
+                vert.specular_alpha_blend = vtex_specular_alpha.data[face.index].color1[0] # only use the first color for alpha       
                 vert.u0_blend = uv_tex0.data[face.index].uv1[0] 
                 vert.v0_blend = uv_tex0.data[face.index].uv1[1]
                 vert.u1_blend = uv_tex1.data[face.index].uv1[0] 
@@ -882,14 +905,14 @@ def _write(context, filepath,
                 vert.index = verts_in_face[1]
                 # get vertex coords and make sure to translate from local to global
                 vert.x_blend, vert.y_blend, vert.z_blend = matrix_world * mesh.vertices[verts_in_face[1]].co.xyz
-                vert.diffuse_blue_blend = vtex_diffuse.data[face.index].color2[2] 
-                vert.diffuse_green_blend = vtex_diffuse.data[face.index].color2[1] 
-                vert.diffuse_red_blend = vtex_diffuse.data[face.index].color2[0] 
-                vert.diffuse_alpha_blend = 0
-                vert.specular_blue_blend = vtex_specular.data[face.index].color2[2] 
-                vert.specular_green_blend = vtex_specular.data[face.index].color2[1] 
-                vert.specular_red_blend = vtex_specular.data[face.index].color2[0] 
-                vert.specular_alpha_blend = 0       
+                vert.diffuse_blue_blend = vtex_diffuse_colors.data[face.index].color2[2] 
+                vert.diffuse_green_blend = vtex_diffuse_colors.data[face.index].color2[1] 
+                vert.diffuse_red_blend = vtex_diffuse_colors.data[face.index].color2[0] 
+                vert.diffuse_alpha_blend = vtex_diffuse_alpha.data[face.index].color1[0] # only use the first color for alpha
+                vert.specular_blue_blend = vtex_specular_colors.data[face.index].color2[2] 
+                vert.specular_green_blend = vtex_specular_colors.data[face.index].color2[1] 
+                vert.specular_red_blend = vtex_specular_colors.data[face.index].color2[0] 
+                vert.specular_alpha_blend = vtex_specular_alpha.data[face.index].color1[0] # only use the first color for alpha              
                 vert.u0_blend = uv_tex0.data[face.index].uv2[0] 
                 vert.v0_blend = uv_tex0.data[face.index].uv2[1]
                 vert.u1_blend = uv_tex1.data[face.index].uv2[0] 
@@ -904,14 +927,14 @@ def _write(context, filepath,
                 vert.index = verts_in_face[2]
                 # get vertex coords and make sure to translate from local to global
                 vert.x_blend, vert.y_blend, vert.z_blend = matrix_world * mesh.vertices[verts_in_face[2]].co.xyz
-                vert.diffuse_blue_blend = vtex_diffuse.data[face.index].color3[2] 
-                vert.diffuse_green_blend = vtex_diffuse.data[face.index].color3[1] 
-                vert.diffuse_red_blend = vtex_diffuse.data[face.index].color3[0] 
-                vert.diffuse_alpha_blend = 0
-                vert.specular_blue_blend = vtex_specular.data[face.index].color3[2] 
-                vert.specular_green_blend = vtex_specular.data[face.index].color3[1] 
-                vert.specular_red_blend = vtex_specular.data[face.index].color3[0] 
-                vert.specular_alpha_blend = 0       
+                vert.diffuse_blue_blend = vtex_diffuse_colors.data[face.index].color3[2] 
+                vert.diffuse_green_blend = vtex_diffuse_colors.data[face.index].color3[1] 
+                vert.diffuse_red_blend = vtex_diffuse_colors.data[face.index].color3[0] 
+                vert.diffuse_alpha_blend = vtex_diffuse_alpha.data[face.index].color1[0] # only use the first color for alpha
+                vert.specular_blue_blend = vtex_specular_colors.data[face.index].color3[2] 
+                vert.specular_green_blend = vtex_specular_colors.data[face.index].color3[1] 
+                vert.specular_red_blend = vtex_specular_colors.data[face.index].color3[0] 
+                vert.specular_alpha_blend = vtex_specular_alpha.data[face.index].color1[0] # only use the first color for alpha              
                 vert.u0_blend = uv_tex0.data[face.index].uv3[0] 
                 vert.v0_blend = uv_tex0.data[face.index].uv3[1]
                 vert.u1_blend = uv_tex1.data[face.index].uv3[0] 
