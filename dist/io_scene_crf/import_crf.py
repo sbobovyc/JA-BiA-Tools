@@ -16,8 +16,6 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-# <pep8 compliant>
-
 # Script copyright (C) Stanislav Bobovych
 
 """
@@ -149,28 +147,44 @@ def setVertexDiffuseColors(me, faces, vertex_diffuse):
     vtex_diffuse.name = "vertex_diffuse_colors"
     for face in faces:
         verts_in_face = face.vertices[:]
-        vtex_diffuse.data[face.index].color1 = vertex_diffuse[verts_in_face[0]]
-        vtex_diffuse.data[face.index].color2 = vertex_diffuse[verts_in_face[1]]
-        vtex_diffuse.data[face.index].color3 = vertex_diffuse[verts_in_face[2]]
-
-##    for n in vtex_diffuse.data:
-##        print(n.color1, n.color2, n.color3)
+        vtex_diffuse.data[face.index].color1 = vertex_diffuse[verts_in_face[0]][0:3]
+        vtex_diffuse.data[face.index].color2 = vertex_diffuse[verts_in_face[1]][0:3]
+        vtex_diffuse.data[face.index].color3 = vertex_diffuse[verts_in_face[2]][0:3]
+    
+    vtex_diffuse = me.vertex_colors.new()
+    vtex_diffuse.name = "vertex_diffuse_alpha"
+    for face in faces:
+        verts_in_face = face.vertices[:]
+        alpha0 = (vertex_diffuse[verts_in_face[0]][3], vertex_diffuse[verts_in_face[0]][3], vertex_diffuse[verts_in_face[0]][3])
+        alpha1 = (vertex_diffuse[verts_in_face[1]][3], vertex_diffuse[verts_in_face[1]][3], vertex_diffuse[verts_in_face[1]][3])
+        alpha2 = (vertex_diffuse[verts_in_face[2]][3], vertex_diffuse[verts_in_face[2]][3], vertex_diffuse[verts_in_face[2]][3])
+        vtex_diffuse.data[face.index].color1 = alpha0
+        vtex_diffuse.data[face.index].color2 = alpha1
+        vtex_diffuse.data[face.index].color3 = alpha2
         
-    return vtex_diffuse
+    #return vtex_diffuse
 
 def setVertexSpecularColors(me, faces, vertex_specular):
     vtex_specular = me.vertex_colors.new()
     vtex_specular.name = "vertex_specular_colors"
     for face in faces:
         verts_in_face = face.vertices[:]
-        vtex_specular.data[face.index].color1 = vertex_specular[verts_in_face[0]]
-        vtex_specular.data[face.index].color2 = vertex_specular[verts_in_face[1]]
-        vtex_specular.data[face.index].color3 = vertex_specular[verts_in_face[2]]
-
-##    for n in vtex_diffuse.data:
-##        print(n.color1, n.color2, n.color3)
+        vtex_specular.data[face.index].color1 = vertex_specular[verts_in_face[0]][0:3]
+        vtex_specular.data[face.index].color2 = vertex_specular[verts_in_face[1]][0:3]
+        vtex_specular.data[face.index].color3 = vertex_specular[verts_in_face[2]][0:3]
         
-    return vtex_specular
+    vtex_specular = me.vertex_colors.new()
+    vtex_specular.name = "vertex_specular_alpha"
+    for face in faces:
+        verts_in_face = face.vertices[:]
+        alpha0 = (vertex_specular[verts_in_face[0]][3], vertex_specular[verts_in_face[0]][3], vertex_specular[verts_in_face[0]][3])
+        alpha1 = (vertex_specular[verts_in_face[1]][3], vertex_specular[verts_in_face[1]][3], vertex_specular[verts_in_face[1]][3])
+        alpha2 = (vertex_specular[verts_in_face[2]][3], vertex_specular[verts_in_face[2]][3], vertex_specular[verts_in_face[2]][3])
+        vtex_specular.data[face.index].color1 = alpha0
+        vtex_specular.data[face.index].color2 = alpha1
+        vtex_specular.data[face.index].color3 = alpha2
+        
+    #return vtex_specular
 
 
 def parseShaderInfo(file, specular_list):
@@ -401,10 +415,8 @@ def load(operator, context, filepath,
                 print()
 
             # convert 8 bit to float
-            # notice that I don't include alpha
-            #TODO Add alpha support
-            vertex_diffuse.append( (diffuse_red/255.0, diffuse_green/255.0, diffuse_blue/255.0) )
-            vertex_specular.append( (specular_red/255.0, specular_green/255.0, specular_blue/255.0) )
+            vertex_diffuse.append( (diffuse_red/255.0, diffuse_green/255.0, diffuse_blue/255.0, diffuse_alpha/255.0) )
+            vertex_specular.append( (specular_red/255.0, specular_green/255.0, specular_blue/255.0, specular_alpha/255.0) )
 
         #read in separator 0x000000080008000000
         print("Separator at", hex(file.tell()))
