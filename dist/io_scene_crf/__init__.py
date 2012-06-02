@@ -75,9 +75,9 @@ class ImportCRF(bpy.types.Operator, ImportHelper):
             description="Use shadeless materials",
             default=False,
             )
-    use_vertex_colors = BoolProperty(
-        name="Vertex Colors",
-        description="Use vertex colors",
+    viz_normals = BoolProperty(
+        name="Visualize Normals",
+        description="Use vertex colors to visualize normals",
         default=True,
         )
     use_specular = BoolProperty(
@@ -149,7 +149,7 @@ class ImportCRF(bpy.types.Operator, ImportHelper):
         row.prop(self, "use_shadeless")        
 
         row = layout.split(percentage=0.67)
-        row.prop(self, "use_vertex_colors")
+        row.prop(self, "viz_normals")
         row = layout.split(percentage=0.67)
         row.prop(self, "use_specular")
 

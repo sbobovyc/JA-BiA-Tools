@@ -19,6 +19,7 @@
 import os
 import time
 import struct
+import math
 import bpy
 import mathutils
 import bpy_extras.io_utils
@@ -614,10 +615,10 @@ class CRF_vertex(object):
         
         Raw CRF variables:
         CRF_vertex.x, vert.y, vert.z 
-        CRF_vertex.diffuse_blue 
-        CRF_vertex.diffuse_green 
-        CRF_vertex.diffuse_red 
-        CRF_vertex.diffuse_alpha 
+        CRF_vertex.normal_x 
+        CRF_vertex.normal_y 
+        CRF_vertex.normal_z 
+        CRF_vertex.normal_w 
         CRF_vertex.specular_blue 
         CRF_vertex.specular_green
         CRF_vertex.specular_red 
@@ -630,10 +631,10 @@ class CRF_vertex(object):
 
         Blender variables
         CRF_vertex.x_blend, vert.y_blend, vert.z_blend 
-        CRF_vertex.diffuse_blue_blend 
-        CRF_vertex.diffuse_green_blend 
-        CRF_vertex.diffuse_red_blend 
-        CRF_vertex.diffuse_alpha_blend #Not iplemented
+        CRF_vertex.normal_x_blend 
+        CRF_vertex.normal_y_blend 
+        CRF_vertex.normal_z_blend 
+        CRF_vertex.normal_w_blend 
         CRF_vertex.specular_blue_blend 
         CRF_vertex.specular_green_blend
         CRF_vertex.specular_red_blend 
@@ -650,23 +651,31 @@ class CRF_vertex(object):
         string = "Vertex index = %s\n" % (self.index)
         string += "Blender values:\n"
         string += "xyz = %f %f %f\n" % (self.x_blend, self.y_blend, self.z_blend)
-        string += "\tdiffuse BGRA  = %f %f %f %f\n" % (self.diffuse_blue_blend, self.diffuse_green_blend, self.diffuse_red_blend, self.diffuse_alpha_blend)                                                                    
-        string += "\tspecular BGRA  = %f %f %f %f\n" % (self.diffuse_blue_blend, self.diffuse_green_blend, self.diffuse_red_blend, self.diffuse_alpha_blend)                                                 
+        string += "\tvertex normal XYZW  = %f %f %f %f\n" % (self.normal_x_blend, self.normal_y_blend, self.normal_z_blend, self.normal_w_blend)                                                                    
+        string += "\tspecular BGRA  = %f %f %f %f\n" % (self.normal_x_blend, self.normal_y_blend, self.normal_z_blend, self.normal_w_blend)                                                 
         string += "\tuv0 = %f %f\n" % (self.u0_blend, self.v0_blend)
         string += "\tuv1 = %f %f\n" % (self.u1_blend, self.v1_blend)
         string += "\tblendeweight = 0x%x\n" % (self.blendweights1_blend & 0xffffffff)     
 
         string += "CRF values:\n"
         string += "xyz = %f %f %f\n" % (self.x, self.y, self.z)        
-        string += "\tdiffuse BGRA  = %i %i %i %i, %s %s %s %s\n" % (self.diffuse_blue, self.diffuse_green, self.diffuse_red, self.diffuse_alpha,
-                                                                     hex(self.diffuse_blue), hex(self.diffuse_green), hex(self.diffuse_red), hex(self.diffuse_alpha))
-        string += "\tspecular BGRA  = %i %i %i %i, %s %s %s %s\n" % (self.diffuse_blue, self.diffuse_green, self.diffuse_red, self.diffuse_alpha,
+        string += "\tvertex normal XYZW  = %i %i %i %i, %s %s %s %s\n" % (self.normal_x, self.normal_y, self.normal_z, self.normal_w,
+                                                                     hex(self.normal_x), hex(self.normal_y), hex(self.normal_z), hex(self.normal_w))
+        string += "\tspecular BGRA  = %i %i %i %i, %s %s %s %s\n" % (self.normal_x, self.normal_y, self.normal_z, self.normal_w,
                                                                      hex(self.specular_blue), hex(self.specular_green), hex(self.specular_red), hex(self.specular_alpha))
         string += "\tuv0 = %i %i, 0x%x 0x%x\n" % (self.u0, self.v0, self.u0, self.v0)
         string += "\tuv1 = %i %i, 0x%x 0x%x\n" % (self.u1, self.v1, self.u1, self.v1)        
         string += "\tblendeweight = 0x%x\n" % (self.blendweights1 & 0xffffffff)       
         return string
 
+    def float2uint(self, f_number):
+        if f_number > 0.0:
+            return int(128 + f_number * 127)
+        elif f_number < 0.0:
+            return int(128 - math.fabs(f_number) * 128)
+        else:
+            return 128
+        
     def blend2raw(self):
         """ Convert blender values to raw values """
         #TODO find out how CRF object coordinates work (global or local)
@@ -674,15 +683,18 @@ class CRF_vertex(object):
         self.y = self.z_blend
         self.z = self.y_blend
         self.x = -self.x # mirror vertex across x axis
-        self.z = -self.z # mirror vertex across z axis        
-        self.diffuse_blue = int(self.diffuse_blue_blend * 255)
-        self.diffuse_green = int(self.diffuse_green_blend * 255)
-        self.diffuse_red = int(self.diffuse_red_blend * 255)
-        self.diffuse_alpha = int(self.diffuse_alpha_blend * 255)
+        self.z = -self.z # mirror vertex across z axis
+        
+        self.normal_x = self.float2uint(self.normal_x_blend)
+        self.normal_y = self.float2uint(-self.normal_y_blend) # flip y direction
+        self.normal_z = self.float2uint(-self.normal_z_blend) # flip z direction
+        self.normal_w = self.float2uint(self.normal_w_blend)
+        
         self.specular_blue = int(self.specular_blue_blend * 255)
         self.specular_green = int(self.specular_green_blend * 255)
         self.specular_red = int(self.specular_red_blend * 255)
         self.specular_alpha = int(self.specular_alpha_blend * 255)
+        
         self.u0 = int(((self.u0_blend - 0.5) * 2) * 32768)
         self.v0 = int(((self.v0_blend - 0.5) * -2) * 32768)
         self.u1 = int(((self.u1_blend - 0.5) * 2) * 32768)
@@ -709,12 +721,12 @@ class CRF_vertex(object):
         
     def convert2bin(self):        
         binstring = struct.pack("<fffBBBBBBBBhhhhI", self.x, self.y, self.z,
-                                                         self.diffuse_blue, self.diffuse_green, self.diffuse_red, self.diffuse_alpha,
+                                                         self.normal_x, self.normal_y, self.normal_z, self.normal_w,
                                                          self.specular_blue, self.specular_green, self.specular_red, self.specular_alpha,
                                                          self.u0, self.v0, self.u1, self.v1, self.blendweights1)
 ##        binstring = b""
 ##        binstring += struct.pack("<fff", self.x, self.y, self.z)
-##        binstring += struct.pack("<BBBBBBBB", self.diffuse_blue, self.diffuse_green, self.diffuse_red, self.diffuse_alpha,
+##        binstring += struct.pack("<BBBBBBBB", self.normal_x, self.normal_y, self.normal_z, self.normal_w,
 ##                                                         self.specular_blue, self.specular_green, self.specular_red, self.specular_alpha)
 ##        binstring += struct.pack("<hhhhI", self.u0, self.v0, self.u1, self.v1, self.blendweights1)
 
@@ -841,28 +853,28 @@ def _write(context, filepath,
         # write out verteces, kd, ks, and UVs
         if len(mesh.vertex_colors) >= 4:
             vtex_diffuse_colors = mesh.vertex_colors[0] # only consider first layer for diffuse
-            vtex_diffuse_alpha = mesh.vertex_colors[1] # only consider second layer for diffuse alpha
+            vtex_normal_w = mesh.vertex_colors[1] # only consider second layer for diffuse alpha
             vtex_specular_colors = mesh.vertex_colors[2] # only consider third layer for specular
             vtex_specular_alpha = mesh.vertex_colors[3] # only consider second layer for specular alpha
         elif len(mesh.vertex_colors) == 3:
             vtex_diffuse_colors = mesh.vertex_colors[0] # only consider first layer for diffuse
-            vtex_diffuse_alpha = mesh.vertex_colors[1] # only consider second layer for diffuse alpha
+            vtex_normal_w = mesh.vertex_colors[1] # only consider second layer for diffuse alpha
             vtex_specular_colors = mesh.vertex_colors[2] # only consider third layer for specular
             vtex_specular_alpha = mesh.vertex_colors.new()
             vtex_specular_alpha.name = "vertex_specular_alpha"            
         elif len(mesh.vertex_colors) == 2:
             vtex_diffuse_colors = mesh.vertex_colors[0] # only consider first layer for diffuse
             vtex_specular_colors = mesh.vertex_colors[1] # only consider second layer for specular
-            vtex_diffuse_alpha = mesh.vertex_colors.new()
-            vtex_diffuse_alpha.name = "vertex_diffuse_alpha"  
+            vtex_normal_w = mesh.vertex_colors.new()
+            vtex_normal_w.name = "vertex_diffuse_alpha"  
             vtex_specular_alpha = mesh.vertex_colors.new()
             vtex_specular_alpha.name = "vertex_specular_alpha"              
         elif len(mesh.vertex_colors) == 1:
             vtex_diffuse_colors = mesh.vertex_colors[0] # only consider first layer for diffuse
             vtex_specular_colors = mesh.vertex_colors.new()
             vtex_specular_colors.name = "vertex_specular_colors"
-            vtex_diffuse_alpha = mesh.vertex_colors.new()
-            vtex_diffuse_alpha.name = "vertex_diffuse_alpha"  
+            vtex_normal_w = mesh.vertex_colors.new()
+            vtex_normal_w.name = "vertex_diffuse_alpha"  
             vtex_specular_alpha = mesh.vertex_colors.new()
             vtex_specular_alpha.name = "vertex_specular_alpha"               
         else:                                       # if no vertex colors, create default layers
@@ -870,8 +882,8 @@ def _write(context, filepath,
             vtex_diffuse_colors.name = "vertex_diffuse_colors"
             vtex_specular_colors = mesh.vertex_colors.new()
             vtex_specular_colors.name = "vertex_specular_colors"
-            vtex_diffuse_alpha = mesh.vertex_colors.new()
-            vtex_diffuse_alpha.name = "vertex_diffuse_alpha"  
+            vtex_normal_w = mesh.vertex_colors.new()
+            vtex_normal_w.name = "vertex_diffuse_alpha"  
             vtex_specular_alpha = mesh.vertex_colors.new()
             vtex_specular_alpha.name = "vertex_specular_alpha" 
 
@@ -883,10 +895,9 @@ def _write(context, filepath,
                 vert.index = verts_in_face[0]
                 # get vertex coords and make sure to translate from local to global
                 vert.x_blend, vert.y_blend, vert.z_blend = matrix_world * mesh.vertices[verts_in_face[0]].co.xyz 
-                vert.diffuse_blue_blend = vtex_diffuse_colors.data[face.index].color1[2] 
-                vert.diffuse_green_blend = vtex_diffuse_colors.data[face.index].color1[1] 
-                vert.diffuse_red_blend = vtex_diffuse_colors.data[face.index].color1[0] 
-                vert.diffuse_alpha_blend = vtex_diffuse_alpha.data[face.index].color1[0] # only use the first color for alpha
+                vert.normal_x_blend, vert.normal_y_blend, vert.normal_z_blend = mesh.vertices[verts_in_face[0]].normal
+                print(vert.normal_x_blend, vert.normal_y_blend, vert.normal_z_blend)
+                vert.normal_w_blend = 1.0
                 vert.specular_blue_blend = vtex_specular_colors.data[face.index].color1[2] 
                 vert.specular_green_blend = vtex_specular_colors.data[face.index].color1[1] 
                 vert.specular_red_blend = vtex_specular_colors.data[face.index].color1[0] 
@@ -898,17 +909,17 @@ def _write(context, filepath,
                 vert.blendweights1_blend = 0x00018080 #TODO change from constant
                 vert.blend2raw()
                 vert_dict[verts_in_face[0]] = vert # put object in dictionary
-                #print(vert)
+                if verbose:
+                    print(vert)
 
             if not verts_in_face[1] in vert_dict:
                 vert = CRF_vertex()
                 vert.index = verts_in_face[1]
                 # get vertex coords and make sure to translate from local to global
                 vert.x_blend, vert.y_blend, vert.z_blend = matrix_world * mesh.vertices[verts_in_face[1]].co.xyz
-                vert.diffuse_blue_blend = vtex_diffuse_colors.data[face.index].color2[2] 
-                vert.diffuse_green_blend = vtex_diffuse_colors.data[face.index].color2[1] 
-                vert.diffuse_red_blend = vtex_diffuse_colors.data[face.index].color2[0] 
-                vert.diffuse_alpha_blend = vtex_diffuse_alpha.data[face.index].color1[0] # only use the first color for alpha
+                vert.normal_x_blend, vert.normal_y_blend, vert.normal_z_blend = mesh.vertices[verts_in_face[1]].normal
+                print(vert.normal_x_blend, vert.normal_y_blend, vert.normal_z_blend)
+                vert.normal_w_blend = 1.0
                 vert.specular_blue_blend = vtex_specular_colors.data[face.index].color2[2] 
                 vert.specular_green_blend = vtex_specular_colors.data[face.index].color2[1] 
                 vert.specular_red_blend = vtex_specular_colors.data[face.index].color2[0] 
@@ -920,17 +931,17 @@ def _write(context, filepath,
                 vert.blendweights1_blend = 0x00018080 #TODO change from constant
                 vert.blend2raw()
                 vert_dict[verts_in_face[1]] = vert # put object in dictionary
-                #print(vert)     
+                if verbose:
+                    print(vert)     
 
             if not verts_in_face[2] in vert_dict:
                 vert = CRF_vertex()
                 vert.index = verts_in_face[2]
                 # get vertex coords and make sure to translate from local to global
                 vert.x_blend, vert.y_blend, vert.z_blend = matrix_world * mesh.vertices[verts_in_face[2]].co.xyz
-                vert.diffuse_blue_blend = vtex_diffuse_colors.data[face.index].color3[2] 
-                vert.diffuse_green_blend = vtex_diffuse_colors.data[face.index].color3[1] 
-                vert.diffuse_red_blend = vtex_diffuse_colors.data[face.index].color3[0] 
-                vert.diffuse_alpha_blend = vtex_diffuse_alpha.data[face.index].color1[0] # only use the first color for alpha
+                vert.normal_x_blend, vert.normal_y_blend, vert.normal_z_blend = mesh.vertices[verts_in_face[2]].normal
+                print(vert.normal_x_blend, vert.normal_y_blend, vert.normal_z_blend)         
+                vert.normal_w_blend = 1.0
                 vert.specular_blue_blend = vtex_specular_colors.data[face.index].color3[2] 
                 vert.specular_green_blend = vtex_specular_colors.data[face.index].color3[1] 
                 vert.specular_red_blend = vtex_specular_colors.data[face.index].color3[0] 
@@ -942,7 +953,8 @@ def _write(context, filepath,
                 vert.blendweights1_blend = 0x00018080 #TODO change from constant
                 vert.blend2raw()
                 vert_dict[verts_in_face[2]] = vert # put object in dictionary
-                #print(vert)    
+                if verbose:
+                    print(vert)    
 
         # write out vertices
         for key, vertex in vert_dict.items():

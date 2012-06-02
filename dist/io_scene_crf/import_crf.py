@@ -80,11 +80,11 @@ def findTextureFile(path, name):
 ##    mtex.use_map_color_diffuse = True 
 ##    return mat
 
-def createMaterial(name, use_shadeless, use_vertex_colors):        
+def createMaterial(name, use_shadeless, viz_normals):        
     # Create shadeless or shaded material and MTex
     mat = bpy.data.materials.new(name)
     mat.use_shadeless = use_shadeless
-    mat.use_vertex_color_paint = use_vertex_colors   # support per vertex    
+    mat.use_vertex_color_paint = viz_normals   # support per vertex    
     return mat
 
 def addDiffuseTexture(color_filepath, mat):
@@ -125,11 +125,11 @@ def addSpecularTexture(specular_filepath, mat):
     mspec.use_map_specular = True
     
 
-def createSimpleMaterial(use_shadeless, use_vertex_colors):        
+def createSimpleMaterial(use_shadeless, viz_normals):        
     # Create shadeless or shaded material and MTex
     mat = bpy.data.materials.new('SimpleMat')
     mat.use_shadeless = use_shadeless
-    mat.use_vertex_color_paint = use_vertex_colors   # support per vertex 
+    mat.use_vertex_color_paint = viz_normals   # support per vertex 
     return mat
 
 def createTextureLayer(name, me, texFaces):
@@ -142,27 +142,25 @@ def createTextureLayer(name, me, texFaces):
         datum.uv3 = tf[2]
     return uvtex
 
-def setVertexDiffuseColors(me, faces, vertex_diffuse):
-    vtex_diffuse = me.vertex_colors.new()
-    vtex_diffuse.name = "vertex_diffuse_colors"
+def setVertexNormalsColors(me, faces, vertex_normals):
+    vtex_normals = me.vertex_colors.new()
+    vtex_normals.name = "vertex_normal_xyz"
     for face in faces:
         verts_in_face = face.vertices[:]
-        vtex_diffuse.data[face.index].color1 = vertex_diffuse[verts_in_face[0]][0:3]
-        vtex_diffuse.data[face.index].color2 = vertex_diffuse[verts_in_face[1]][0:3]
-        vtex_diffuse.data[face.index].color3 = vertex_diffuse[verts_in_face[2]][0:3]
+        vtex_normals.data[face.index].color1 = vertex_normals[verts_in_face[0]][0:3]
+        vtex_normals.data[face.index].color2 = vertex_normals[verts_in_face[1]][0:3]
+        vtex_normals.data[face.index].color3 = vertex_normals[verts_in_face[2]][0:3]
     
-    vtex_diffuse = me.vertex_colors.new()
-    vtex_diffuse.name = "vertex_diffuse_alpha"
+    vtex_normals = me.vertex_colors.new()
+    vtex_normals.name = "vertex_normal_w"
     for face in faces:
         verts_in_face = face.vertices[:]
-        alpha0 = (vertex_diffuse[verts_in_face[0]][3], vertex_diffuse[verts_in_face[0]][3], vertex_diffuse[verts_in_face[0]][3])
-        alpha1 = (vertex_diffuse[verts_in_face[1]][3], vertex_diffuse[verts_in_face[1]][3], vertex_diffuse[verts_in_face[1]][3])
-        alpha2 = (vertex_diffuse[verts_in_face[2]][3], vertex_diffuse[verts_in_face[2]][3], vertex_diffuse[verts_in_face[2]][3])
-        vtex_diffuse.data[face.index].color1 = alpha0
-        vtex_diffuse.data[face.index].color2 = alpha1
-        vtex_diffuse.data[face.index].color3 = alpha2
-        
-    #return vtex_diffuse
+        alpha0 = (vertex_normals[verts_in_face[0]][3], vertex_normals[verts_in_face[0]][3], vertex_normals[verts_in_face[0]][3])
+        alpha1 = (vertex_normals[verts_in_face[1]][3], vertex_normals[verts_in_face[1]][3], vertex_normals[verts_in_face[1]][3])
+        alpha2 = (vertex_normals[verts_in_face[2]][3], vertex_normals[verts_in_face[2]][3], vertex_normals[verts_in_face[2]][3])
+        vtex_normals.data[face.index].color1 = alpha0
+        vtex_normals.data[face.index].color2 = alpha1
+        vtex_normals.data[face.index].color3 = alpha2
 
 def setVertexSpecularColors(me, faces, vertex_specular):
     vtex_specular = me.vertex_colors.new()
@@ -315,7 +313,7 @@ def load(operator, context, filepath,
          use_verbose=False,
          use_image_search=True,
          use_shadeless=True,
-         use_vertex_colors=True,
+         viz_normals=True,
          use_specular=True,
          global_matrix=None,
          ):
@@ -360,7 +358,7 @@ def load(operator, context, filepath,
         verts_tex1 = []
         faces = []  # tuples of the faces
         face_tex = [] # tuples of uv coordinates for faces
-        vertex_diffuse = []
+        vertex_normals = []
         vertex_specular = []
 
         number_of_verteces, = struct.unpack("<I", file.read(4))
@@ -382,16 +380,16 @@ def load(operator, context, filepath,
 
         if use_verbose:
             print("Loading file, printing raw vertex information.")
-        # read in verteces, kd, ks, and UVs
+        # read in verteces, vertex normals, ks, and UVs
         for i in range(0, number_of_verteces):
             x, y, z, \
-                diffuse_blue, diffuse_green, diffuse_red, diffuse_alpha, \
+                normal_x, normal_y, normal_z, normal_w, \
                 specular_blue, specular_green, specular_red, specular_alpha, \
                 u0, v0, u1, v1, blendweights1 = struct.unpack("<fffBBBBBBBBhhhhI", file.read(32))
             
             if use_verbose:                
-                print("vert index=%s, xyz=(%s %s %s), Kd=(%s, %s, %s, %s), Ks=(%s, %s, %s, %s), uv0=(%s, %s), uv1=(%s, %s)" % (i, x,y,z, \
-                                    hex(diffuse_alpha), hex(diffuse_red), hex(diffuse_green), hex(diffuse_blue), \
+                print("vert index=%s, xyz=(%s %s %s), Normal XYZW=(%s, %s, %s, %s), Ks=(%s, %s, %s, %s), uv0=(%s, %s), uv1=(%s, %s)" % (i, x,y,z, \
+                                    hex(normal_x), hex(normal_y), hex(normal_z), hex(normal_w), \
                                     hex(specular_alpha), hex(specular_red), hex(specular_green), hex(specular_blue), \
                                     hex(u0), hex(v0), hex(u1), hex(v1)))
             # convert signed short to float
@@ -415,7 +413,7 @@ def load(operator, context, filepath,
                 print()
 
             # convert 8 bit to float
-            vertex_diffuse.append( (diffuse_red/255.0, diffuse_green/255.0, diffuse_blue/255.0, diffuse_alpha/255.0) )
+            vertex_normals.append( (normal_x/255.0, normal_y/255.0, normal_z/255.0, normal_w/255.0) )
             vertex_specular.append( (specular_red/255.0, specular_green/255.0, specular_blue/255.0, specular_alpha/255.0) )
 
         #read in separator 0x000000080008000000
@@ -482,7 +480,7 @@ def load(operator, context, filepath,
                 print("normal", face.normal)  
                 for vert in verts_in_face:  
                     print("vert", vert, " vert co", ob.data.vertices[vert].co)
-                    print("diffuse R:%s G:%s B:%s " % (vertex_diffuse[vert][0], vertex_diffuse[vert][1], vertex_diffuse[vert][2]))
+                    print("Normal X:%s Y:%s Z:%s " % (vertex_normal[vert][0], vertex_normal[vert][1], vertex_normal[vert][2]))
                     print("specular R:%s G:%s B:%s " % (vertex_specular[vert][0], vertex_specular[vert][1], vertex_specular[vert][2]))
                     print("UV0: ", verts_tex0[vert])
                     print()
@@ -498,7 +496,7 @@ def load(operator, context, filepath,
             normals_filepath = findTextureFile(os.fsdecode(filepath),  normal_name.decode(sys.stdout.encoding))
             specular_filepath = findTextureFile(os.fsdecode(filepath),  specular_name.decode(sys.stdout.encoding))            
             print(texture_filepath, normals_filepath, specular_filepath)            
-            mat = createMaterial('TexMat', use_shadeless, use_vertex_colors)
+            mat = createMaterial('TexMat', use_shadeless, viz_normals)
             if texture_filepath != None and texture_filepath != "":
                 addDiffuseTexture(texture_filepath, mat)
             if normals_filepath != None and normals_filepath != "":
@@ -507,18 +505,18 @@ def load(operator, context, filepath,
                 addSpecularTexture(specular_filepath, mat)                
             ob.data.materials.append(mat)
 
-        if use_vertex_colors:
-            setVertexDiffuseColors(me, ob.data.faces, vertex_diffuse)
+        if viz_normals:
+            setVertexNormalsColors(me, ob.data.faces, vertex_normals)
             # if no materials exists, create one+
             if len(ob.data.materials) == 0 and not use_image_search:
-                mat = createMaterial('SimpleMat', use_shadeless, use_vertex_colors)
+                mat = createMaterial('SimpleMat', use_shadeless, viz_normals)
                 ob.data.materials.append(mat)
                 
         if use_specular:
             setVertexSpecularColors(me, ob.data.faces, vertex_specular)
             # if no materials exists, create one+
             if len(ob.data.materials) == 0 and not use_image_search:
-                mat = createMaterial('Specular', use_shadeless, use_vertex_colors)
+                mat = createMaterial('Specular', use_shadeless, viz_normals)
                 mat.specular_color = specular_list[0]
                 ob.data.materials.append(mat)
             else:
