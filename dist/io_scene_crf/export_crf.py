@@ -839,7 +839,7 @@ def _write(context, filepath,
 
 
         # write out verteces, kd, ks, and UVs
-        if len(mesh.vertex_colors) <= 4:
+        if len(mesh.vertex_colors) >= 4:
             vtex_diffuse_colors = mesh.vertex_colors[0] # only consider first layer for diffuse
             vtex_diffuse_alpha = mesh.vertex_colors[1] # only consider second layer for diffuse alpha
             vtex_specular_colors = mesh.vertex_colors[2] # only consider third layer for specular
