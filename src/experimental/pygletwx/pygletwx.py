@@ -181,9 +181,9 @@ class TestCanvas(WxCanvas):
         sprite = pyglet.sprite.Sprite(image, batch=batch)
         sprite.scale = 0.5
         sprite.draw()
-##        sprite.x = 0
-##        sprite.y = 0
-##        batch.draw()
+        sprite.x = 0
+        sprite.y = 0
+        batch.draw()
 
 class TestFrame(wx.Frame):
     def __init__(self, parent, title):
