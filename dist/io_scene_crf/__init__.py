@@ -21,7 +21,7 @@
 bl_info = {
     "name": "JABIA CRF format",
     "author": "Stanislav Bobovych",
-    "version": (0, 1),
+    "version": (0, 2),
     "blender": (2, 6, 2),
     "location": "File > Import-Export",
     "description": "Import-Export CRF, Import CRF mesh, UV's, "
@@ -86,11 +86,16 @@ class ImportCRF(bpy.types.Operator, ImportHelper):
         default=True,
         )
     use_image_search = BoolProperty(
-            name="Image Search",
-            description="Search subdirs for any assosiated images " \
-                        "(Warning, may be slow)",
-            default=True,
-            )
+        name="Image Search",
+        description="Search subdirs for any assosiated images " \
+                    "(Warning, may be slow)",
+        default=True,
+        )
+    use_computed_normals = BoolProperty(
+        name="Precomputed Normals",
+        description="Use vertex normals stored in CRF",
+        default=False,
+        )
 
     global_clamp_size = FloatProperty(
             name="Clamp Scale",
@@ -158,6 +163,7 @@ class ImportCRF(bpy.types.Operator, ImportHelper):
         layout.prop(self, "axis_forward")
         layout.prop(self, "axis_up")
         layout.prop(self, "use_image_search")
+        layout.prop(self, "use_computed_normals")
 
 
 class ExportOBJ(bpy.types.Operator, ExportHelper):

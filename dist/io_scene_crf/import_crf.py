@@ -185,7 +185,7 @@ def setVertexSpecularColors(me, faces, vertex_specular):
     #return vtex_specular
 
 
-def parseShaderInfo(file, specular_list):
+def parseMaterialInfo(file, specular_list):
     texture_name = b''
     normals_name = b''
     specular_name = b''
@@ -312,6 +312,7 @@ def load(operator, context, filepath,
          global_clamp_size=0.0,
          use_verbose=False,
          use_image_search=True,
+         use_computed_normals=False,
          use_shadeless=True,
          viz_normals=True,
          use_specular=True,
@@ -450,14 +451,9 @@ def load(operator, context, filepath,
         normal_name = b''
         specular_name = b''
         specular_list = []
-        texture_name, normal_name, specular_name = parseShaderInfo(file, specular_list)        
+        texture_name, normal_name, specular_name = parseMaterialInfo(file, specular_list)        
         print(texture_name, normal_name, specular_name, specular_list)    
         #next is object bone information, not parsed
-        
-
-        # fill face texture array
-##        for i in range(0, len(faces)):
-##            face_tex.append([ verts_tex0[faces[i][0]], verts_tex0[faces[i][1]], verts_tex0[faces[i][2]] ] )
         
         # deselect all
         if bpy.ops.object.select_all.poll():
@@ -511,6 +507,11 @@ def load(operator, context, filepath,
             if len(ob.data.materials) == 0 and not use_image_search:
                 mat = createMaterial('SimpleMat', use_shadeless, viz_normals)
                 ob.data.materials.append(mat)
+
+        if use_computed_normals:
+            for vertex, vertex_normal in zip(me.vertices, vertex_normals):
+                print("vertex index", vertex.index, vertex_normal)
+                vertex.normal = vertex_normal[0:3]
                 
         if use_specular:
             setVertexSpecularColors(me, ob.data.faces, vertex_specular)
