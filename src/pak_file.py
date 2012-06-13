@@ -28,8 +28,8 @@ import base64
 from Crypto.Cipher import AES
 
 PAK_SIGNATURE = 0x504B4C4501000000
-AES_KEY_CIPHERED = "eFd1cnozbFBFVEVSMjUzeg=="
-                
+AES_KEY_CIPHERED = {"JABIA" : "eFd1cnozbFBFVEVSMjUzeg==", "DLC5" : "MTNIYW5zZWxuMTBFbGYlIQ=="}
+
 class PAK_data:
     def __init_(self, dir):  
         self.file_name_length = None    # includes '\0' 
@@ -147,8 +147,14 @@ class PAK_CRYPT_file(PAK_file):
             _, real_size, block_size = struct.unpack("<HII", f.read(0xa))
         
             buf = f.read(block_size)
-        
-            aes = AES.new(base64.b64decode(AES_KEY_CIPHERED), AES.MODE_ECB)
+
+            CIPHER = ""
+            if os.path.splitext(os.path.basename(self.filepath))[0] == "dlc5_dlc5_configs_win32.pak":
+                CIPHER = "DLC5"
+            else:
+                CIPHER = "JABIA"
+            
+            aes = AES.new(base64.b64decode(AES_KEY_CIPHERED[CIPHER]), AES.MODE_ECB)
             self.io = cStringIO.StringIO(aes.decrypt(buf)[:real_size])
         self.header = PAK_header()
 
