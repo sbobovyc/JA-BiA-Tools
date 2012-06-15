@@ -28,7 +28,9 @@ import base64
 from Crypto.Cipher import AES
 
 PAK_SIGNATURE = 0x504B4C4501000000
-AES_KEY_CIPHERED = {"JABIA" : "eFd1cnozbFBFVEVSMjUzeg==", "DLC5" : "MTNIYW5zZWxuMTBFbGYlIQ=="}
+AES_KEY_CIPHERED = {"JABIA" : "eFd1cnozbFBFVEVSMjUzeg==",
+                    "DLC5" : "MTNIYW5zZWxuMTBFbGYlIQ==",
+                    "DLC6" : "MTNIYW5zZWxuMTBFbGYlIQ=="}
 
 class PAK_data:
     def __init_(self, dir):  
@@ -151,6 +153,8 @@ class PAK_CRYPT_file(PAK_file):
             CIPHER = ""
             if os.path.splitext(os.path.basename(self.filepath))[0] == "dlc5_dlc5_configs_win32.pak":
                 CIPHER = "DLC5"
+            elif os.path.splitext(os.path.basename(self.filepath))[0] == "dlc6_dlc6_configs_win32.pak":
+                CIPHER = "DLC6"                
             else:
                 CIPHER = "JABIA"
             
