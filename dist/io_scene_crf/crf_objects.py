@@ -68,10 +68,39 @@ class CRF_vertex(object):
             return int(128 - math.fabs(f_number) * 128)
         else:
             return 128
+        
+    def uint2float(self, uint_number):
+        if uint_number > 128:
+            return float(uint_number / 127)
+        elif uint_number < 128:
+            return float(-uint_number / 128)
+        else:
+            return 0.0
 
     def raw2blend(self):
-        pass
-    
+        """ Convert raw values to blender values """
+        #TODO find out how CRF object coordinates work (global or local)
+        self.x_blend = self.x
+        self.y_blend = self.y
+        self.z_blend = self.z
+        self.x_blend = -self.x_blend # mirror vertex across x axis
+
+        self.normal_x_blend = self.uint2float(self.normal_x)
+        self.normal_y_blend = self.uint2float(self.normal_y) 
+        self.normal_z_blend = self.uint2float(self.normal_z) 
+        self.normal_w_blend = self.uint2float(self.normal_w)
+
+        self.specular_blue_blend = self.specular_blue * 255
+        self.specular_green_blend = self.specular_green * 255
+        self.specular_red_blend = self.specular_red * 255
+        self.specular_alpha_blend = self.specular_alpha * 255
+
+        self.u0_blend = 0.5+(self.u0 / 32768)/2.0
+        self.v0_blend = 0.5-(self.v0 / 32768)/2.0
+        self.u1_blend = 0.5+(self.u1 / 32768)/2.0
+        self.v1_blend = 0.5-(self.v1 / 32768)/2.0
+        self.blendweights1_blend = self.blendweights1
+        
     def blend2raw(self):
         """ Convert blender values to raw values """
         #TODO find out how CRF object coordinates work (global or local)

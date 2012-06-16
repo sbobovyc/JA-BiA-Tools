@@ -41,6 +41,8 @@ import struct
 from bpy_extras.io_utils import unpack_list, unpack_face_list
 from bpy_extras.image_utils import load_image
 
+from .crf_objects import CRF_vertex
+
 def find_files(base, pattern):
     '''Return list of files matching pattern in base folder.'''
     try:
@@ -383,39 +385,23 @@ def load(operator, context, filepath,
             print("Loading file, printing raw vertex information.")
         # read in verteces, vertex normals, ks, and UVs
         for i in range(0, number_of_verteces):
-            x, y, z, \
-                normal_x, normal_y, normal_z, normal_w, \
-                specular_blue, specular_green, specular_red, specular_alpha, \
-                u0, v0, u1, v1, blendweights1 = struct.unpack("<fffBBBBBBBBhhhhI", file.read(32))
+            vertex = CRF_vertex()
+            vertex.index = i
+            vertex.x, vertex.y, vertex.z, \
+                vertex.normal_x, vertex.normal_y, vertex.normal_z, vertex.normal_w, \
+                vertex.specular_blue, vertex.specular_green, vertex.specular_red, vertex.specular_alpha, \
+                vertex.u0, vertex.v0, vertex.u1, vertex.v1, vertex.blendweights1 = struct.unpack("<fffBBBBBBBBhhhhI", file.read(32))
+            
+            vertex.raw2blend()
             
             if use_verbose:                
-                print("vert index=%s, xyz=(%s %s %s), Normal XYZW=(%s, %s, %s, %s), Ks=(%s, %s, %s, %s), uv0=(%s, %s), uv1=(%s, %s)" % (i, x,y,z, \
-                                    hex(normal_x), hex(normal_y), hex(normal_z), hex(normal_w), \
-                                    hex(specular_alpha), hex(specular_red), hex(specular_green), hex(specular_blue), \
-                                    hex(u0), hex(v0), hex(u1), hex(v1)))
-            # convert signed short to float
-            # distortions due to rounding by directx and not python
-            u0 /= 32768
-            v0 /= 32768
-            u1 /= 32768
-            v1 /= 32768
+                print(vertex)            
             
-            # mirror vertex across x axis
-            verts_loc.append((-x,y,z))
-            
-            # rectify UV map
-            uv0 = (0.5+u0/2.0, 0.5-v0/2.0)
+            verts_loc.append( (vertex.x_blend, vertex.y_blend, vertex.z_blend) )            
+            verts_tex0.append( (vertex.u0_blend, vertex.v0_blend) )        
 
-            verts_tex0.append(uv0)
-            
-            #TODO, add support for the second UV map
-            if use_verbose:
-                print("Rectified uv0:", uv0)
-                print()
-
-            # convert 8 bit to float
-            vertex_normals.append( (normal_x/255.0, normal_y/255.0, normal_z/255.0, normal_w/255.0) )
-            vertex_specular.append( (specular_red/255.0, specular_green/255.0, specular_blue/255.0, specular_alpha/255.0) )
+            vertex_normals.append( (vertex.normal_x_blend, vertex.normal_y_blend, vertex.normal_z_blend, vertex.normal_w_blend) )
+            vertex_specular.append( (vertex.specular_red_blend, vertex.specular_green_blend, vertex.specular_blue_blend, vertex.specular_alpha_blend) )
 
         #read in separator 0x000000080008000000
         print("Separator at", hex(file.tell()))
@@ -476,7 +462,7 @@ def load(operator, context, filepath,
                 print("normal", face.normal)  
                 for vert in verts_in_face:  
                     print("vert", vert, " vert co", ob.data.vertices[vert].co)
-                    print("Normal X:%s Y:%s Z:%s " % (vertex_normal[vert][0], vertex_normal[vert][1], vertex_normal[vert][2]))
+                    print("Normal X:%s Y:%s Z:%s " % (vertex_normals[vert][0], vertex_normals[vert][1], vertex_normals[vert][2]))
                     print("specular R:%s G:%s B:%s " % (vertex_specular[vert][0], vertex_specular[vert][1], vertex_specular[vert][2]))
                     print("UV0: ", verts_tex0[vert])
                     print()

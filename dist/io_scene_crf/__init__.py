@@ -82,7 +82,7 @@ class ImportCRF(bpy.types.Operator, ImportHelper):
         )
     use_specular = BoolProperty(
         name="Specular Colors",
-        description="Use specular colors",
+        description="Use vertex colors to visualize what may be specular colors",
         default=True,
         )
     use_image_search = BoolProperty(
@@ -157,13 +157,14 @@ class ImportCRF(bpy.types.Operator, ImportHelper):
         row.prop(self, "viz_normals")
         row = layout.split(percentage=0.67)
         row.prop(self, "use_specular")
+        layout.prop(self, "use_image_search")
+        layout.prop(self, "use_computed_normals")
 
         row = layout.split(percentage=0.67)
         row.prop(self, "global_clamp_size")
         layout.prop(self, "axis_forward")
         layout.prop(self, "axis_up")
-        layout.prop(self, "use_image_search")
-        layout.prop(self, "use_computed_normals")
+
 
 
 class ExportOBJ(bpy.types.Operator, ExportHelper):
