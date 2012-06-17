@@ -20,7 +20,10 @@ class CRF_vertex(object):
         CRF_vertex.v0 
         CRF_vertex.u1 
         CRF_vertex.v1 
-        CRF_vertex.blendweights1
+        CRF_vertex.blendweights1_x
+        CRF_vertex.blendweights1_y
+        CRF_vertex.blendweights1_z
+        CRF_vertex.blendweights1_w
 
         Blender variables
         CRF_vertex.x_blend, vert.y_blend, vert.z_blend 
@@ -36,7 +39,11 @@ class CRF_vertex(object):
         CRF_vertex.v0_blend 
         CRF_vertex.u1_blend 
         CRF_vertex.v1_blend 
-        CRF_vertex.blendweights1_blend #Not implemeted 
+        CRF_vertex.blendweights1_blend
+        CRF_vertex.blendweights1_x_blend
+        CRF_vertex.blendweights1_y_blend
+        CRF_vertex.blendweights1_z_blend
+        CRF_vertex.blendweights1_w_blend  
 
             
     """
@@ -48,7 +55,7 @@ class CRF_vertex(object):
         string += "\tspecular BGRA  = %f %f %f %f\n" % (self.normal_x_blend, self.normal_y_blend, self.normal_z_blend, self.normal_w_blend)                                                 
         string += "\tuv0 = %f %f\n" % (self.u0_blend, self.v0_blend)
         string += "\tuv1 = %f %f\n" % (self.u1_blend, self.v1_blend)
-        string += "\tblendeweight = 0x%x\n" % (self.blendweights1_blend & 0xffffffff)     
+        string += "\tblendeweight = %f %f %f %f\n" % (self.blendweights1_x_blend, self.blendweights1_y_blend, self.blendweights1_z_blend, self.blendweights1_w_blend)     
 
         string += "CRF values:\n"
         string += "xyz = %f %f %f\n" % (self.x, self.y, self.z)        
@@ -58,7 +65,7 @@ class CRF_vertex(object):
                                                                      hex(self.specular_blue), hex(self.specular_green), hex(self.specular_red), hex(self.specular_alpha))
         string += "\tuv0 = %i %i, 0x%x 0x%x\n" % (self.u0, self.v0, self.u0, self.v0)
         string += "\tuv1 = %i %i, 0x%x 0x%x\n" % (self.u1, self.v1, self.u1, self.v1)        
-        string += "\tblendeweight = 0x%x\n" % (self.blendweights1 & 0xffffffff)       
+        string += "\tblendeweight = 0x%x 0x%x 0x%x 0x%x\n" % (self.blendweights1_x & 0xff, self.blendweights1_y & 0xff, self.blendweights1_z & 0xff, self.blendweights1_w & 0xff)       
         return string
 
     def float2uint(self, f_number):
@@ -90,16 +97,21 @@ class CRF_vertex(object):
         self.normal_z_blend = self.uint2float(self.normal_z) 
         self.normal_w_blend = self.uint2float(self.normal_w)
 
-        self.specular_blue_blend = self.specular_blue * 255
-        self.specular_green_blend = self.specular_green * 255
-        self.specular_red_blend = self.specular_red * 255
-        self.specular_alpha_blend = self.specular_alpha * 255
+        self.specular_blue_blend = self.specular_blue / 255
+        self.specular_green_blend = self.specular_green / 255
+        self.specular_red_blend = self.specular_red / 255
+        self.specular_alpha_blend = self.specular_alpha / 255
 
         self.u0_blend = 0.5+(self.u0 / 32768)/2.0
         self.v0_blend = 0.5-(self.v0 / 32768)/2.0
         self.u1_blend = 0.5+(self.u1 / 32768)/2.0
         self.v1_blend = 0.5-(self.v1 / 32768)/2.0
-        self.blendweights1_blend = self.blendweights1
+        
+        self.blendweights1_x_blend = self.blendweights1_x / 255
+        self.blendweights1_y_blend = self.blendweights1_y / 255
+        self.blendweights1_z_blend = self.blendweights1_z / 255
+        self.blendweights1_w_blend = self.blendweights1_w / 255        
+        
         
     def blend2raw(self):
         """ Convert blender values to raw values """
@@ -124,7 +136,12 @@ class CRF_vertex(object):
         self.v0 = int(((self.v0_blend - 0.5) * -2) * 32768)
         self.u1 = int(((self.u1_blend - 0.5) * 2) * 32768)
         self.v1 = int(((self.v1_blend - 0.5) * -2) * 32768)
-        self.blendweights1 = 0x00018080 #TODO change from constant
+
+        #TODO change from constant
+        self.blendweights1_x = 0x80
+        self.blendweights1_y = 0x80
+        self.blendweights1_z = 0x01
+        self.blendweights1_w = 0x00         
 
         # clamp uv values to be <= 32768 and >=-32768
         if self.u0 >= 32768:
@@ -145,9 +162,11 @@ class CRF_vertex(object):
             self.v1 = -32767               
         
     def convert2bin(self):        
-        binstring = struct.pack("<fffBBBBBBBBhhhhI", self.x, self.y, self.z,
+        binstring = struct.pack("<fffBBBBBBBBhhhhBBBB", self.x, self.y, self.z,
                                                          self.normal_x, self.normal_y, self.normal_z, self.normal_w,
                                                          self.specular_blue, self.specular_green, self.specular_red, self.specular_alpha,
-                                                         self.u0, self.v0, self.u1, self.v1, self.blendweights1)                                                
+                                                         self.u0, self.v0, self.u1, self.v1,
+                                                         self.blendweights1_x, self.blendweights1_y,
+                                                        self.blendweights1_z, self.blendweights1_w)                                                
         return binstring
     
