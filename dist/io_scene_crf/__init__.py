@@ -21,7 +21,7 @@
 bl_info = {
     "name": "JABIA CRF format",
     "author": "Stanislav Bobovych",
-    "version": (0, 2),
+    "version": (0, 3),
     "blender": (2, 6, 2),
     "location": "File > Import-Export",
     "description": "Import-Export CRF, Import CRF mesh, UV's, "
@@ -75,11 +75,19 @@ class ImportCRF(bpy.types.Operator, ImportHelper):
             description="Use shadeless materials",
             default=False,
             )
+    
     viz_normals = BoolProperty(
         name="Visualize Normals",
         description="Use vertex colors to visualize normals",
         default=True,
         )
+
+    viz_blendweights = BoolProperty(
+        name="Visualize Blendweights",
+        description="Use vertex colors to visualize blendweights",
+        default=True,
+        )
+        
     use_specular = BoolProperty(
         name="Specular Colors",
         description="Use vertex colors to visualize what may be specular colors",
@@ -155,6 +163,8 @@ class ImportCRF(bpy.types.Operator, ImportHelper):
 
         row = layout.split(percentage=0.67)
         row.prop(self, "viz_normals")
+        row = layout.split(percentage=0.67)
+        row.prop(self, "viz_blendweights")
         row = layout.split(percentage=0.67)
         row.prop(self, "use_specular")
         layout.prop(self, "use_image_search")

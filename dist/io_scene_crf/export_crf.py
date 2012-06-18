@@ -135,41 +135,29 @@ def _write(context, filepath,
 
 
         # write out verteces, normals, ks, and UVs
-        if len(mesh.vertex_colors) >= 4:
-            vtex_diffuse_colors = mesh.vertex_colors[0] # only consider first layer for diffuse
-            vtex_normal_w = mesh.vertex_colors[1] # only consider second layer for diffuse alpha
-            vtex_specular_colors = mesh.vertex_colors[2] # only consider third layer for specular
-            vtex_specular_alpha = mesh.vertex_colors[3] # only consider second layer for specular alpha
-        elif len(mesh.vertex_colors) == 3:
-            vtex_diffuse_colors = mesh.vertex_colors[0] # only consider first layer for diffuse
-            vtex_normal_w = mesh.vertex_colors[1] # only consider second layer for diffuse alpha
-            vtex_specular_colors = mesh.vertex_colors[2] # only consider third layer for specular
-            vtex_specular_alpha = mesh.vertex_colors.new()
-            vtex_specular_alpha.name = "vertex_specular_alpha"            
-        elif len(mesh.vertex_colors) == 2:
-            vtex_diffuse_colors = mesh.vertex_colors[0] # only consider first layer for diffuse
-            vtex_specular_colors = mesh.vertex_colors[1] # only consider second layer for specular
-            vtex_normal_w = mesh.vertex_colors.new()
-            vtex_normal_w.name = "vertex_diffuse_alpha"  
-            vtex_specular_alpha = mesh.vertex_colors.new()
-            vtex_specular_alpha.name = "vertex_specular_alpha"              
-        elif len(mesh.vertex_colors) == 1:
-            vtex_diffuse_colors = mesh.vertex_colors[0] # only consider first layer for diffuse
+        if "vertex_specular_colors" in mesh.vertex_colors:
+            vtex_specular_colors = mesh.vertex_colors["vertex_specular_colors"]
+        else:
             vtex_specular_colors = mesh.vertex_colors.new()
             vtex_specular_colors.name = "vertex_specular_colors"
-            vtex_normal_w = mesh.vertex_colors.new()
-            vtex_normal_w.name = "vertex_diffuse_alpha"  
+
+        if "vertex_specular_alpha" in mesh.vertex_colors:
+            vtex_specular_alpha = mesh.vertex_colors["vertex_specular_alpha"]
+        else:
             vtex_specular_alpha = mesh.vertex_colors.new()
-            vtex_specular_alpha.name = "vertex_specular_alpha"               
-        else:                                       # if no vertex colors, create default layers
-            vtex_diffuse_colors = mesh.vertex_colors.new()
-            vtex_diffuse_colors.name = "vertex_diffuse_colors"
-            vtex_specular_colors = mesh.vertex_colors.new()
-            vtex_specular_colors.name = "vertex_specular_colors"
-            vtex_normal_w = mesh.vertex_colors.new()
-            vtex_normal_w.name = "vertex_diffuse_alpha"  
-            vtex_specular_alpha = mesh.vertex_colors.new()
-            vtex_specular_alpha.name = "vertex_specular_alpha" 
+            vtex_specular_alpha.name = "vertex_specular_alpha"
+
+        if "vertex_blendweight_xyz" in mesh.vertex_colors:
+            vtex_blendweights_xyz = mesh.vertex_colors["vertex_blendweight_xyz"]
+        else:
+            vtex_blendweights_xyz = mesh.vertex_colors.new()
+            vtex_blendweights_xyz.name = "vertex_blendweight_xyz"
+
+        if "vertex_blendweight_w" in mesh.vertex_colors:
+            vtex_blendweights_w = mesh.vertex_colors["vertex_blendweight_w"]
+        else:
+            vtex_blendweights_w = mesh.vertex_colors.new()
+            vtex_blendweights_w.name = "vertex_blendweight_w"
 
         vert_dict = {} # will store CRF_vertex objects
         for face in mesh.faces:
@@ -189,7 +177,10 @@ def _write(context, filepath,
                 vert.v0_blend = uv_tex0.data[face.index].uv1[1]
                 vert.u1_blend = uv_tex1.data[face.index].uv1[0] 
                 vert.v1_blend = uv_tex1.data[face.index].uv1[1]
-                vert.blendweights1_blend = 0x00018080 #TODO change from constant
+                vert.blendweights1_x_blend = vtex_blendweights_xyz.data[face.index].color1[0]
+                vert.blendweights1_y_blend = vtex_blendweights_xyz.data[face.index].color1[1]
+                vert.blendweights1_z_blend = vtex_blendweights_xyz.data[face.index].color1[2]
+                vert.blendweights1_w_blend = vtex_blendweights_w.data[face.index].color1[0] # only use the first color for w       
                 vert.blend2raw()
                 vert_dict[verts_in_face[0]] = vert # put object in dictionary
                 if verbose:
@@ -210,7 +201,10 @@ def _write(context, filepath,
                 vert.v0_blend = uv_tex0.data[face.index].uv2[1]
                 vert.u1_blend = uv_tex1.data[face.index].uv2[0] 
                 vert.v1_blend = uv_tex1.data[face.index].uv2[1]
-                vert.blendweights1_blend = 0x00018080 #TODO change from constant
+                vert.blendweights1_x_blend = vtex_blendweights_xyz.data[face.index].color1[0]
+                vert.blendweights1_y_blend = vtex_blendweights_xyz.data[face.index].color1[1]
+                vert.blendweights1_z_blend = vtex_blendweights_xyz.data[face.index].color1[2]
+                vert.blendweights1_w_blend = vtex_blendweights_w.data[face.index].color1[0] # only use the first color for w
                 vert.blend2raw()
                 vert_dict[verts_in_face[1]] = vert # put object in dictionary
                 if verbose:
@@ -231,7 +225,10 @@ def _write(context, filepath,
                 vert.v0_blend = uv_tex0.data[face.index].uv3[1]
                 vert.u1_blend = uv_tex1.data[face.index].uv3[0] 
                 vert.v1_blend = uv_tex1.data[face.index].uv3[1]
-                vert.blendweights1_blend = 0x00018080 #TODO change from constant
+                vert.blendweights1_x_blend = vtex_blendweights_xyz.data[face.index].color1[0]
+                vert.blendweights1_y_blend = vtex_blendweights_xyz.data[face.index].color1[1]
+                vert.blendweights1_z_blend = vtex_blendweights_xyz.data[face.index].color1[2]
+                vert.blendweights1_w_blend = vtex_blendweights_w.data[face.index].color1[0] # only use the first color for w
                 vert.blend2raw()
                 vert_dict[verts_in_face[2]] = vert # put object in dictionary
                 if verbose:

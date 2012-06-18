@@ -137,11 +137,10 @@ class CRF_vertex(object):
         self.u1 = int(((self.u1_blend - 0.5) * 2) * 32768)
         self.v1 = int(((self.v1_blend - 0.5) * -2) * 32768)
 
-        #TODO change from constant
-        self.blendweights1_x = 0x80
-        self.blendweights1_y = 0x80
-        self.blendweights1_z = 0x01
-        self.blendweights1_w = 0x00         
+        self.blendweights1_x = int(self.blendweights1_x_blend * 255)
+        self.blendweights1_y = int(self.blendweights1_y_blend * 255)
+        self.blendweights1_z = int(self.blendweights1_z_blend * 255)
+        self.blendweights1_w = int(self.blendweights1_w_blend * 255)
 
         # clamp uv values to be <= 32768 and >=-32768
         if self.u0 >= 32768:

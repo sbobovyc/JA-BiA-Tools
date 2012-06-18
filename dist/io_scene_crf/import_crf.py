@@ -336,6 +336,7 @@ def load(operator, context, filepath,
          use_computed_normals=False,
          use_shadeless=True,
          viz_normals=True,
+         viz_blendweights=False,
          use_specular=True,
          global_matrix=None,
          ):
@@ -534,11 +535,12 @@ def load(operator, context, filepath,
                 ob.data.materials[0].specular_color = specular_list[0]
                 print(ob.data.materials[0].specular_color)
 
-        setVertexBlendweightColors(me, ob.data.faces, vertex_blendweights1)
-        # if no materials exist, create one+
-        if len(ob.data.materials) == 0 and not use_image_search:
-            mat = createMaterial('BlendweightMat', use_shadeless, True)
-            ob.data.materials.append(mat)
+        if viz_blendweights:
+            setVertexBlendweightColors(me, ob.data.faces, vertex_blendweights1)
+            # if no materials exist, create one+
+            if len(ob.data.materials) == 0 and not use_image_search:
+                mat = createMaterial('BlendweightMat', use_shadeless, True)
+                ob.data.materials.append(mat)
 
                 
         new_objects.append(ob)
