@@ -41,6 +41,8 @@ import struct
 from bpy_extras.io_utils import unpack_list, unpack_face_list
 from bpy_extras.image_utils import load_image
 
+from .crf_objects import CRF_vertex
+
 def find_files(base, pattern):
     '''Return list of files matching pattern in base folder.'''
     try:
@@ -80,11 +82,11 @@ def findTextureFile(path, name):
 ##    mtex.use_map_color_diffuse = True 
 ##    return mat
 
-def createMaterial(name, use_shadeless, viz_normals):        
+def createMaterial(name, use_shadeless, use_vertex_color_paint):        
     # Create shadeless or shaded material and MTex
     mat = bpy.data.materials.new(name)
     mat.use_shadeless = use_shadeless
-    mat.use_vertex_color_paint = viz_normals   # support per vertex    
+    mat.use_vertex_color_paint = use_vertex_color_paint   # support per vertex    
     return mat
 
 def addDiffuseTexture(color_filepath, mat):
@@ -181,11 +183,30 @@ def setVertexSpecularColors(me, faces, vertex_specular):
         vtex_specular.data[face.index].color1 = alpha0
         vtex_specular.data[face.index].color2 = alpha1
         vtex_specular.data[face.index].color3 = alpha2
+
+def setVertexBlendweightColors(me, faces, vertex_blendweight):
+    vtex_blendweight = me.vertex_colors.new()
+    vtex_blendweight.name = "vertex_blendweight_xyz"
+    for face in faces:
+        verts_in_face = face.vertices[:]
+        vtex_blendweight.data[face.index].color1 = vertex_blendweight[verts_in_face[0]][0:3]
+        vtex_blendweight.data[face.index].color2 = vertex_blendweight[verts_in_face[1]][0:3]
+        vtex_blendweight.data[face.index].color3 = vertex_blendweight[verts_in_face[2]][0:3]
         
-    #return vtex_specular
+    vtex_blendweight = me.vertex_colors.new()
+    vtex_blendweight.name = "vertex_blendweight_w"
+    for face in faces:
+        verts_in_face = face.vertices[:]
+        alpha0 = (vertex_blendweight[verts_in_face[0]][3], vertex_blendweight[verts_in_face[0]][3], vertex_blendweight[verts_in_face[0]][3])
+        alpha1 = (vertex_blendweight[verts_in_face[1]][3], vertex_blendweight[verts_in_face[1]][3], vertex_blendweight[verts_in_face[1]][3])
+        alpha2 = (vertex_blendweight[verts_in_face[2]][3], vertex_blendweight[verts_in_face[2]][3], vertex_blendweight[verts_in_face[2]][3])
+        vtex_blendweight.data[face.index].color1 = alpha0
+        vtex_blendweight.data[face.index].color2 = alpha1
+        vtex_blendweight.data[face.index].color3 = alpha2        
+        
 
 
-def parseShaderInfo(file, specular_list):
+def parseMaterialInfo(file, specular_list):
     texture_name = b''
     normals_name = b''
     specular_name = b''
@@ -312,8 +333,10 @@ def load(operator, context, filepath,
          global_clamp_size=0.0,
          use_verbose=False,
          use_image_search=True,
+         use_computed_normals=False,
          use_shadeless=True,
          viz_normals=True,
+         viz_blendweights=False,
          use_specular=True,
          global_matrix=None,
          ):
@@ -360,6 +383,7 @@ def load(operator, context, filepath,
         face_tex = [] # tuples of uv coordinates for faces
         vertex_normals = []
         vertex_specular = []
+        vertex_blendweights1 = []
 
         number_of_verteces, = struct.unpack("<I", file.read(4))
         number_of_faces, = struct.unpack("<I", file.read(4))
@@ -382,39 +406,26 @@ def load(operator, context, filepath,
             print("Loading file, printing raw vertex information.")
         # read in verteces, vertex normals, ks, and UVs
         for i in range(0, number_of_verteces):
-            x, y, z, \
-                normal_x, normal_y, normal_z, normal_w, \
-                specular_blue, specular_green, specular_red, specular_alpha, \
-                u0, v0, u1, v1, blendweights1 = struct.unpack("<fffBBBBBBBBhhhhI", file.read(32))
+            vertex = CRF_vertex()
+            vertex.index = i
+            vertex.x, vertex.y, vertex.z, \
+                vertex.normal_x, vertex.normal_y, vertex.normal_z, vertex.normal_w, \
+                vertex.specular_blue, vertex.specular_green, vertex.specular_red, vertex.specular_alpha, \
+                vertex.u0, vertex.v0, vertex.u1, vertex.v1, \
+                vertex.blendweights1_x, vertex.blendweights1_y, \
+                vertex.blendweights1_z, vertex.blendweights1_w = struct.unpack("<fffBBBBBBBBhhhhBBBB", file.read(32))
+            
+            vertex.raw2blend()
             
             if use_verbose:                
-                print("vert index=%s, xyz=(%s %s %s), Normal XYZW=(%s, %s, %s, %s), Ks=(%s, %s, %s, %s), uv0=(%s, %s), uv1=(%s, %s)" % (i, x,y,z, \
-                                    hex(normal_x), hex(normal_y), hex(normal_z), hex(normal_w), \
-                                    hex(specular_alpha), hex(specular_red), hex(specular_green), hex(specular_blue), \
-                                    hex(u0), hex(v0), hex(u1), hex(v1)))
-            # convert signed short to float
-            # distortions due to rounding by directx and not python
-            u0 /= 32768
-            v0 /= 32768
-            u1 /= 32768
-            v1 /= 32768
+                print(vertex)            
             
-            # mirror vertex across x axis
-            verts_loc.append((-x,y,z))
-            
-            # rectify UV map
-            uv0 = (0.5+u0/2.0, 0.5-v0/2.0)
+            verts_loc.append( (vertex.x_blend, vertex.y_blend, vertex.z_blend) )            
+            verts_tex0.append( (vertex.u0_blend, vertex.v0_blend) )        
 
-            verts_tex0.append(uv0)
-            
-            #TODO, add support for the second UV map
-            if use_verbose:
-                print("Rectified uv0:", uv0)
-                print()
-
-            # convert 8 bit to float
-            vertex_normals.append( (normal_x/255.0, normal_y/255.0, normal_z/255.0, normal_w/255.0) )
-            vertex_specular.append( (specular_red/255.0, specular_green/255.0, specular_blue/255.0, specular_alpha/255.0) )
+            vertex_normals.append( (vertex.normal_x_blend, vertex.normal_y_blend, vertex.normal_z_blend, vertex.normal_w_blend) )
+            vertex_specular.append( (vertex.specular_red_blend, vertex.specular_green_blend, vertex.specular_blue_blend, vertex.specular_alpha_blend) )
+            vertex_blendweights1.append( (vertex.blendweights1_x_blend, vertex.blendweights1_y_blend, vertex.blendweights1_z_blend, vertex.blendweights1_w_blend) )
 
         #read in separator 0x000000080008000000
         print("Separator at", hex(file.tell()))
@@ -450,14 +461,9 @@ def load(operator, context, filepath,
         normal_name = b''
         specular_name = b''
         specular_list = []
-        texture_name, normal_name, specular_name = parseShaderInfo(file, specular_list)        
+        texture_name, normal_name, specular_name = parseMaterialInfo(file, specular_list)        
         print(texture_name, normal_name, specular_name, specular_list)    
         #next is object bone information, not parsed
-        
-
-        # fill face texture array
-##        for i in range(0, len(faces)):
-##            face_tex.append([ verts_tex0[faces[i][0]], verts_tex0[faces[i][1]], verts_tex0[faces[i][2]] ] )
         
         # deselect all
         if bpy.ops.object.select_all.poll():
@@ -480,7 +486,7 @@ def load(operator, context, filepath,
                 print("normal", face.normal)  
                 for vert in verts_in_face:  
                     print("vert", vert, " vert co", ob.data.vertices[vert].co)
-                    print("Normal X:%s Y:%s Z:%s " % (vertex_normal[vert][0], vertex_normal[vert][1], vertex_normal[vert][2]))
+                    print("Normal X:%s Y:%s Z:%s " % (vertex_normals[vert][0], vertex_normals[vert][1], vertex_normals[vert][2]))
                     print("specular R:%s G:%s B:%s " % (vertex_specular[vert][0], vertex_specular[vert][1], vertex_specular[vert][2]))
                     print("UV0: ", verts_tex0[vert])
                     print()
@@ -507,14 +513,19 @@ def load(operator, context, filepath,
 
         if viz_normals:
             setVertexNormalsColors(me, ob.data.faces, vertex_normals)
-            # if no materials exists, create one+
+            # if no materials exist, create one+
             if len(ob.data.materials) == 0 and not use_image_search:
                 mat = createMaterial('SimpleMat', use_shadeless, viz_normals)
                 ob.data.materials.append(mat)
+        
+        if use_computed_normals:
+            for vertex, vertex_normal in zip(me.vertices, vertex_normals):
+                print("vertex index", vertex.index, vertex_normal)
+                vertex.normal = vertex_normal[0:3]
                 
         if use_specular:
             setVertexSpecularColors(me, ob.data.faces, vertex_specular)
-            # if no materials exists, create one+
+            # if no materials exist, create one+
             if len(ob.data.materials) == 0 and not use_image_search:
                 mat = createMaterial('Specular', use_shadeless, viz_normals)
                 mat.specular_color = specular_list[0]
@@ -523,6 +534,15 @@ def load(operator, context, filepath,
                 #ob.data.materials[0] = specular_list[0]
                 ob.data.materials[0].specular_color = specular_list[0]
                 print(ob.data.materials[0].specular_color)
+
+        if viz_blendweights:
+            setVertexBlendweightColors(me, ob.data.faces, vertex_blendweights1)
+            # if no materials exist, create one+
+            if len(ob.data.materials) == 0 and not use_image_search:
+                mat = createMaterial('BlendweightMat', use_shadeless, True)
+                ob.data.materials.append(mat)
+
+                
         new_objects.append(ob)
 
     # end loop

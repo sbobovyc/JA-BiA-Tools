@@ -21,7 +21,7 @@
 bl_info = {
     "name": "JABIA CRF format",
     "author": "Stanislav Bobovych",
-    "version": (0, 1),
+    "version": (0, 3),
     "blender": (2, 6, 2),
     "location": "File > Import-Export",
     "description": "Import-Export CRF, Import CRF mesh, UV's, "
@@ -75,22 +75,35 @@ class ImportCRF(bpy.types.Operator, ImportHelper):
             description="Use shadeless materials",
             default=False,
             )
+    
     viz_normals = BoolProperty(
         name="Visualize Normals",
         description="Use vertex colors to visualize normals",
         default=True,
         )
+
+    viz_blendweights = BoolProperty(
+        name="Visualize Blendweights",
+        description="Use vertex colors to visualize blendweights",
+        default=True,
+        )
+        
     use_specular = BoolProperty(
         name="Specular Colors",
-        description="Use specular colors",
+        description="Use vertex colors to visualize what may be specular colors",
         default=True,
         )
     use_image_search = BoolProperty(
-            name="Image Search",
-            description="Search subdirs for any assosiated images " \
-                        "(Warning, may be slow)",
-            default=True,
-            )
+        name="Image Search",
+        description="Search subdirs for any assosiated images " \
+                    "(Warning, may be slow)",
+        default=True,
+        )
+    use_computed_normals = BoolProperty(
+        name="Precomputed Normals",
+        description="Use vertex normals stored in CRF",
+        default=False,
+        )
 
     global_clamp_size = FloatProperty(
             name="Clamp Scale",
@@ -151,13 +164,17 @@ class ImportCRF(bpy.types.Operator, ImportHelper):
         row = layout.split(percentage=0.67)
         row.prop(self, "viz_normals")
         row = layout.split(percentage=0.67)
+        row.prop(self, "viz_blendweights")
+        row = layout.split(percentage=0.67)
         row.prop(self, "use_specular")
+        layout.prop(self, "use_image_search")
+        layout.prop(self, "use_computed_normals")
 
         row = layout.split(percentage=0.67)
         row.prop(self, "global_clamp_size")
         layout.prop(self, "axis_forward")
         layout.prop(self, "axis_up")
-        layout.prop(self, "use_image_search")
+
 
 
 class ExportOBJ(bpy.types.Operator, ExportHelper):
