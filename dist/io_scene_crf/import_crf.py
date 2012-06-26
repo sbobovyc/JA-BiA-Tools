@@ -447,15 +447,16 @@ def load(operator, context, filepath,
                 print("Second blendweight? list at", hex(file.tell()))
             for i in range(0, number_of_verteces):
                 blendweights2, unknown = struct.unpack("<II", file.read(8))
+                if use_verbose:
+                    print(blendweights2, unknown)
             # read in one more int
             file.read(8)
-            print("Yay", hex(file.tell()))
             
         #read in bounding box?
         bounding_box = struct.unpack("<6f", file.read(24))
         if use_verbose:
             print("Bounding box? ", bounding_box)
-                
+            
         #read in material information
         texture_name = b''
         normal_name = b''
@@ -472,8 +473,9 @@ def load(operator, context, filepath,
         scene = context.scene
     #     scn.objects.selected = []
 
-        me = bpy.data.meshes.new("DumpedObject%i_Mesh" % model_number)   # create a new mesh
-        ob = bpy.data.objects.new("DumpedObject%i" % model_number, me)
+        me = bpy.data.meshes.new("Dumped_Mesh")   # create a new mesh
+        object_name = os.path.splitext(os.path.basename(filepath))[0]
+        ob = bpy.data.objects.new(os.fsdecode(object_name) + "_%i" % model_number, me)
         # Fill the mesh with verts, edges, faces 
         me.from_pydata(verts_loc,[],faces)   # edges or faces should be [], or you ask for problems
         me.update(calc_edges=True)    # Update mesh with new data
