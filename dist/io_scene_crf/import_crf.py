@@ -325,7 +325,7 @@ def parseMaterialInfo(file, specular_list):
             return texture_name, normals_name, specular_name
         
         if state == -1:
-            print("This object's materials format is unsupported")
+            print("This object's materials format is unsupported. Unknown at", hex(file.tell()))
             return    
         
 
@@ -428,6 +428,7 @@ def load(operator, context, filepath,
             vertex_blendweights1.append( (vertex.blendweights1_x_blend, vertex.blendweights1_y_blend, vertex.blendweights1_z_blend, vertex.blendweights1_w_blend) )
 
         #read in separator 0x000000080008000000
+        #TODO not all files have this separator
         print("Separator at", hex(file.tell()))
         separator = struct.unpack("<8B", file.read(8))
 
@@ -445,12 +446,14 @@ def load(operator, context, filepath,
         if object_type == 0x4:
             if use_verbose:
                 print("Second blendweight? list at", hex(file.tell()))
+            unknown1, unknown2 = struct.unpack("<II", file.read(8))
             for i in range(0, number_of_verteces):
-                blendweights2, unknown = struct.unpack("<II", file.read(8))
+                blendweights2, = struct.unpack("<I", file.read(4))
                 if use_verbose:
-                    print(blendweights2, unknown)
+                    print(i, blendweights2)
             # read in one more int
-            file.read(8)
+            #file.read(8)
+        print(hex(file.tell()))
             
         #read in bounding box?
         bounding_box = struct.unpack("<6f", file.read(24))

@@ -167,27 +167,23 @@ else:
 class TestCanvas(WxCanvas):
     label = pyglet.text.Label('Hello, world', font_size=48,
                               anchor_x='center', anchor_y='center')
-
+    image = pyglet.resource.image('foo2.dds', flip_x=False, flip_y=True, rotate=0)
+    image = image.get_region(0, 0, 120, 40)
+    
     def on_draw(self):
         width, height = self.GetClientSize()
-        
+        print self.image.width, self.image.height
         glClear(GL_COLOR_BUFFER_BIT)
         self.label.text = 'OpenGL %s' % pyglet.gl.gl_info.get_version()
         self.label.x = width//2
         self.label.y = height//2
         self.label.draw()
-        image = pyglet.image.load('foo.png')
-        batch = pyglet.graphics.Batch()
-        sprite = pyglet.sprite.Sprite(image, batch=batch)
-        sprite.scale = 0.5
-        sprite.draw()
-        sprite.x = 0
-        sprite.y = 0
-        batch.draw()
+##        self.image.blit(0, 986)
+        self.image.blit(0, 0)
 
 class TestFrame(wx.Frame):
     def __init__(self, parent, title):
-        wx.Frame.__init__(self, parent, -1, title, size=(640, 480))
+        wx.Frame.__init__(self, parent, -1, title, size=(1024, 1024))
         canvas = TestCanvas(self)
 
 class TestApp(wx.App):
