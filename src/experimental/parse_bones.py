@@ -70,6 +70,32 @@ def graph(bones):
 def read_bones():
     bone_dict = {}    
     with open("bones.bin", "rb") as f:
+            bone_count, = struct.unpack("<I", f.read(4))
+            print "Bone count", bone_count
+
+##            print struct.unpack("<fff", f.read(12))
+##            bone_count, = struct.unpack("<I", f.read(4))
+##            print struct.unpack("<fff", f.read(12))
+            for i in range(0, bone_count):
+                print "Bone id:", i
+                f11, f12, f13 = struct.unpack("<fff", f.read(12))
+                uint1, = struct.unpack("<I", f.read(4))                
+                f21, f22, f23 = struct.unpack("<fff", f.read(12))
+                uint2, = struct.unpack("<I", f.read(4))                
+                f31, f32, f33 = struct.unpack("<fff", f.read(12))
+                uint3, = struct.unpack("<I", f.read(4))
+                f41, f42, f43 = struct.unpack("<fff", f.read(12))
+                uint4, = struct.unpack("<I", f.read(4))
+                print f11, f12, f13
+                print uint1
+                print f21, f22, f23
+                print uint2
+                print f31, f32, f33
+                print uint3
+                print f41, f42, f43
+                print uint4                
+                print
+                
             bone_count, = struct.unpack("<I", f.read(4))            
             print "Bone count", bone_count
             unknown, = struct.unpack("<I", f.read(4))
