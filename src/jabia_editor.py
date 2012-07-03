@@ -1,3 +1,27 @@
+"""
+Created on July 2, 2012
+
+@author: sbobovyc
+"""
+"""
+Copyright (C) 2012 Stanislav Bobovych
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <http://www.gnu.org/licenses/>.
+"""
+#http://wiki.wxpython.org/ProportionalSplitterWindow
+#http://wiki.wxpython.org/index.cgi/ModelViewController
+
 import os
 import wx
 
@@ -30,22 +54,29 @@ class Controller(object):
         self.menubar.Append(self.helpMenu, '&Help')
         self.mainFrame.SetMenuBar(self.menubar)
 
-        hbox = wx.BoxSizer(wx.HORIZONTAL)
-        vbox = wx.BoxSizer(wx.VERTICAL)
-        # create panels
-        self.panel_tree = wx.Panel(self.mainFrame)
-        self.panel_work = wx.Panel(self.mainFrame)
+        # create splitter
+        self.split1 = ProportionalSplitter(self.mainFrame,-1, 0.35)
+
+        # create controls to go in the splitter windows...
+        self.panel_tree = wx.Panel (self.split1)
+        self.panel_work = wx.Panel (self.split1)
+        # add your controls to the splitters:
+        self.split1.SplitVertically(self.panel_tree, self.panel_work)
+        
+
 
         # initialize tree
         #self.tree = wx.TreeCtrl(self.panel_tree, 1, wx.DefaultPosition, (-1,-1), wx.TR_HIDE_ROOT|wx.TR_HAS_BUTTONS)
         self.tree = wx.TreeCtrl(self.panel_tree, 1, wx.DefaultPosition, (-1,-1), wx.TR_HAS_BUTTONS)
         
-        # set the look of main frame
+        # make the tree fill the panel
+        hbox = wx.BoxSizer(wx.HORIZONTAL)
+        vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.Add(self.tree, 1, wx.EXPAND)
-        hbox.Add(self.panel_tree, 1, wx.EXPAND)
-        hbox.Add(self.panel_work, 1, wx.EXPAND)        
+        hbox.Add(self.panel_tree, 1, wx.EXPAND)       
         self.panel_tree.SetSizer(vbox)
-        self.mainFrame.SetSizer(hbox)
+
+        # center 
         self.mainFrame.Centre()
         
         # bind events
@@ -114,8 +145,6 @@ class Controller(object):
         self.tree.Expand(ctx_tree)
 
 
-
-
 class HelpMenu(wx.Menu):
     def __init__(self):
         wx.Menu.__init__(self)
@@ -126,10 +155,67 @@ class FileMenu(wx.Menu):
         wx.Menu.__init__(self)
         self.openItem = self.Append(wx.ID_OPEN, 'Open', 'Open file')
         self.quitItem = self.Append(wx.ID_EXIT, 'Quit', 'Quit application')
+
+class ProportionalSplitter(wx.SplitterWindow):
+        def __init__(self,parent, id = -1, proportion=0.66, size = wx.DefaultSize, **kwargs):
+                wx.SplitterWindow.__init__(self,parent,id,wx.Point(0, 0),size, **kwargs)
+                self.SetMinimumPaneSize(50) #the minimum size of a pane.
+                self.proportion = proportion
+                if not 0 < self.proportion < 1:
+                        raise ValueError, "proportion value for ProportionalSplitter must be between 0 and 1."
+                self.ResetSash()
+                self.Bind(wx.EVT_SIZE, self.OnReSize)
+                self.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self.OnSashChanged, id=id)
+                ##hack to set sizes on first paint event
+                self.Bind(wx.EVT_PAINT, self.OnPaint)
+                self.firstpaint = True
+
+        def SplitHorizontally(self, win1, win2):
+                if self.GetParent() is None: return False
+                return wx.SplitterWindow.SplitHorizontally(self, win1, win2,
+                        int(round(self.GetParent().GetSize().GetHeight() * self.proportion)))
+
+        def SplitVertically(self, win1, win2):
+                if self.GetParent() is None: return False
+                return wx.SplitterWindow.SplitVertically(self, win1, win2,
+                        int(round(self.GetParent().GetSize().GetWidth() * self.proportion)))
+
+        def GetExpectedSashPosition(self):
+                if self.GetSplitMode() == wx.SPLIT_HORIZONTAL:
+                        tot = max(self.GetMinimumPaneSize(),self.GetParent().GetClientSize().height)
+                else:
+                        tot = max(self.GetMinimumPaneSize(),self.GetParent().GetClientSize().width)
+                return int(round(tot * self.proportion))
+
+        def ResetSash(self):
+                self.SetSashPosition(self.GetExpectedSashPosition())
+
+        def OnReSize(self, event):
+                "Window has been resized, so we need to adjust the sash based on self.proportion."
+                self.ResetSash()
+                event.Skip()
+
+        def OnSashChanged(self, event):
+                "We'll change self.proportion now based on where user dragged the sash."
+                pos = float(self.GetSashPosition())
+                if self.GetSplitMode() == wx.SPLIT_HORIZONTAL:
+                        tot = max(self.GetMinimumPaneSize(),self.GetParent().GetClientSize().height)
+                else:
+                        tot = max(self.GetMinimumPaneSize(),self.GetParent().GetClientSize().width)
+                self.proportion = pos / tot
+                event.Skip()
+
+        def OnPaint(self,event):
+                if self.firstpaint:
+                        if self.GetSashPosition() != self.GetExpectedSashPosition():
+                                self.ResetSash()
+                        self.firstpaint = False
+                event.Skip()
+
         
 class MainFrame(wx.Frame):
     def __init__(self, parent, id, title):
-        wx.Frame.__init__(self, parent, id, title, wx.DefaultPosition, wx.Size(450, 350))
+        wx.Frame.__init__(self, parent, id, title, wx.DefaultPosition, wx.Size(600, 400))
             
 if __name__ == "__main__":
     app = wx.App(False)
