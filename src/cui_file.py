@@ -178,10 +178,11 @@ class CUI_data:
     def unpack(self, file_pointer, peek=False, verbose=False):    
         self.last_variable_id,unknown1 = struct.unpack("<II", file_pointer.read(8))
 
-        if peek or verbose:
+        if peek:
             print "Peeking not implemented"
-        
-        print "Last variable picture_id:", self.last_variable_id
+            
+        if verbose:
+            print "Last variable picture_id:", self.last_variable_id
         
         id = 0
         while(id < self.last_variable_id):
@@ -190,71 +191,90 @@ class CUI_data:
             length, = struct.unpack("<I", file_pointer.read(4))
             variable_value = file_pointer.read(length)
             ctx_id = CTX_ID(id, variable_name, variable_value)
-            print ctx_id
+            if verbose:
+                print ctx_id
             self.ctx_id_list.append(ctx_id)
-        
-        print
+            
+        if verbose:
+            print
         
         file_count, = struct.unpack("<I", file_pointer.read(4))
-        print "Sound file count:", file_count
+        if verbose:
+            print "Sound file count:", file_count
         id = 0
         for i in range(0, file_count):
             id,length = struct.unpack("<II", file_pointer.read(8))
             filename = file_pointer.read(length)
-            jabia_sound = JABIA_sound(id, filename)            
-            print jabia_sound
+            jabia_sound = JABIA_sound(id, filename)
+            if verbose:
+                print jabia_sound
             self.sound_list.append(jabia_sound)
-        
-        print 
+
+        if verbose:
+            print 
         
         self.binary_count, = struct.unpack("<I", file_pointer.read(4))
-        print "Binary sound info blob count:", self.binary_count
+        if verbose:
+            print "Binary sound info blob count:", self.binary_count
         for i in range(0, self.binary_count):
             id, = struct.unpack("<I", file_pointer.read(4))
-            raw_data = file_pointer.read(9)            
-            print id,binascii.hexlify(raw_data)
+            raw_data = file_pointer.read(9)
+            if verbose:
+                print id,binascii.hexlify(raw_data)
             self.binary_blob_dictionary[id] = raw_data
-        
-        print
-        
+
+        if verbose:    
+            print
+
         self.font_count, = struct.unpack("<I", file_pointer.read(4))
-        print "Font count:", self.font_count
+        if verbose:
+            print "Font count:", self.font_count
         for i in range(0, self.font_count):
             id,length = struct.unpack("<II", file_pointer.read(8))
             font_name = file_pointer.read(length)
             length, = struct.unpack("<I", file_pointer.read(4))
             filename = file_pointer.read(length)
             jabia_font = JABIA_font(id, font_name, filename)
-            print jabia_font
+            if verbose:
+                print jabia_font
             self.font_list.append(jabia_font)
             
-        print
+        if verbose:
+            print
         
         self.ui_file_count, = struct.unpack("<I", file_pointer.read(4))
-        print "UI file count:", self.ui_file_count
+        if verbose:
+            print "UI file count:", self.ui_file_count
         for i in range(0, self.ui_file_count):
             id,length = struct.unpack("<II", file_pointer.read(8))
             ui_name = file_pointer.read(length)
             length, = struct.unpack("<I", file_pointer.read(4))
             filename = file_pointer.read(length)
             ui_resource = CUI_ui_resource(id, ui_name, filename)
-            print ui_resource
+            if verbose:
+                print ui_resource
             self.ui_resource_dict[id]= ui_resource
-        print 
+            
+        if verbose:
+            print 
         
         self.ui_count, = struct.unpack("<I", file_pointer.read(4))
-        print "UI icon count:", self.ui_count
+        if verbose:
+            print "UI icon count:", self.ui_count
         for i in range(0, self.ui_count):
             icon_id,resource_id = struct.unpack("<II", file_pointer.read(8))
             ulx,uly,lrx,lry = struct.unpack("<HHHH", file_pointer.read(8))
             icon = CUI_ui_icon(icon_id, resource_id, ulx, uly, lrx, lry)
             self.ui_icon_dict[icon_id] = icon
-            print icon
+            if verbose:
+                print icon
             
-        print 
+        if verbose:
+            print 
         
         count, = struct.unpack("<I", file_pointer.read(4))
-        print "Number of ui elements:", count
+        if verbose:
+            print "Number of ui elements:", count
         for i in range(0, count):
             ui_element_id,length = struct.unpack("<II", file_pointer.read(8))
             name = file_pointer.read(length)
@@ -297,12 +317,16 @@ class CUI_data:
                         unknown_data1.append((id,data))                        
                         
                     trailer_type = CUI_ui_element_trailer(unknown_data0, unknown_data1)
-            print 
+
+            if verbose:
+                print
+
             # construct object
             cui_ui_element = CUI_ui_element(ui_element_id, name, unknown0, unknown1, verteces, trailer_type)
             self.ui_element_dict[ui_element_id] = cui_ui_element
-            print cui_ui_element
-        
+            if verbose:
+                print cui_ui_element
+
         self.binary_ui_blob = file_pointer.read()
 #        count, = struct.unpack("<I", file_pointer.read(4))
 #        print "Number of ui screens:", count        

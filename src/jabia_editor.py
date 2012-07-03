@@ -25,7 +25,9 @@ class Controller(object):
 
         self.menubar = wx.MenuBar()
         self.fileMenu = FileMenu()
+        self.helpMenu = HelpMenu()
         self.menubar.Append(self.fileMenu, '&File')
+        self.menubar.Append(self.helpMenu, '&Help')
         self.mainFrame.SetMenuBar(self.menubar)
 
         hbox = wx.BoxSizer(wx.HORIZONTAL)
@@ -35,8 +37,8 @@ class Controller(object):
         self.panel_work = wx.Panel(self.mainFrame)
 
         # initialize tree
-        self.tree = wx.TreeCtrl(self.panel_tree, 1, wx.DefaultPosition, (-1,-1), wx.TR_HIDE_ROOT|wx.TR_HAS_BUTTONS)
-
+        #self.tree = wx.TreeCtrl(self.panel_tree, 1, wx.DefaultPosition, (-1,-1), wx.TR_HIDE_ROOT|wx.TR_HAS_BUTTONS)
+        self.tree = wx.TreeCtrl(self.panel_tree, 1, wx.DefaultPosition, (-1,-1), wx.TR_HAS_BUTTONS)
         
         # set the look of main frame
         vbox.Add(self.tree, 1, wx.EXPAND)
@@ -52,6 +54,21 @@ class Controller(object):
         pub.subscribe(self.CreateTree, 'CUI LOADED')
 
         self.mainFrame.Show()
+        
+    def get_item_by_label(self, tree, search_text, root_item):
+        item, cookie = tree.GetFirstChild(root_item)
+
+        while item.IsOk():
+            text = tree.GetItemText(item)
+            if text.lower() == search_text.lower():
+                return item
+            if tree.ItemHasChildren(item):
+                match = self.get_item_by_label(tree, search_text, item)
+                if match.IsOk():
+                    return match
+            item, cookie = tree.GetNextChild(root_item, cookie)
+
+        return wx.TreeItemId()
         
     def OnQuit(self, event):
         self.mainFrame.Close()
@@ -73,6 +90,7 @@ class Controller(object):
         ctx_tree = self.tree.AppendItem(cui_item, 'CTX')
         sound_tree = self.tree.AppendItem(cui_item, 'sounds')
         font_tree = self.tree.AppendItem(cui_item, 'fonts')
+        ui_file_tree = self.tree.AppendItem(cui_item, 'ui files')
         
         # open cui file
         CUI = message.data
@@ -81,13 +99,27 @@ class Controller(object):
         # populate ctx ids
         for ctx_id in CUI.data.ctx_id_list:
             self.tree.AppendItem(ctx_tree, ctx_id.id_name)
-            print ctx_id
         # populate sounds
         for sound_id in CUI.data.sound_list:
             self.tree.AppendItem(sound_tree, sound_id.filename)
         # populate fonts
         for font_id in CUI.data.font_list:
             self.tree.AppendItem(font_tree, font_id.font_name)
+        # populate ui files
+        for ui_file_id in CUI.data.ui_resource_dict:
+            self.tree.AppendItem(ui_file_tree, CUI.data.ui_resource_dict[ui_file_id].filename)
+            
+        self.tree.Expand(root)
+        self.tree.Expand(cui_item)        
+        self.tree.Expand(ctx_tree)
+
+
+
+
+class HelpMenu(wx.Menu):
+    def __init__(self):
+        wx.Menu.__init__(self)
+        self.aboutItem = self.Append(wx.ID_ABOUT, 'About', '')        
         
 class FileMenu(wx.Menu):
     def __init__(self):
