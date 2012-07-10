@@ -78,9 +78,9 @@ class CRF_vertex(object):
         
     def uint2float(self, uint_number):
         if uint_number > 128:
-            return float(uint_number / 127)
+            return float(uint_number / 127.0)
         elif uint_number < 128:
-            return float(-uint_number / 128)
+            return float(-uint_number / 128.0)
         else:
             return 0.0
 
