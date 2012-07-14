@@ -31,10 +31,8 @@ class CTX_ID:
         self.path = path
  
     def get_packed_data(self): 
-        import binascii       
         data_buffer = struct.pack("<II%isI%is" % (len(self.id_name), len(self.path)), 
                                   self.id, len(self.id_name), self.id_name, len(self.path), self.path)
-#        print binascii.hexlify(data_buffer)
         return data_buffer
     
     def __repr__(self):
@@ -120,7 +118,7 @@ class CTX_data:
         self.data_offset = file_pointer.tell()
         
         if peek or verbose:
-            print "Number of itmes: %s" % self.num_items
+            print "Number of items: %s" % self.num_items
             print "Last item id: %i" % self.last_item_id
             print "Number of languages in file: %i" % self.num_languages
             print "Data offset: %s" % hex(self.data_offset).rstrip('L')

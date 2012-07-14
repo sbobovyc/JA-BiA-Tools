@@ -63,7 +63,7 @@ class Controller(object):
         # add your controls to the splitters:
         self.split1.SplitVertically(self.panel_tree, self.panel_work)
         
-
+        #self.panel_work.SetBackgroundColour("blue") #debug only
 
         # initialize tree
         #self.tree = wx.TreeCtrl(self.panel_tree, 1, wx.DefaultPosition, (-1,-1), wx.TR_HIDE_ROOT|wx.TR_HAS_BUTTONS)
@@ -82,6 +82,7 @@ class Controller(object):
         # bind events
         self.mainFrame.Bind(wx.EVT_MENU, self.OnOpen, self.fileMenu.openItem)
         self.mainFrame.Bind(wx.EVT_MENU, self.OnQuit, self.fileMenu.quitItem)
+        self.tree.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnSelChanged, id=1)
         pub.subscribe(self.CreateTree, 'CUI LOADED')
 
         self.mainFrame.Show()
@@ -114,6 +115,23 @@ class Controller(object):
                 filepath = os.path.join(self.dirname, self.filename)
                 self.model.openCUI(filepath)
             dlg.Destroy()
+            
+    def OnSelChanged(self, event):
+        item =  event.GetItem()
+        print item
+        data = self.tree.GetItemData(item).GetData()
+        print data
+        # clear panel
+        for child in self.panel_work.GetChildren():
+            child.Destroy() 
+#        self.display = wx.StaticText(self.panel_work, -1, '',(10,10), style=wx.ALIGN_CENTRE)
+#        self.display.SetLabel(data.path)
+        print data.__class__.__name__
+        
+        if data.__class__.__name__ == "CTX_ID": 
+            CTX_ID_Panel(self.panel_work, data)
+        elif data.__class__.__name__ == "CUI_ui_icon":
+            print 'here'
 
     def CreateTree(self, message):
         root = self.tree.AddRoot('JABIA')
@@ -122,6 +140,7 @@ class Controller(object):
         sound_tree = self.tree.AppendItem(cui_item, 'sounds')
         font_tree = self.tree.AppendItem(cui_item, 'fonts')
         ui_file_tree = self.tree.AppendItem(cui_item, 'ui files')
+        ui_icon_tree = self.tree.AppendItem(cui_item, 'ui icons')
         
         # open cui file
         CUI = message.data
@@ -129,7 +148,8 @@ class Controller(object):
         CUI.unpack(verbose=False)
         # populate ctx ids
         for ctx_id in CUI.data.ctx_id_list:
-            self.tree.AppendItem(ctx_tree, ctx_id.id_name)
+            item = self.tree.AppendItem(ctx_tree, ctx_id.id_name)
+            self.tree.SetItemData(item, wx.TreeItemData(ctx_id))
         # populate sounds
         for sound_id in CUI.data.sound_list:
             self.tree.AppendItem(sound_tree, sound_id.filename)
@@ -139,6 +159,10 @@ class Controller(object):
         # populate ui files
         for ui_file_id in CUI.data.ui_resource_dict:
             self.tree.AppendItem(ui_file_tree, CUI.data.ui_resource_dict[ui_file_id].filename)
+        # populate ui icons
+        for ui_icon_id in CUI.data.ui_icon_dict:
+            item = self.tree.AppendItem(ui_icon_tree, str(CUI.data.ui_icon_dict[ui_icon_id].icon_id))
+            self.tree.SetItemData(item, wx.TreeItemData(CUI.data.ui_icon_dict[ui_icon_id]))
             
         self.tree.Expand(root)
         self.tree.Expand(cui_item)        
@@ -212,6 +236,28 @@ class ProportionalSplitter(wx.SplitterWindow):
                         self.firstpaint = False
                 event.Skip()
 
+class CTX_ID_Panel(wx.Panel):
+    def __init__(self, parent, CTX_ID_object):
+        wx.Panel.__init__(self, parent)
+        self.ctx_id_object = CTX_ID_object        
+        
+        # build gui
+        self.id_text = wx.StaticText(self, label="CTX id:")
+        self.id = wx.TextCtrl(self, -1, "", size=wx.Size(30, -1))
+        self.path_text = wx.StaticText(self, label="Path:")        
+        self.path = wx.TextCtrl(self, -1, "", size=wx.Size(250, -1)) 
+        sizer = wx.GridBagSizer(5, 5)
+        sizer.Add(self.id_text, (0,0))
+        sizer.Add(self.id, (0,1))
+        sizer.Add(self.path_text, (1,0))
+        sizer.Add(self.path, (1,1))
+        self.SetSizer(sizer)
+        self.updateView()
+        
+    def updateView(self):
+        self.id.WriteText(str(self.ctx_id_object.id))
+        self.path.WriteText(str(self.ctx_id_object.path))
+        self.Fit()
         
 class MainFrame(wx.Frame):
     def __init__(self, parent, id, title):

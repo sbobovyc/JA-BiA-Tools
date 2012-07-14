@@ -143,7 +143,7 @@ class CUI_ui_icon:
              self.__class__.__name__, self.icon_id, self.resource_id, self.ulx, self.uly, self.lrx, self.lry)
    
     def __str__(self):
-        return "UI icon ID: %s, resource %s, (%s,%s)(%s,%s)" % (self.icon_id, self.resource_id, self.ulx, self.uly, self.lrx, self.lry)
+        return "UI icon ID: %s, resource %s, {(%s,%s)(%s,%s)}" % (self.icon_id, self.resource_id, self.ulx, self.uly, self.lrx, self.lry)
 
 class CUI_ui_resource:
     def __init__(self, id, ui_name, filename):
