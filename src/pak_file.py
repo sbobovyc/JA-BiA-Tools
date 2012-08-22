@@ -22,15 +22,18 @@ Created on February 2, 2012
 
 import struct 
 import os
-import zlib
+import sys
 import cStringIO
 import base64
 from Crypto.Cipher import AES
 
 PAK_SIGNATURE = 0x504B4C4501000000
-AES_KEY_CIPHERED = {"JABIA" : "eFd1cnozbFBFVEVSMjUzeg==",
+AES_KEY_CIPHERED = {"JABIA_JAC" : "eFd1cnozbFBFVEVSMjUzeg==",
                     "DLC5" : "MTNIYW5zZWxuMTBFbGYlIQ==",
                     "DLC6" : "MTNIYW5zZWxuMTBFbGYlIQ=="}
+PAK_filesize = 0 # in bytes
+PAK_bytes_unpacked = 0
+
 
 class PAK_data:
     def __init_(self, dir):  
@@ -46,7 +49,7 @@ class PAK_data:
         self.file_name_length, self.file_size, self.file_offset, self.file_crc = struct.unpack('<IQQQ', file_pointer.read(28))
         
         self.file_name = file_pointer.read(self.file_name_length)
-        # srip the null
+        # strip the null
         self.file_name = self.file_name.replace("\00", "").strip()
         
         saved_pointer = file_pointer.tell()
@@ -55,14 +58,21 @@ class PAK_data:
         
         if verbose:
             print "File name: %s" % os.path.join(self.file_directory,self.file_name)
-            print "File offset: %s" % hex(self.file_offset)
-            print "File Size: %s bytes" % hex(self.file_size)
-            print "File unknown crc: %s" % hex(self.file_crc)
+            print "File offset: %s" % hex(self.file_offset).rstrip('L')
+            print "File Size: %s bytes" % hex(self.file_size).rstrip('L')
+            print "File unknown crc: %s" % hex(self.file_crc).rstrip('L')
             #print "File Adler32 %s" % hex(zlib.adler32(self.data) & 0xffffffff )
             #print "File CRC32 %s" % hex(zlib.crc32(self.data) & 0xffffffff )
             print 
         
+        global PAK_bytes_unpacked
+        PAK_bytes_unpacked += float(self.file_size)
+        
+        sys.stdout.write("%.0f%%\r" % (PAK_bytes_unpacked * 100/ PAK_filesize) )
+
+        #print "%i\r" % PAK_bytes_unpacked
         path = os.path.join(dest_filepath, self.file_directory)
+        
         if not os.path.exists(path):
             os.makedirs(path)
             
@@ -107,10 +117,13 @@ class PAK_header:
             print "File is not BiA pak"
             return
         
-        self.descriptor_size, self.num_dirs = struct.unpack("<QQ", file_pointer.read(16))        
+        self.descriptor_size, self.num_dirs = struct.unpack("<QQ", file_pointer.read(16))     
+        global PAK_filesize   
+        PAK_filesize -= self.descriptor_size
         
         if verbose:
             print "Descriptor size: %i bytes" % self.descriptor_size
+            print "Content size: %i bytes" % PAK_filesize
             print "Number of directories in archive: %i" % self.num_dirs
             
         for i in range(0, self.num_dirs):
@@ -120,8 +133,11 @@ class PAK_header:
 class PAK_file:
     def __init__(self, filepath=None):
         self.filepath = filepath
-        self.header = None
+        self.header = None        
+        
         if self.filepath != None:
+            global PAK_filesize
+            PAK_filesize = os.path.getsize(filepath)
             self.open(filepath)
     
     def open(self, filepath=None, peek=False):
@@ -156,7 +172,7 @@ class PAK_CRYPT_file(PAK_file):
             elif os.path.splitext(os.path.basename(self.filepath))[0] == "dlc6_dlc6_configs_win32.pak":
                 CIPHER = "DLC6"                
             else:
-                CIPHER = "JABIA"
+                CIPHER = "JABIA_JAC"
             
             aes = AES.new(base64.b64decode(AES_KEY_CIPHERED[CIPHER]), AES.MODE_ECB)
             self.io = cStringIO.StringIO(aes.decrypt(buf)[:real_size])
