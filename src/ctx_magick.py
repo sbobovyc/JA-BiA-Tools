@@ -50,6 +50,7 @@ if file != None and os.path.splitext(file)[1][1:].strip() == "ctx":
     if not info:
         output_filepath = os.path.abspath(outdir)
         ctx_file.dump2yaml(outdir)
+        ctx_file.dump2sql(outdir)
     
 elif file != None and os.path.splitext(file)[1][1:].strip() == "txt":            
     yaml_ctx_filepath = os.path.abspath(file)
@@ -59,6 +60,15 @@ elif file != None and os.path.splitext(file)[1][1:].strip() == "txt":
     print "Packing %s" % yaml_ctx_filepath
     ctx_file = CTX_file(filepath=ctx_filepath)
     ctx_file.yaml2bin(yaml_ctx_filepath)
+
+elif file != None and os.path.splitext(file)[1][1:].strip() == "sqlite":            
+    sql_ctx_filepath = os.path.abspath(file)
+    ctx_file_name = os.path.basename(file).split('.')[0] + ".ctx"    
+    ctx_filepath = os.path.join(os.path.abspath(outdir), ctx_file_name)
+        
+    print "Packing %s" % sql_ctx_filepath
+    ctx_file = CTX_file(filepath=ctx_filepath)
+    ctx_file.sql2bin(sql_ctx_filepath)
 
 else:
     print "Nothing happened"
