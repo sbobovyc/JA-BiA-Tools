@@ -23,7 +23,9 @@ Created on March 15, 2012
 """ Parts of code taken from http://wiki.wxpython.org/wxWizard"""
 import wx
 import wx.wizard as wizmod
-from wx.lib.pubsub import Publisher as pub #this does not work with pyinstaller 1.5.1    
+#from wx.lib.pubsub import Publisher as pub #this does not work with pyinstaller 1.5.1
+#from wx.lib.pubsub import setuparg1
+from wx.lib.pubsub import pub
 import os
 import yaml
 import codecs

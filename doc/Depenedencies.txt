@@ -1,3 +1,4 @@
 pycrypto >=2.3
-wxpython
+wxpython 2.9.4
 pyyaml
+pyinstaller 2.0

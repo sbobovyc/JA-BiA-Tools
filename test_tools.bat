@@ -22,6 +22,7 @@
     echo Testing ctx_magick
     mkdir %TEMP%
     %BIN%\ctx_magick.exe %BIA%\bin_win32\interface\equipment.ctx %TEMP%
+    %BIN%\ctx_magick.exe %TEMP%\equipment.sqlite %TEMP%
     %BIN%\ctx_magick.exe %TEMP%\equipment.ctx.txt %TEMP%
 
     echo. 
