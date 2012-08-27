@@ -210,7 +210,8 @@ class JABIA_Tools_wizard(object):
         panel = wx.Panel(self.page4, -1) 
         #self.gauge = wx.Gauge(panel, -1, 50, size=(340, 25))
         #vbox.Add(panel)
-        self.status = wx.TextCtrl(panel, -1, '', size = wx.Size(200, 200), style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_NO_VSCROLL)
+#        self.status = wx.TextCtrl(panel, -1, '', size = wx.Size(200, 200), style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_NO_VSCROLL)
+        self.status = wx.TextCtrl(panel, -1, '', size = wx.Size(200, 200), style=wx.TE_MULTILINE | wx.TE_READONLY)
         #vbox.Add(self.status)
         #self.page4.add_stuff(vbox)
         
@@ -251,22 +252,23 @@ class JABIA_Tools_wizard(object):
         
     def finish(self):
         if self.mywiz.GetCurrentPage() == self.mywiz.pages[2]:  
-            self.mywiz.GetCurrentPage().SetNext(self.mywiz.pages[3])   
-            self.mywiz.FindWindowById(wx.ID_FORWARD).Disable()
-            self.mywiz.FindWindowById(wx.ID_BACKWARD).Disable()          
+            self.mywiz.GetCurrentPage().SetNext(self.mywiz.pages[3])          
             thread.start_new_thread(self.longRunning, ())            
                 
     def longRunning(self):
         self.status.SetValue("")
+        self.mywiz.FindWindowById(wx.ID_FORWARD).Disable()
+        self.mywiz.FindWindowById(wx.ID_BACKWARD).Disable()
+        self.mywiz.FindWindowById(wx.ID_CANCEL).Disable()   
         for file in self.settings.file_list:
-            pak_filepath = os.path.join(self.settings.jabia_path, file) 
-            #pak_file = PAK_file(filepath=pak_filepath)        
-            wx.CallAfter(self.status.AppendText, "Unpacking " + file + "\n")        
-            #pak_file.dump(self.settings.workspace_path)
+            pak_filepath = os.path.join(self.settings.jabia_path, file)                
             cmd = "pak_magick.exe \"%s\" \"%s\"" % (pak_filepath, self.settings.workspace_path)
+            wx.CallAfter(self.status.AppendText, cmd + "\n\n")
             os.system(cmd)
         self.mywiz.FindWindowById(wx.ID_FORWARD).Enable()
-        self.mywiz.FindWindowById(wx.ID_CANCEL).Disable()
+        self.mywiz.FindWindowById(wx.ID_BACKWARD).Disable()
+        
+        
         
 if __name__ == '__main__':
     app = wx.App()  # Start the application    
