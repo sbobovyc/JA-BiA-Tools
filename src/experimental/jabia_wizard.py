@@ -26,6 +26,7 @@ import wx.wizard as wizmod
 #from wx.lib.pubsub import Publisher as pub #this does not work with pyinstaller 1.5.1
 #from wx.lib.pubsub import setuparg1
 from wx.lib.pubsub import pub
+print "pubsub", pub.VERSION_STR
 import os
 import yaml
 import codecs
@@ -38,8 +39,8 @@ class wizard_settings(object):
         #TODO This path only works on windows
         self.jabia_path = "C:\Program Files (x86)\Steam\steamapps\common\jabia"
         #TODO This environment variable only works on windows
-        self.workspace_path = os.path.join(os.getenv('USERPROFILE'), "workspace_jabia", "default_1.11")
-        self.filepath = "wizard"
+        self.workspace_path = os.path.join(os.getenv('USERPROFILE'), "workspace_jabia", "default_1.13e")
+        self.filepath = "jabia_wizard"
         self.yaml_extension = ".txt"
         yaml_file = self.filepath + self.yaml_extension
         self.file_list = ["data_win32.pak", "data1_win32.pak", "data2_win32.pak", 
@@ -96,7 +97,6 @@ class wizard_page(wizmod.PyWizardPage):
     def GetPrev(self):
         'Return the previous page'
         return self.prev
-
 
 class wizard(wx.wizard.Wizard):
     'Add pages to this wizard object to make it useful.'
@@ -166,7 +166,7 @@ class JABIA_Tools_wizard(object):
         
         # welcome page
         page1 = wizard_page(self.mywiz, 'JABIA-Tools Wizard')  # Create a first page
-        page1.add_stuff(wx.StaticText(page1, -1, 'This tool will help you unpack JABIA 1.11 game assets.'))
+        page1.add_stuff(wx.StaticText(page1, -1, 'This tool will help you unpack JABIA 1.13e game assets.'))
         page1.add_stuff(wx.StaticText(page1, -1, 'To get started, click Next.'))
         self.mywiz.add_page(page1)
     
@@ -249,7 +249,7 @@ class JABIA_Tools_wizard(object):
             pub.sendMessage("DIR_CHANGED", dlg.GetPath())
         dlg.Destroy()
         
-    def finish(self, event):
+    def finish(self):
         if self.mywiz.GetCurrentPage() == self.mywiz.pages[2]:  
             self.mywiz.GetCurrentPage().SetNext(self.mywiz.pages[3])   
             self.mywiz.FindWindowById(wx.ID_FORWARD).Disable()
