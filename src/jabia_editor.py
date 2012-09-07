@@ -21,11 +21,12 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 #http://wiki.wxpython.org/ProportionalSplitterWindow
 #http://wiki.wxpython.org/index.cgi/ModelViewController
+#http://wiki.wxpython.org/Controlling%20GUI%20with%20pubsub
 
 import os
 import wx
 
-from wx.lib.pubsub import Publisher as pub
+from wx.lib.pubsub import pub
 
 from cui_file import CUI_file
 
@@ -38,7 +39,7 @@ class Model(object):
         print self.cui_filepath
         self.CUI = CUI_file(filepath)
         #now tell anyone who cares that the value has been changed
-        pub.sendMessage("CUI LOADED", data=self.CUI)
+        pub.sendMessage("CUI.LOADED", message=self.CUI)
 
 class Controller(object):
     def __init__(self, app):
@@ -46,14 +47,8 @@ class Controller(object):
         self.model = Model()
 
         self.mainFrame = MainFrame(None, -1, 'JABIA Tools Editor (CUI ed)')
-
-        self.menubar = wx.MenuBar()
-        self.fileMenu = FileMenu()
-        self.helpMenu = HelpMenu()
-        self.menubar.Append(self.fileMenu, '&File')
-        self.menubar.Append(self.helpMenu, '&Help')
-        self.mainFrame.SetMenuBar(self.menubar)
-
+        self.createMenubar()
+        
         # create splitter
         self.split1 = ProportionalSplitter(self.mainFrame,-1, 0.35)
 
@@ -83,10 +78,18 @@ class Controller(object):
         self.mainFrame.Bind(wx.EVT_MENU, self.OnOpen, self.fileMenu.openItem)
         self.mainFrame.Bind(wx.EVT_MENU, self.OnQuit, self.fileMenu.quitItem)
         self.tree.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnSelChanged, id=1)
-        pub.subscribe(self.CreateTree, 'CUI LOADED')
+        pub.subscribe(self.CreateTree, 'CUI.LOADED')
 
         self.mainFrame.Show()
         
+    def createMenubar(self):
+        self.menubar = wx.MenuBar()
+        self.fileMenu = FileMenu()
+        self.helpMenu = HelpMenu()
+        self.menubar.Append(self.fileMenu, '&File')
+        self.menubar.Append(self.helpMenu, '&Help')
+        self.mainFrame.SetMenuBar(self.menubar)
+
     def get_item_by_label(self, tree, search_text, root_item):
         item, cookie = tree.GetFirstChild(root_item)
 
@@ -143,7 +146,7 @@ class Controller(object):
         ui_icon_tree = self.tree.AppendItem(cui_item, 'ui icons')
         
         # open cui file
-        CUI = message.data
+        CUI = message
         CUI.open()
         CUI.unpack(verbose=False)
         # populate ctx ids
