@@ -135,7 +135,7 @@ def createSimpleMaterial(use_shadeless, viz_normals):
     return mat
 
 def createTextureLayer(name, me, texFaces):
-    uvtex = me.uv_textures.new()
+    uvtex = me.tessface_uv_textures.new()
     uvtex.name = name
     for n,tf in enumerate(texFaces):        
         datum = uvtex.data[n]
@@ -145,7 +145,7 @@ def createTextureLayer(name, me, texFaces):
     return uvtex
 
 def setVertexNormalsColors(me, faces, vertex_normals):
-    vtex_normals = me.vertex_colors.new()
+    vtex_normals = me.tessface_vertex_colors.new()
     vtex_normals.name = "vertex_normal_xyz"
     for face in faces:
         verts_in_face = face.vertices[:]
@@ -153,7 +153,7 @@ def setVertexNormalsColors(me, faces, vertex_normals):
         vtex_normals.data[face.index].color2 = vertex_normals[verts_in_face[1]][0:3]
         vtex_normals.data[face.index].color3 = vertex_normals[verts_in_face[2]][0:3]
     
-    vtex_normals = me.vertex_colors.new()
+    vtex_normals = me.tessface_vertex_colors.new()
     vtex_normals.name = "vertex_normal_w"
     for face in faces:
         verts_in_face = face.vertices[:]
@@ -165,7 +165,7 @@ def setVertexNormalsColors(me, faces, vertex_normals):
         vtex_normals.data[face.index].color3 = alpha2
 
 def setVertexSpecularColors(me, faces, vertex_specular):
-    vtex_specular = me.vertex_colors.new()
+    vtex_specular = me.tessface_vertex_colors.new()
     vtex_specular.name = "vertex_specular_colors"
     for face in faces:
         verts_in_face = face.vertices[:]
@@ -173,7 +173,7 @@ def setVertexSpecularColors(me, faces, vertex_specular):
         vtex_specular.data[face.index].color2 = vertex_specular[verts_in_face[1]][0:3]
         vtex_specular.data[face.index].color3 = vertex_specular[verts_in_face[2]][0:3]
         
-    vtex_specular = me.vertex_colors.new()
+    vtex_specular = me.tessface_vertex_colors.new()
     vtex_specular.name = "vertex_specular_alpha"
     for face in faces:
         verts_in_face = face.vertices[:]
@@ -185,7 +185,7 @@ def setVertexSpecularColors(me, faces, vertex_specular):
         vtex_specular.data[face.index].color3 = alpha2
 
 def setVertexBlendweightColors(me, faces, vertex_blendweight):
-    vtex_blendweight = me.vertex_colors.new()
+    vtex_blendweight = me.tessface_vertex_colors.new()
     vtex_blendweight.name = "vertex_blendweight_xyz"
     for face in faces:
         verts_in_face = face.vertices[:]
@@ -193,7 +193,7 @@ def setVertexBlendweightColors(me, faces, vertex_blendweight):
         vtex_blendweight.data[face.index].color2 = vertex_blendweight[verts_in_face[1]][0:3]
         vtex_blendweight.data[face.index].color3 = vertex_blendweight[verts_in_face[2]][0:3]
         
-    vtex_blendweight = me.vertex_colors.new()
+    vtex_blendweight = me.tessface_vertex_colors.new()
     vtex_blendweight.name = "vertex_blendweight_w"
     for face in faces:
         verts_in_face = face.vertices[:]
@@ -479,12 +479,16 @@ def load(operator, context, filepath,
         me = bpy.data.meshes.new("Dumped_Mesh")   # create a new mesh
         object_name = os.path.splitext(os.path.basename(filepath))[0]
         ob = bpy.data.objects.new(os.fsdecode(object_name) + "_%i" % model_number, me)
-        # Fill the mesh with verts, edges, faces 
-        me.from_pydata(verts_loc,[],faces)   # edges or faces should be [], or you ask for problems
-        me.update(calc_edges=True)    # Update mesh with new data
+        # Fill the mesh with verts, edges, faces
+        from bpy_extras.io_utils import unpack_list
+        me.vertices.add(len(verts_loc))
+        me.vertices.foreach_set("co", unpack_list(verts_loc))
+        me.tessfaces.add(len(faces))
+        me.tessfaces.foreach_set("vertices_raw", unpack_face_list(faces))
+        #me.update(calc_edges=True)    # Update mesh with new data and in 2.63 convert tessfaces to poly
 
         # fill face uv texture array
-        for face in ob.data.faces:
+        for face in ob.data.tessfaces:
             verts_in_face = face.vertices[:]
             if use_verbose:
                 print("face index", face.index)  
@@ -517,7 +521,7 @@ def load(operator, context, filepath,
             ob.data.materials.append(mat)
 
         if viz_normals:
-            setVertexNormalsColors(me, ob.data.faces, vertex_normals)
+            setVertexNormalsColors(me, ob.data.tessfaces, vertex_normals)
             # if no materials exist, create one+
             if len(ob.data.materials) == 0 and not use_image_search:
                 mat = createMaterial('SimpleMat', use_shadeless, viz_normals)
@@ -529,7 +533,7 @@ def load(operator, context, filepath,
                 vertex.normal = vertex_normal[0:3]
                 
         if use_specular:
-            setVertexSpecularColors(me, ob.data.faces, vertex_specular)
+            setVertexSpecularColors(me, ob.data.tessfaces, vertex_specular)
             # if no materials exist, create one+
             if len(ob.data.materials) == 0 and not use_image_search:
                 mat = createMaterial('Specular', use_shadeless, viz_normals)
@@ -541,13 +545,13 @@ def load(operator, context, filepath,
                 print(ob.data.materials[0].specular_color)
 
         if viz_blendweights:
-            setVertexBlendweightColors(me, ob.data.faces, vertex_blendweights1)
+            setVertexBlendweightColors(me, ob.data.tessfaces, vertex_blendweights1)
             # if no materials exist, create one+
             if len(ob.data.materials) == 0 and not use_image_search:
                 mat = createMaterial('BlendweightMat', use_shadeless, True)
                 ob.data.materials.append(mat)
 
-                
+        me.update(calc_tessface=True, calc_edges=True)
         new_objects.append(ob)
 
     # end loop
@@ -596,6 +600,7 @@ def load(operator, context, filepath,
         for obj in new_objects:
             obj.scale = scale, scale, scale
 
+    
     time_new = time.time()
 
     print("finished importing: %r in %.4f sec." % (filepath, (time_new - time_main)))
