@@ -100,14 +100,14 @@ def _write(context, filepath,
         # mesh header
         mesh = ob.data
         number_of_verteces = len(mesh.vertices)
-        number_of_faces = len(mesh.faces)
+        number_of_faces = len(mesh.tessfaces)
         file.write(struct.pack("<II", *(number_of_verteces, number_of_faces))) # number for vertices and faces
-        print("Model: %i, vertices: %i, faces: %i" % (model_number, len(mesh.vertices), len(mesh.faces)))
+        print("Model: %i, vertices: %i, faces: %i" % (model_number, len(mesh.vertices), len(mesh.tessfaces)))
         model_number = model_number + 1
         # face/vertex index list
         #TODO, the first face always has the first two vertices switched. Don't know if this will affect
         # anything. Need to verify that this does not cause a problem.
-        for face in mesh.faces:
+        for face in mesh.tessfaces:
             verts_in_face = face.vertices[:]
             if verbose:
                 print("face index %s, verts %s" % (face.index, verts_in_face))
@@ -133,34 +133,38 @@ def _write(context, filepath,
             uv_tex1 = mesh.uv_textures.new()
             uv_tex1.name = "UV_Secondary"
 
-
+        mesh.update(calc_tessface=True)
+        uv_tex0 = mesh.tessface_uv_textures[0]
+        uv_tex1 = mesh.tessface_uv_textures[1]
+        
         # write out verteces, normals, ks, and UVs
-        if "vertex_specular_colors" in mesh.vertex_colors:
-            vtex_specular_colors = mesh.vertex_colors["vertex_specular_colors"]
+        if "vertex_specular_colors" in mesh.tessface_vertex_colors:
+            vtex_specular_colors = mesh.tessface_vertex_colors["vertex_specular_colors"]
         else:
-            vtex_specular_colors = mesh.vertex_colors.new()
+            vtex_specular_colors = mesh.tessface_vertex_colors.new()
             vtex_specular_colors.name = "vertex_specular_colors"
 
-        if "vertex_specular_alpha" in mesh.vertex_colors:
-            vtex_specular_alpha = mesh.vertex_colors["vertex_specular_alpha"]
+        if "vertex_specular_alpha" in mesh.tessface_vertex_colors:
+            vtex_specular_alpha = mesh.tessface_vertex_colors["vertex_specular_alpha"]
         else:
-            vtex_specular_alpha = mesh.vertex_colors.new()
+            vtex_specular_alpha = mesh.tessface_vertex_colors.new()
             vtex_specular_alpha.name = "vertex_specular_alpha"
 
-        if "vertex_blendweight_xyz" in mesh.vertex_colors:
-            vtex_blendweights_xyz = mesh.vertex_colors["vertex_blendweight_xyz"]
+        if "vertex_blendweight_xyz" in mesh.tessface_vertex_colors:
+            vtex_blendweights_xyz = mesh.tessface_vertex_colors["vertex_blendweight_xyz"]
         else:
-            vtex_blendweights_xyz = mesh.vertex_colors.new()
+            vtex_blendweights_xyz = mesh.tessface_vertex_colors.new()
             vtex_blendweights_xyz.name = "vertex_blendweight_xyz"
 
-        if "vertex_blendweight_w" in mesh.vertex_colors:
-            vtex_blendweights_w = mesh.vertex_colors["vertex_blendweight_w"]
+        if "vertex_blendweight_w" in mesh.tessface_vertex_colors:
+            vtex_blendweights_w = mesh.tessface_vertex_colors["vertex_blendweight_w"]
         else:
-            vtex_blendweights_w = mesh.vertex_colors.new()
+            vtex_blendweights_w = mesh.tessface_vertex_colors.new()
             vtex_blendweights_w.name = "vertex_blendweight_w"
 
+
         vert_dict = {} # will store CRF_vertex objects
-        for face in mesh.faces:
+        for face in mesh.tessfaces:
             verts_in_face = face.vertices[:]
             if not verts_in_face[0] in vert_dict:
                 vert = CRF_vertex()
