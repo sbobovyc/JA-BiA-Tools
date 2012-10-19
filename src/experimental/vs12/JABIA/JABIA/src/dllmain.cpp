@@ -60,6 +60,29 @@ DWORD WINAPI MyThread(LPVOID)
                             MAKEINTRESOURCE (IDD_DIALOG1),
                             0,
                             DialogProc);
+				HMODULE game_handle;
+				GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, "GameDemo.exe", &game_handle);
+				uint32_t temp_addr;
+				temp_addr = (uint32_t)game_handle;
+				char buf [100];
+
+				temp_addr = *(uint32_t *)(temp_addr + 0x003C64E8)+ 0x6E0;
+				wsprintf (buf, "base ptr 0x%x", temp_addr);
+				OutputDebugString(buf);		
+				temp_addr = *(uint32_t *)temp_addr + 0xD4;
+				wsprintf (buf, "second ptr 0x%x", temp_addr);
+				OutputDebugString(buf);
+				temp_addr = *(uint32_t *)temp_addr + 0x5C0;
+				wsprintf (buf, "second ptr 0x%x", temp_addr);
+				OutputDebugString(buf);
+				temp_addr = *(uint32_t *)temp_addr + 0x34;
+				wsprintf (buf, "second ptr 0x%x", temp_addr);
+				OutputDebugString(buf);
+				temp_addr = *(uint32_t *)temp_addr + 0x118;
+				wsprintf (buf, "second ptr 0x%x", temp_addr);
+				OutputDebugString(buf);
+
+				address = temp_addr;
 				if(address) {
 					fillDialog(hDialog, address);
 				}
@@ -70,7 +93,7 @@ DWORD WINAPI MyThread(LPVOID)
 					MessageBox (0, buf, "CreateDialog", MB_ICONEXCLAMATION | MB_OK);
 					return 1;
 				 }
-				OutputDebugString("Created dialog");
+				
 				MSG  msg;
 				int status;
 				while ((status = GetMessage (& msg, 0, 0, 0)) != 0)
@@ -84,8 +107,10 @@ DWORD WINAPI MyThread(LPVOID)
 					}
 				}
         }
-        else if(GetAsyncKeyState(VK_F8) &1)
+        else if(GetAsyncKeyState(VK_F8) &1) {
+			OutputDebugString("Unloading DLL");
             break;
+		}
     Sleep(100);
     }
 	//DetourTransactionBegin();
@@ -126,13 +151,11 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 					fillDialog(hwnd, address);
 					break;
                 case IDSET:
-					OutputDebugString("In Set");
 					GetDlgItemText(hwnd, IDC_ADDRESS, address_string, 50);
 					address = strtoul(address_string, NULL, 16);
 					setCharacter(hwnd, address);
 					break;
                 case IDCANCEL:
-					OutputDebugString("In Cancel");
                     DestroyWindow(hwnd);
 					PostQuitMessage(0);
 					break;
