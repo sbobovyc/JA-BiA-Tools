@@ -2,8 +2,18 @@
 #define _CHARACTER_H_
 #include <stdint.h>
 
+#define Faction_HumanPlayer		0
+#define Faction_HumanMilitia	1      
+#define Faction_Deidranna		2
+#define Faction_HillBillies		3
+#define Faction_KillTarget		4
+#define Faction_VillagePeople	5
+#define JABIA_CHARACTER_MAX_NAME_LENGTH  16
+
 typedef struct JABIA_Character {
-	uint32_t uk0[24];
+	uint32_t temp_buffer[71];
+	/*
+	uint32_t uk0[25];
 	uint32_t melee_performed;
 	uint32_t grenades_thrown;
 	uint32_t uk1;
@@ -43,8 +53,9 @@ typedef struct JABIA_Character {
 	uint32_t total_days_in_service;
 	uint32_t uk8[5];
 	uint32_t maybe_ptr;
-	uint32_t uk9[3];
-	
+	char pxec[4]; // just a string "pxec"  = character experience
+	uint32_t maybe_ptr2;
+	*/
 
 	uint32_t level;
 	uint32_t experience;
@@ -59,10 +70,15 @@ typedef struct JABIA_Character {
 	uint32_t marksmanship_inc;
 	uint32_t stealth_inc;
 	uint32_t mechanical_inc;
-	uint32_t unknown1[14];
-	
+	uint32_t unknown1[10];
+
+	uint32_t maybe_ptr3;
+	char cinv[4]; // just a string "cinv" = character inventory
+	uint32_t maybe_ptr4;
+	uint32_t maybe_ptr5;
+
 	// all equipment, if empty is 0xFFFF and durability 0
-	uint16_t weapon_in_hand;
+	uint16_t weapon_in_hand; 
 	uint16_t unknown2;
 	
 	uint16_t weapon_in_hand_durability; // divide by ten to get number reported in gui
@@ -116,23 +132,26 @@ typedef struct JABIA_Character {
 
 	uint32_t unknown21[4]; //3 is possibly length of something
 
-	char merc_name[6]; //don't know if this is fixed length or determined by null terminator
-
-	uint16_t unknown22;
-	uint32_t possible_pointer1;
-	uint32_t possible_pointer2;
+	char merc_name[JABIA_CHARACTER_MAX_NAME_LENGTH]; // seems to be fixed length, sometimes has a null terminator
 	uint32_t name_length;
 	
 	uint32_t unknown23;
 
-	uint32_t faction; //Faction_HumanPlayer   = 0
-						//kFaction_HumanMilitia = 1      
-						//Faction_Deidranna     = 2
-						//Faction_HillBillies	= 3
-						//Faction_KillTarget   	= 4
-						//Faction_VillagePeople = 5
+	uint32_t faction; 
 
-	uint32_t medical_condition; // 0 or 1 = healthy, 2 or 3 = dying, 4 = dead, 17 ?= bleeding, 27 = wounded, 128 = being bandaged
+	// medical condition is managed by some state machine
+	uint32_t medical_condition; // 0 or 1 = healthy, 
+								// 2 or 3 = dying, 4 = dead, 17 ?= bleeding, 27 = wounded, 128 = being bandaged
+								// 145 = being healed by large medkit while bleeding
+	// probably a bit field
+	// bit 0 = healthy? initially 1
+	// bit 1 = dying
+	// bit 2 = dead
+	// bit 3 = wounded
+	// bit 4 = unknown
+	// bit 5 = unknown
+	// bit 6 = 
+	// bit 7 = being healed by large medkit
 
 	float health;
 	float stamina;
@@ -165,3 +184,5 @@ typedef struct JABIA_Character {
 } JABIA_Character;
 
 #endif /* _CHARACTER_H_ */
+
+void dump_character(JABIA_Character * ptr, char * filepath);

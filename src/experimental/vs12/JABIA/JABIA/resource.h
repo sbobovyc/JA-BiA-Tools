@@ -4,6 +4,7 @@
 
 #define IDD_DIALOG1                             100
 #define IDI_ICON1                               101
+#define IDR_MENU1                               102
 #define IDSET                                   1000
 #define IDC_SPC_EQ_LEFT                         1001
 #define IDC_SHRT_EQ                             1002
@@ -11,7 +12,7 @@
 #define IDC_MERC_NAME                           1004
 #define IDC_VEST_EQ                             1005
 #define IDC_AMMO_EQ                             1006
-#define IDGET                                   1007
+#define IDC_ADDRESS                             1009
 #define IDC_LEV                                 1010
 #define IDC_TP                                  1011
 #define IDC_AG                                  1012
@@ -45,3 +46,4 @@
 #define IDC_MED_COND                            1077
 #define IDC_MERC_FAC                            1078
 #define IDC_COMBO1                              1079
+#define IDM_DUMP_CHARACTER                      40000

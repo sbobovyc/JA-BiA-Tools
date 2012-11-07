@@ -4,14 +4,25 @@
 #include <stdio.h>
 #include <vector>
 #include <detours.h>
+
 #include "resource.h"
 #include "character.h"
 
 #pragma comment(lib, "detours.lib")
 
-#define MYFUNC_ADDR 0x01341FF0
-#define SHOW_INVENTORY_FUNC 0x00D39B70  
+#define FULL
+//#define DEMO
+
+//#define SHOW_INVENTORY_FUNC 0x00D39B70  
+#ifdef DEMO
 #define CHARACTER_CONST_OFFSET 0x112450
+#define CHARACTER_CONST_RETN_OFFSET 0x210
+static ProcessName = "GameDemo.exe";
+#else
+#define CHARACTER_CONST_OFFSET 0x132880
+#define CHARACTER_CONST_RETN_OFFSET 0x2D8
+static char ProcessName[] = "GameJABiA.exe";
+#endif
 
 /*
 address of CHARACTER_CONST_OFFSET is at the start of this sequence
@@ -24,6 +35,7 @@ BOOL CALLBACK DialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 DWORD WINAPI MyThread(LPVOID);
 void* myCharacterConstRetrun();
 void recordCharacters(void* instance);
+void dump_current_character(HWND hwnd, uint32_t ptr);
 void fillDialog(HWND hwnd, uint32_t ptr);
 void setCharacter(HWND hwnd, uint32_t ptr);
 
@@ -61,14 +73,14 @@ DWORD WINAPI MyThread(LPVOID)
 {
 	char buf [100];
 	// find base address of GameDemo.exe in memory
-	GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, "GameDemo.exe", &game_handle);
+	GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, ProcessName, &game_handle);
 	// find address of character constructor
 	ParseCharacter = (CharacterConstRetrunPtr)((uint32_t)game_handle+CHARACTER_CONST_OFFSET);
 	wsprintf (buf, "Address of CharacterConstructor 0x%x", ParseCharacter);
 	OutputDebugString(buf);
 	// find address of character constructor return
-	ParseCharacter = (CharacterConstRetrunPtr)((uint32_t)game_handle+CHARACTER_CONST_OFFSET+0x210);
-	wsprintf (buf, "Address of retn 10h in CharacterConstructor 0x%x", ParseCharacter);
+	ParseCharacter = (CharacterConstRetrunPtr)((uint32_t)game_handle+CHARACTER_CONST_OFFSET+CHARACTER_CONST_RETN_OFFSET);
+	wsprintf (buf, "Address of retn in CharacterConstructor 0x%x", ParseCharacter);
 	OutputDebugString(buf);
 
 	// If jabia_characters is not empty, clear it. Every time the game loads a level, character pointers change.
@@ -163,6 +175,7 @@ DWORD WINAPI MyThread(LPVOID)
 	// restore protection
     VirtualProtect((LPVOID)ParseCharacter, 6, oldProtection, NULL);
 
+	FreeLibraryAndExitThread(g_hModule, 0);
     return 0;
 }
 
@@ -171,38 +184,63 @@ BOOL CALLBACK DialogProc (HWND hwnd,
                           WPARAM wParam, 
                           LPARAM lParam)
 {
+	HMENU hMenu;
 	HWND comboControl;
 	comboControl=GetDlgItem(hwnd,IDC_COMBO1);	
 	BOOL status = FALSE;
 	uint32_t address = 0; // character address
-	char buf [100];
 
     switch (message)
     {
 		case WM_INITDIALOG:
-		
+			// add menu
+			hMenu = LoadMenu(g_hModule, MAKEINTRESOURCE(IDR_MENU1));
+			SetMenu(hwnd,hMenu);
+			
+			// add icon
+			HICON hIcon;
+
+			hIcon = (HICON)LoadImage(   g_hModule,
+                           MAKEINTRESOURCE(IDI_ICON1),
+                           IMAGE_ICON,
+                           GetSystemMetrics(SM_CXSMICON),
+                           GetSystemMetrics(SM_CYSMICON),
+                           0);
+			if(hIcon) {
+				SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+			}
+
+			// add characters to drop down list
 			for(unsigned long i = 0; i < jabia_characters.size(); i++) {							
-				_itoa_s((uint32_t)jabia_characters.at(i), buf, 100, 16);
-				SendMessage(comboControl,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCTSTR)buf));
-				wsprintf(buf, "In init, Character at 0x%X", jabia_characters.at(i));	
-				OutputDebugString(buf);
+				SendMessage(comboControl,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCTSTR)jabia_characters.at(i)->merc_name));
+				//wsprintf(buf, "In init, Character at 0x%X", jabia_characters.at(i));	
+				//OutputDebugString(buf);
 			}
 			// select fist item in list
 			SendMessage(comboControl, CB_SETCURSEL, last_character_selected_index, 0);
+
+			// TODO dialog does not become active the first time it's created
 			break;
         case WM_COMMAND:
             switch(LOWORD(wParam))
             {
-				case IDGET:
-					last_character_selected_index = SendMessage(comboControl, CB_GETCURSEL, 0, 0);
-					SendMessage(comboControl, WM_GETTEXT, 100, reinterpret_cast<LPARAM>((LPCTSTR)buf));
-					address = strtoul(buf, NULL, 16);
-					fillDialog(hwnd, address);
-					break;
+				case IDC_COMBO1:
+					switch(HIWORD(wParam))
+					{
+						case CBN_CLOSEUP:
+							// use combo box selected index to get a character out of the vector
+							last_character_selected_index = SendMessage(comboControl, CB_GETCURSEL, 0, 0);
+							address = (uint32_t)jabia_characters.at(last_character_selected_index);
+							fillDialog(hwnd, address);
+							break;
+					}
                 case IDSET:
-					SendMessage(comboControl, WM_GETTEXT, 100, reinterpret_cast<LPARAM>((LPCTSTR)buf));
-					address = strtoul(buf, NULL, 16);
+					address = (uint32_t)jabia_characters.at(last_character_selected_index);
 					setCharacter(hwnd, address);
+					break;
+				case IDM_DUMP_CHARACTER:					
+					address = (uint32_t)jabia_characters.at(last_character_selected_index);
+					dump_current_character(hwnd, address);
 					break;
                 case IDCANCEL:
                     DestroyWindow(hwnd);
@@ -216,14 +254,45 @@ BOOL CALLBACK DialogProc (HWND hwnd,
     return FALSE;
 }
 
+void dump_current_character(HWND hwnd, uint32_t ptr) {
+	char buf[100];
+	JABIA_Character character;
+	wsprintf(buf, "Character address 0x%X | ptr address 0x%x", &character, ptr);
+	OutputDebugString(buf);
+	memcpy(&character, (void *)ptr, sizeof(JABIA_Character));		
+	OutputDebugString("Dump character");
+	
+	OPENFILENAME ofn;
+    char szFileName[MAX_PATH] = "";
+
+    ZeroMemory(&ofn, sizeof(ofn));
+
+    ofn.lStructSize = sizeof(ofn); // SEE NOTE BELOW
+    ofn.hwndOwner = hwnd;
+    ofn.lpstrFilter = "JABIA Character Dump (*.jcd)\0*.jcd\0All Files (*.*)\0*.*\0";
+    ofn.lpstrFile = szFileName;
+    ofn.nMaxFile = MAX_PATH;
+    ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;
+    ofn.lpstrDefExt = "jcd";
+	
+    if(GetSaveFileName(&ofn))
+    {
+        // Do something usefull with the filename stored in szFileName 
+		dump_character(&character, szFileName);
+    } else {
+		//TODO show error message
+	}
+}
+
 void fillDialog(HWND hwnd, uint32_t ptr) {
 	char buf[100];
 	JABIA_Character character;
 	memcpy(&character, (void *)ptr, sizeof(JABIA_Character));		
 	
-	//_itoa_s(ptr, buf, 100, 16);
-	//SetDlgItemText(hwnd, IDC_ADDRESS, buf);	
-
+	// address of character
+	_itoa_s(ptr, buf, 100, 16);
+	SetDlgItemText(hwnd, IDC_ADDRESS, buf);	
+	
 	_itoa_s(character.level, buf, 100, 10);
 	SetDlgItemText(hwnd, IDC_LEV, buf);
 
@@ -232,7 +301,7 @@ void fillDialog(HWND hwnd, uint32_t ptr) {
 
 	_itoa_s(character.training_points, buf, 100, 10);
 	SetDlgItemText(hwnd, IDC_TP, buf);
-
+	
 	_itoa_s(character.weapon_in_hand, buf, 100, 10);
 	SetDlgItemText(hwnd, IDC_WPN_EQ, buf);
 
@@ -301,7 +370,9 @@ void fillDialog(HWND hwnd, uint32_t ptr) {
 	sprintf_s(buf, "%.1f", character.stamina, 4);
 	SetDlgItemText(hwnd, IDC_STAMINA, buf);
 
-	memcpy(buf, character.merc_name, 6);
+	// name
+	memset(buf, 0x00, 16);
+	memcpy(buf, character.merc_name, character.name_length);
 	SetDlgItemText(hwnd, IDC_MERC_NAME, buf);
 
 	_itoa_s(character.faction, buf, 100, 10);
@@ -342,6 +413,7 @@ void fillDialog(HWND hwnd, uint32_t ptr) {
 
 	_itoa_s(character.mechanical, buf, 100, 10);
 	SetDlgItemText(hwnd, IDC_MECH, buf);
+	
 }
 
 void setCharacter(HWND hwnd, uint32_t ptr) {
@@ -477,8 +549,11 @@ void setCharacter(HWND hwnd, uint32_t ptr) {
 	weapon_attachment_equiped = atoi(buf);
 	character_ptr->weapon_attachment_equiped = weapon_attachment_equiped;
 
-	GetDlgItemText(hwnd, IDC_MERC_NAME, buf, 6);
-	memcpy(character_ptr->merc_name, buf, 6); // TODO read length of name from character struct
+	// get name and it's length
+	memset(buf, 0x0, JABIA_CHARACTER_MAX_NAME_LENGTH);
+	GetDlgItemText(hwnd, IDC_MERC_NAME, buf, JABIA_CHARACTER_MAX_NAME_LENGTH);
+	memcpy(character_ptr->merc_name, buf, JABIA_CHARACTER_MAX_NAME_LENGTH); // TODO read length of name from character struct
+	character_ptr->name_length = (uint32_t)strlen(character_ptr->merc_name);
 
 	// health and stamina
 	GetDlgItemText(hwnd, IDC_HLTH, buf, 100);
@@ -543,12 +618,23 @@ void setCharacter(HWND hwnd, uint32_t ptr) {
 __declspec(naked) void* myCharacterConstRetrun(){	
 	// Character constructor uses thiscall calling convention and as an optimization passes something in EDX. I don't hook the call to the constructor.
 	// Instead, I hook the return of the character constructor. The "this" pointer will be in EAX.
+
+#ifdef DEMO
 	__asm{
 		push eax;
 		call recordCharacters;
 		pop eax;
 		retn 0x10;
 	}
+#else if FULL
+	__asm{
+		push eax;
+		call recordCharacters;
+		pop eax;
+		retn 0x1C;
+	}
+#endif
+
 }
 
 
@@ -556,10 +642,17 @@ void __cdecl recordCharacters(void* instance){
 	char buf [100];
 	JABIA_Character * character_ptr;
 	OutputDebugString("Parsing character!");
+#ifdef DEMO
 	__asm{
 		mov eax, [esp+4];
 		mov character_ptr, eax;
 	}
+#else 
+	__asm{
+		mov eax, [esp+0x148];
+		mov character_ptr, eax;
+	}
+#endif
 	wsprintf(buf, "Character at 0x%X", character_ptr);
 	OutputDebugString(buf);
 	jabia_characters.push_back(character_ptr);
