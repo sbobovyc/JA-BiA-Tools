@@ -51,6 +51,7 @@ HINSTANCE TheInstance = 0;
 // character vector
 std::vector<JABIA_Character *> jabia_characters;
 int last_character_selected_index = 0;
+int last_weaponslot_selected_index = 0;
 
 INT APIENTRY DllMain(HMODULE hDLL, DWORD Reason, LPVOID Reserved)
 {
@@ -185,8 +186,10 @@ BOOL CALLBACK DialogProc (HWND hwnd,
                           LPARAM lParam)
 {
 	HMENU hMenu;
-	HWND comboControl;
-	comboControl=GetDlgItem(hwnd,IDC_COMBO1);	
+	HWND comboControl1;
+	HWND comboControl2;
+	comboControl1=GetDlgItem(hwnd,IDC_COMBO1);	
+	comboControl2=GetDlgItem(hwnd,IDC_COMBO2);	
 	BOOL status = FALSE;
 	uint32_t address = 0; // character address
 
@@ -212,12 +215,21 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 
 			// add characters to drop down list
 			for(unsigned long i = 0; i < jabia_characters.size(); i++) {							
-				SendMessage(comboControl,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCTSTR)jabia_characters.at(i)->merc_name));
+				SendMessage(comboControl1,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCTSTR)jabia_characters.at(i)->merc_name));
 				//wsprintf(buf, "In init, Character at 0x%X", jabia_characters.at(i));	
 				//OutputDebugString(buf);
 			}
+				// select fist item in list
+			SendMessage(comboControl1, CB_SETCURSEL, last_character_selected_index, 0);
+			
+
+			// add weapons slots to their combo box
+			SendMessage(comboControl2,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCTSTR)"1"));
+			SendMessage(comboControl2,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCTSTR)"2"));
+			SendMessage(comboControl2,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCTSTR)"3"));
+
 			// select fist item in list
-			SendMessage(comboControl, CB_SETCURSEL, last_character_selected_index, 0);
+			SendMessage(comboControl2, CB_SETCURSEL, last_weaponslot_selected_index, 0);
 
 			// TODO dialog does not become active the first time it's created
 			break;
@@ -229,7 +241,17 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 					{
 						case CBN_CLOSEUP:
 							// use combo box selected index to get a character out of the vector
-							last_character_selected_index = SendMessage(comboControl, CB_GETCURSEL, 0, 0);
+							last_character_selected_index = SendMessage(comboControl1, CB_GETCURSEL, 0, 0);
+							address = (uint32_t)jabia_characters.at(last_character_selected_index);
+							fillDialog(hwnd, address);
+							break;
+					}
+				case IDC_COMBO2:
+					switch(HIWORD(wParam))
+					{
+						case CBN_CLOSEUP:
+							// use combo box selected index to get weapon from inventory
+							last_weaponslot_selected_index = SendMessage(comboControl2, CB_GETCURSEL, 0, 0);
 							address = (uint32_t)jabia_characters.at(last_character_selected_index);
 							fillDialog(hwnd, address);
 							break;
@@ -359,7 +381,7 @@ void fillDialog(HWND hwnd, uint32_t ptr) {
 	_itoa_s(character.ammo_equiped_count, buf, 100, 10);
 	SetDlgItemText(hwnd, IDC_AMMO_EQ_CNT, buf);
 
-	_itoa_s(character.weapon_attachment_equiped, buf, 100, 10);
+	_itoa_s(character.weapon_attachment_removable, buf, 100, 10);
 	SetDlgItemText(hwnd, IDC_WPN_MOD, buf);
 
 	// health and stamina 	
@@ -380,6 +402,16 @@ void fillDialog(HWND hwnd, uint32_t ptr) {
 
 	_itoa_s(character.medical_condition, buf, 100, 10);
 	SetDlgItemText(hwnd, IDC_MED_COND, buf);
+
+	// inventory
+	_itoa_s(character.weapons[last_weaponslot_selected_index].weapon, buf, 100, 10);
+	SetDlgItemText(hwnd, IDC_WPN_INV, buf);
+
+	_itoa_s(character.weapons[last_weaponslot_selected_index].weapon_durability, buf, 100, 10);
+	SetDlgItemText(hwnd, IDC_WPN_INV_DUR, buf);
+
+	_itoa_s(character.weapons[last_weaponslot_selected_index].ammo_count, buf, 100, 10);
+	SetDlgItemText(hwnd, IDC_AMMO_INV_CNT, buf);
 
 	// attributes
 	_itoa_s(character.agility, buf, 100, 10);
@@ -440,7 +472,11 @@ void setCharacter(HWND hwnd, uint32_t ptr) {
 	uint16_t pants_equiped_durability;
 	uint16_t ammo_equiped;
 	uint16_t ammo_equiped_count;
-	uint16_t weapon_attachment_equiped;
+	uint16_t weapon_attachment_removable;
+
+	uint16_t weapon;
+	uint16_t weapon_durability;
+	uint16_t ammo_count;
 
 	float health;
 	float stamina;
@@ -476,6 +512,8 @@ void setCharacter(HWND hwnd, uint32_t ptr) {
 	GetDlgItemText(hwnd, IDC_WPN_EQ, buf, 100);
 	weapon_in_hand = atoi(buf);
 	character_ptr->weapon_in_hand = weapon_in_hand;
+
+	character_ptr->weapon_in_hand_removable = 1;
 
 	GetDlgItemText(hwnd, IDC_WPN_EQ_DUR, buf, 100);
 	weapon_in_hand_durability = atoi(buf);
@@ -546,14 +584,31 @@ void setCharacter(HWND hwnd, uint32_t ptr) {
 	character_ptr->ammo_equiped_count = ammo_equiped_count;
 
 	GetDlgItemText(hwnd, IDC_WPN_MOD, buf, 100);
-	weapon_attachment_equiped = atoi(buf);
-	character_ptr->weapon_attachment_equiped = weapon_attachment_equiped;
+	weapon_attachment_removable = atoi(buf);
+	character_ptr->weapon_attachment_removable = weapon_attachment_removable;
+	
+	character_ptr->weapon_attachment_status = 1;
 
 	// get name and it's length
 	memset(buf, 0x0, JABIA_CHARACTER_MAX_NAME_LENGTH);
 	GetDlgItemText(hwnd, IDC_MERC_NAME, buf, JABIA_CHARACTER_MAX_NAME_LENGTH);
 	memcpy(character_ptr->merc_name, buf, JABIA_CHARACTER_MAX_NAME_LENGTH); // TODO read length of name from character struct
 	character_ptr->name_length = (uint32_t)strlen(character_ptr->merc_name);
+
+	// inventory
+	GetDlgItemText(hwnd, IDC_WPN_INV, buf, 100);
+	weapon = atoi(buf);
+	character_ptr->weapons[last_weaponslot_selected_index].weapon = weapon;
+
+	GetDlgItemText(hwnd, IDC_WPN_INV_DUR, buf, 100);
+	weapon_durability = atoi(buf);
+	character_ptr->weapons[last_weaponslot_selected_index].weapon_durability = weapon_durability;
+
+	GetDlgItemText(hwnd, IDC_AMMO_INV_CNT, buf, 100);
+	ammo_count = atoi(buf);
+	character_ptr->weapons[last_weaponslot_selected_index].ammo_count = ammo_count;
+
+	character_ptr->weapons[last_weaponslot_selected_index].removable = 1;
 
 	// health and stamina
 	GetDlgItemText(hwnd, IDC_HLTH, buf, 100);

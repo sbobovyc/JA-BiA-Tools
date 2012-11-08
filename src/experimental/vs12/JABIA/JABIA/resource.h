@@ -12,12 +12,14 @@
 #define IDC_MERC_NAME                           1004
 #define IDC_VEST_EQ                             1005
 #define IDC_AMMO_EQ                             1006
+#define IDC_COMBO2                              1007
 #define IDC_ADDRESS                             1009
 #define IDC_LEV                                 1010
 #define IDC_TP                                  1011
 #define IDC_AG                                  1012
 #define IDC_EX                                  1013
 #define IDC_HELM_EQ                             1016
+#define IDC_WPN_INV                             1018
 #define IDC_WPN_EQ                              1024
 #define IDC_HELM_EQ_DUR                         1026
 #define IDC_WPN_EQ_DUR                          1028
@@ -46,4 +48,6 @@
 #define IDC_MED_COND                            1077
 #define IDC_MERC_FAC                            1078
 #define IDC_COMBO1                              1079
-#define IDM_DUMP_CHARACTER                      40000
+#define IDC_WPN_INV_DUR                         40000
+#define IDM_DUMP_CHARACTER                      50000
+#define IDC_AMMO_INV_CNT                        40002

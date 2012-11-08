@@ -10,6 +10,21 @@
 #define Faction_VillagePeople	5
 #define JABIA_CHARACTER_MAX_NAME_LENGTH  16
 
+typedef struct JABIA_Character_weapon {
+	// all equipment, if empty is 0xFFFF and durability 0
+	uint16_t weapon; 
+	uint16_t removable;	 // should be 1 for most weapons
+	uint16_t weapon_durability; // divide by ten to get number reported in gui
+	uint16_t ammo_count;
+} JABIA_Character_weapon;
+
+typedef struct JABIA_Character_inventory_item {
+	uint16_t item_id; 
+	uint16_t item_count;
+	uint16_t item_durability;
+	uint16_t item_charges;
+} JABIA_Character_inventory_item;
+
 typedef struct JABIA_Character {
 	uint32_t temp_buffer[71];
 	/*
@@ -79,8 +94,7 @@ typedef struct JABIA_Character {
 
 	// all equipment, if empty is 0xFFFF and durability 0
 	uint16_t weapon_in_hand; 
-	uint16_t unknown2;
-	
+	uint16_t weapon_in_hand_removable; // 0 for not removable	
 	uint16_t weapon_in_hand_durability; // divide by ten to get number reported in gui
 	uint16_t unknown3;
 
@@ -123,19 +137,20 @@ typedef struct JABIA_Character {
 	uint16_t ammo_equiped_count;
 	uint32_t unknown19;
 
-	uint16_t weapon_attachment_equiped;
+	uint16_t weapon_attachment_removable;
 	uint16_t weapon_attachment_status; // 0 > means you can remove it, less than 0 means you can't
 	uint32_t unknown20;
 
-	// then the weapon slots come
-	uint32_t inventory[36];
+	// inventory is divided between weapons and items
+	JABIA_Character_weapon weapons[3];
+	JABIA_Character_inventory_item items[15];
 
-	uint32_t unknown21[4]; //3 is possibly length of something
+	uint32_t unknown23[4]; //3 is possibly length of something
 
 	char merc_name[JABIA_CHARACTER_MAX_NAME_LENGTH]; // seems to be fixed length, sometimes has a null terminator
 	uint32_t name_length;
 	
-	uint32_t unknown23;
+	uint32_t unknown24;
 
 	uint32_t faction; 
 
@@ -170,8 +185,8 @@ typedef struct JABIA_Character {
 	uint32_t stealth;
 	uint32_t mechanical;
 
-	uint32_t unknown24;
 	uint32_t unknown25;
+	uint32_t unknown26;
 
 	// modifier
 	uint32_t mod_agility;
