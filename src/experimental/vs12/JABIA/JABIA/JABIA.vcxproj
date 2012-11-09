@@ -25,6 +25,7 @@
     <ProjectGuid>{645C9A65-BC39-46EC-BA94-87CFBAFAEBF1}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>JABIA</RootNamespace>
+    <ProjectName>JABIA_debug</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

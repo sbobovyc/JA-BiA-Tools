@@ -1,3 +1,24 @@
+/*
+@author: sbobovyc
+*/
+
+/*
+Copyright (C) 2012 Stanislav Bobovych
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #ifndef _CHARACTER_H_
 #define _CHARACTER_H_
 #include <stdint.h>
@@ -9,6 +30,7 @@
 #define Faction_KillTarget		4
 #define Faction_VillagePeople	5
 #define JABIA_CHARACTER_MAX_NAME_LENGTH  16
+#define JABIA_CHARACTER_INV_SLOTS  15
 
 typedef struct JABIA_Character_weapon {
 	// all equipment, if empty is 0xFFFF and durability 0
@@ -143,7 +165,7 @@ typedef struct JABIA_Character {
 
 	// inventory is divided between weapons and items
 	JABIA_Character_weapon weapons[3];
-	JABIA_Character_inventory_item items[15];
+	JABIA_Character_inventory_item inventory_items[15];
 
 	uint32_t unknown23[4]; //3 is possibly length of something
 

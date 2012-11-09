@@ -1,3 +1,24 @@
+/*
+@author: sbobovyc
+*/
+
+/*
+Copyright (C) 2012 Stanislav Bobovych
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include <windows.h>
 #include <string.h>
 #include <stdint.h>
@@ -24,10 +45,6 @@ static ProcessName = "GameDemo.exe";
 static char ProcessName[] = "GameJABiA.exe";
 #endif
 
-/*
-address of CHARACTER_CONST_OFFSET is at the start of this sequence
-51 53 8B 5C 24 10 57 B8 02 00 00 00 8D 7E 18 C7 46 04 72 61 68 63 66 89 46 08
-*/
 typedef int (_stdcall *ShowInventoryPtr)(void * unknown1, void * character_ptr, void * unknown2, int unknown3);
 typedef void * (_stdcall *CharacterConstRetrunPtr)();
 
@@ -52,6 +69,7 @@ HINSTANCE TheInstance = 0;
 std::vector<JABIA_Character *> jabia_characters;
 int last_character_selected_index = 0;
 int last_weaponslot_selected_index = 0;
+int last_inventory_selected_index = 0;
 
 INT APIENTRY DllMain(HMODULE hDLL, DWORD Reason, LPVOID Reserved)
 {
@@ -103,12 +121,15 @@ DWORD WINAPI MyThread(LPVOID)
 	// restore protection
     VirtualProtect((LPVOID)ParseCharacter, 6, oldProtection, NULL);
 
-
+	wsprintf(buf, "DLL successfully loaded. Load a save game and press F7 to bring up editor.");
+	MessageBox (0, buf, "JABIA character editor", MB_ICONEXCLAMATION | MB_OK | MB_SYSTEMMODAL);
     while(true)
     {
         if(GetAsyncKeyState(VK_F7) & 1)
         {
-
+			if(jabia_characters.at(last_character_selected_index) == NULL) {
+				MessageBox (0, buf, "Memory error", MB_ICONEXCLAMATION | MB_OK | MB_SYSTEMMODAL);
+			} else {
 			    HWND hDialog = 0;
 				
 			    hDialog = CreateDialog (g_hModule,
@@ -116,37 +137,13 @@ DWORD WINAPI MyThread(LPVOID)
                             0,
                             DialogProc);
 
-/*				
-				uint32_t temp_addr;
-				temp_addr = (uint32_t)game_handle;
-				
-				wsprintf (buf, "Address of GameDemo.exe 0x%x", temp_addr);
-				OutputDebugString(buf);		
-				wsprintf (buf, "Address of base ptr 0x%x", temp_addr + 0x003C64E8);
-				OutputDebugString(buf);		
-				temp_addr = *(uint32_t *)(temp_addr + 0x003C64E8)+ 0x6E0;
-				wsprintf (buf, "base ptr 0x%x", temp_addr);
-				OutputDebugString(buf);		
-				temp_addr = *(uint32_t *)temp_addr + 0xD4;
-				wsprintf (buf, "fist ptr 0x%x", temp_addr);
-				OutputDebugString(buf);
-				temp_addr = *(uint32_t *)temp_addr + 0x5C0;
-				wsprintf (buf, "second ptr 0x%x", temp_addr);
-				OutputDebugString(buf);
-				temp_addr = *(uint32_t *)temp_addr + 0x34;
-				wsprintf (buf, "third ptr 0x%x", temp_addr);
-				OutputDebugString(buf);
-				temp_addr = *(uint32_t *)temp_addr;
-				wsprintf (buf, "final ptr 0x%x", temp_addr);
-				OutputDebugString(buf);
-*/
 				fillDialog(hDialog, (uint32_t)jabia_characters.at(last_character_selected_index));
 				
 				if (!hDialog)
 				{
 					char buf [100];
 					wsprintf (buf, "Error x%x", GetLastError ());
-					MessageBox (0, buf, "CreateDialog", MB_ICONEXCLAMATION | MB_OK);
+					MessageBox (0, buf, "CreateDialog", MB_ICONEXCLAMATION | MB_OK | MB_SYSTEMMODAL);
 					return 1;
 				 }
 				
@@ -162,6 +159,7 @@ DWORD WINAPI MyThread(LPVOID)
 						DispatchMessage ( & msg );
 					}
 				}
+			}
         }
         else if(GetAsyncKeyState(VK_F8) &1) {
 			OutputDebugString("Unloading DLL");
@@ -188,14 +186,18 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 	HMENU hMenu;
 	HWND comboControl1;
 	HWND comboControl2;
+	HWND comboControl3;
 	comboControl1=GetDlgItem(hwnd,IDC_COMBO1);	
 	comboControl2=GetDlgItem(hwnd,IDC_COMBO2);	
+	comboControl3=GetDlgItem(hwnd,IDC_COMBO3);	
 	BOOL status = FALSE;
 	uint32_t address = 0; // character address
 
     switch (message)
     {
 		case WM_INITDIALOG:
+			BringWindowToTop(hwnd);
+
 			// add menu
 			hMenu = LoadMenu(g_hModule, MAKEINTRESOURCE(IDR_MENU1));
 			SetMenu(hwnd,hMenu);
@@ -231,7 +233,17 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 			// select fist item in list
 			SendMessage(comboControl2, CB_SETCURSEL, last_weaponslot_selected_index, 0);
 
-			// TODO dialog does not become active the first time it's created
+
+			// add inventory slots to their combo box
+			for(int i = 0; i < JABIA_CHARACTER_INV_SLOTS; i++) {
+				char buf[5];
+				wsprintf(buf, "%i", i);
+				SendMessage(comboControl3,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCTSTR)buf));
+			}
+
+			// select fist item in list
+			SendMessage(comboControl3, CB_SETCURSEL, 0, 0);
+
 			break;
         case WM_COMMAND:
             switch(LOWORD(wParam))
@@ -246,6 +258,7 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 							fillDialog(hwnd, address);
 							break;
 					}
+					break;
 				case IDC_COMBO2:
 					switch(HIWORD(wParam))
 					{
@@ -256,7 +269,21 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 							fillDialog(hwnd, address);
 							break;
 					}
+					break;
+				case IDC_COMBO3:
+					switch(HIWORD(wParam))
+					{
+						case CBN_CLOSEUP:
+							// use combo box selected index to get weapon from inventory
+							last_inventory_selected_index = SendMessage(comboControl3, CB_GETCURSEL, 0, 0);
+							address = (uint32_t)jabia_characters.at(last_character_selected_index);
+							fillDialog(hwnd, address);
+							break;
+					}
+					break;
                 case IDSET:
+					char buf[50];
+					wsprintf(buf, "Setting");
 					address = (uint32_t)jabia_characters.at(last_character_selected_index);
 					setCharacter(hwnd, address);
 					break;
@@ -310,7 +337,7 @@ void fillDialog(HWND hwnd, uint32_t ptr) {
 	char buf[100];
 	JABIA_Character character;
 	memcpy(&character, (void *)ptr, sizeof(JABIA_Character));		
-	
+
 	// address of character
 	_itoa_s(ptr, buf, 100, 16);
 	SetDlgItemText(hwnd, IDC_ADDRESS, buf);	
@@ -412,6 +439,9 @@ void fillDialog(HWND hwnd, uint32_t ptr) {
 
 	_itoa_s(character.weapons[last_weaponslot_selected_index].ammo_count, buf, 100, 10);
 	SetDlgItemText(hwnd, IDC_AMMO_INV_CNT, buf);
+
+	_itoa_s(character.inventory_items[last_inventory_selected_index].item_id, buf, 100, 10);
+	SetDlgItemText(hwnd, IDC_INV_ITEM_ID, buf);
 
 	// attributes
 	_itoa_s(character.agility, buf, 100, 10);
