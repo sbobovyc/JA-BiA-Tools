@@ -47,10 +47,12 @@ typedef struct JABIA_Character_inventory_item {
 	uint16_t item_charges;
 } JABIA_Character_inventory_item;
 
-typedef struct JABIA_Character {
-	uint32_t temp_buffer[71];
-	/*
-	uint32_t uk0[25];
+typedef struct JABIA_Character {			
+	uint32_t uk0[22];
+	char ctsc[4]; // just a string "ctsc"  = character statistics
+	uint32_t u0;
+	uint32_t u1;
+	uint32_t maybe_ptr0;
 	uint32_t melee_performed;
 	uint32_t grenades_thrown;
 	uint32_t uk1;
@@ -61,16 +63,16 @@ typedef struct JABIA_Character {
 	uint32_t bullets_fired;
 	uint32_t bullets_hit;
 	uint32_t bullets_hit_noncritical;
-	uint32_t bullets_hit_critical;
+	uint32_t bullets_hit_critical;	
 	uint32_t enemies_killed;
 	uint32_t total_damage_dealt;
 	uint32_t uk5;
-	uint32_t uk6;
+	uint32_t uk6;	
 	uint32_t total_damage_taken;
 	uint32_t times_bleeding;
 	uint32_t times_wounded;
 	uint32_t times_rescued_from_dying;
-	uint32_t uk7;
+	uint32_t uk7;	
 	uint32_t successful_healing_checks;
 	uint32_t unsuccessful_healing_checks;
 	uint32_t total_amount_health_restored;
@@ -91,8 +93,8 @@ typedef struct JABIA_Character {
 	uint32_t uk8[5];
 	uint32_t maybe_ptr;
 	char pxec[4]; // just a string "pxec"  = character experience
-	uint32_t maybe_ptr2;
-	*/
+	uint32_t uk9;
+		
 
 	uint32_t level;
 	uint32_t experience;

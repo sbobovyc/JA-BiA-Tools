@@ -27,14 +27,14 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #include <detours.h>
 
 #include "resource.h"
-#include "character.h"
+#include "../h/character.h"
 
 #pragma comment(lib, "detours.lib")
 
 #define FULL
+#define WITH_XP_MOD
 //#define DEMO
 
-//#define SHOW_INVENTORY_FUNC 0x00D39B70  
 #ifdef DEMO
 #define CHARACTER_CONST_OFFSET 0x112450
 #define CHARACTER_CONST_RETN_OFFSET 0x210
@@ -45,8 +45,15 @@ static ProcessName = "GameDemo.exe";
 static char ProcessName[] = "GameJABiA.exe";
 #endif
 
-typedef int (_stdcall *ShowInventoryPtr)(void * unknown1, void * character_ptr, void * unknown2, int unknown3);
+
+// modding exp function
+#ifdef FULL
+#define UPDATE_EXP_OFFSET 0x14C470
+#endif
+
+
 typedef void * (_stdcall *CharacterConstRetrunPtr)();
+typedef void * (_stdcall *UpdateCharacterExpPtr)();
 
 BOOL CALLBACK DialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 DWORD WINAPI MyThread(LPVOID);
@@ -102,6 +109,7 @@ DWORD WINAPI MyThread(LPVOID)
 	wsprintf (buf, "Address of retn in CharacterConstructor 0x%x", ParseCharacter);
 	OutputDebugString(buf);
 
+
 	// If jabia_characters is not empty, clear it. Every time the game loads a level, character pointers change.
 	//TODO need to hook load level function and do this then too.
 	jabia_characters.clear();
@@ -123,6 +131,8 @@ DWORD WINAPI MyThread(LPVOID)
 
 	wsprintf(buf, "DLL successfully loaded. Load a save game and press F7 to bring up editor.");
 	MessageBox (0, buf, "JABIA character editor", MB_ICONEXCLAMATION | MB_OK | MB_SYSTEMMODAL);
+	wsprintf(buf, "Size of struct %i", sizeof(JABIA_Character));
+	OutputDebugString(buf);
     while(true)
     {
         if(GetAsyncKeyState(VK_F7) & 1)
@@ -167,7 +177,7 @@ DWORD WINAPI MyThread(LPVOID)
 		}
     Sleep(100);
     }
-	// restor retn hook
+	// restore retn hook
 	// read + write
 	VirtualProtect(ParseCharacter, 6, PAGE_EXECUTE_READWRITE, &oldProtection);
 	memcpy((void *)ParseCharacter, (void *)Before_JMP, 6);
@@ -734,7 +744,7 @@ void __cdecl recordCharacters(void* instance){
 	}
 #else 
 	__asm{
-		mov eax, [esp+0x148];
+		mov eax, [esp+0x148];	//TODO fix this stupid mistake, if i ever change what happends to the stack this offset will be wrong
 		mov character_ptr, eax;
 	}
 #endif
@@ -745,27 +755,3 @@ void __cdecl recordCharacters(void* instance){
 	OutputDebugString(buf);
 }
 
-/*
-void BeginRedirect(LPVOID newFunction, uint32_t pOrigMBAddress)
-{
-    char debugBuffer[128];
-    OutputDebugString("Redirecting");
-    BYTE tempJMP[SIZE] = {0xE9, 0x90, 0x90, 0x90, 0x90, 0xC3};
-    memcpy(JMP, tempJMP, SIZE);
-    DWORD JMPSize = ((DWORD)newFunction - (DWORD)pOrigMBAddress - 5);
-    VirtualProtect((LPVOID)pOrigMBAddress, SIZE, 
-                    PAGE_EXECUTE_READWRITE, &oldProtect);
-    memcpy((void *)oldBytes, (void *)pOrigMBAddress, SIZE);
-
-    sprintf(debugBuffer, "Old bytes: %x%x%x%x%x", oldBytes[0], oldBytes[1], oldBytes[2], oldBytes[3], oldBytes[4], oldBytes[5]);
-    OutputDebugString(debugBuffer);
-
-    memcpy(&JMP[1], &JMPSize, 4);
-
-    sprintf(debugBuffer, "JMP: %x%x%x%x%x", JMP[0], JMP[1], JMP[2], JMP[3], JMP[4], JMP[5]);
-    OutputDebugString(debugBuffer);
-
-    memcpy((void *)pOrigMBAddress, (void *)JMP, SIZE);
-    VirtualProtect((LPVOID)pOrigMBAddress, SIZE, oldProtect, NULL);
-}
-*/
