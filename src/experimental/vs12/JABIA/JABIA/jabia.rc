@@ -19,6 +19,8 @@ IDR_MENU1 MENU
     POPUP "Advanced"
     {
         MENUITEM "Dump character", IDM_DUMP_CHARACTER
+        MENUITEM "Dump all", IDM_DUMP_ALL, INACTIVE
+        MENUITEM SEPARATOR
     }
 }
 

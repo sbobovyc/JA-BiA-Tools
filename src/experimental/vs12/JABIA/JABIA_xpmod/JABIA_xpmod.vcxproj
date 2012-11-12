@@ -83,6 +83,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="h\xpmod.h" />
+    <ClInclude Include="resource\resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="resource\JABIA_xpmod.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

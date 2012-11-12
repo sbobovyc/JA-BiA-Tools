@@ -26,5 +26,13 @@
     <ClInclude Include="h\xpmod.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="resource\resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="resource\JABIA_xpmod.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

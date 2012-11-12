@@ -29,3 +29,10 @@ void dump_character(JABIA_Character * ptr, char * filepath) {
 	fwrite(ptr, sizeof(JABIA_Character), 1, fp);
 	fclose(fp);
 }
+
+void load_character(JABIA_Character * ptr, char * filepath) {
+	FILE *fp;
+	fp=fopen(filepath, "wb");
+	fread(ptr, sizeof(JABIA_Character), 1, fp);
+	fclose(fp);
+}

@@ -12,11 +12,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\h\character.h" />
+    <ClInclude Include="h\JABIA_debug.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\character.cpp" />
-    <ClCompile Include="src\dllmain.cpp" />
+    <ClCompile Include="src\JABIA_debug.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="jabia.rc" />

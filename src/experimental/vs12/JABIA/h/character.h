@@ -225,3 +225,4 @@ typedef struct JABIA_Character {
 #endif /* _CHARACTER_H_ */
 
 void dump_character(JABIA_Character * ptr, char * filepath);
+

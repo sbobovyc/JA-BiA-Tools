@@ -24,44 +24,17 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #include <stdint.h>
 #include <stdio.h>
 #include <vector>
+#include <shlobj.h>
+#include <objbase.h>
 #include <detours.h>
 
+#include "../h/JABIA_debug.h"
 #include "resource.h"
 #include "../h/character.h"
 
 #pragma comment(lib, "detours.lib")
 
-#define FULL
-#define WITH_XP_MOD
-//#define DEMO
 
-#ifdef DEMO
-#define CHARACTER_CONST_OFFSET 0x112450
-#define CHARACTER_CONST_RETN_OFFSET 0x210
-static ProcessName = "GameDemo.exe";
-#else
-#define CHARACTER_CONST_OFFSET 0x132880
-#define CHARACTER_CONST_RETN_OFFSET 0x2D8
-static char ProcessName[] = "GameJABiA.exe";
-#endif
-
-
-// modding exp function
-#ifdef FULL
-#define UPDATE_EXP_OFFSET 0x14C470
-#endif
-
-
-typedef void * (_stdcall *CharacterConstRetrunPtr)();
-typedef void * (_stdcall *UpdateCharacterExpPtr)();
-
-BOOL CALLBACK DialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
-DWORD WINAPI MyThread(LPVOID);
-void* myCharacterConstRetrun();
-void recordCharacters(void* instance);
-void dump_current_character(HWND hwnd, uint32_t ptr);
-void fillDialog(HWND hwnd, uint32_t ptr);
-void setCharacter(HWND hwnd, uint32_t ptr);
 
 CharacterConstRetrunPtr ParseCharacter;
 
@@ -98,93 +71,114 @@ INT APIENTRY DllMain(HMODULE hDLL, DWORD Reason, LPVOID Reserved)
 DWORD WINAPI MyThread(LPVOID)
 {
 	char buf [100];
-	// find base address of GameDemo.exe in memory
-	GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, ProcessName, &game_handle);
-	// find address of character constructor
-	ParseCharacter = (CharacterConstRetrunPtr)((uint32_t)game_handle+CHARACTER_CONST_OFFSET);
-	wsprintf (buf, "Address of CharacterConstructor 0x%x", ParseCharacter);
-	OutputDebugString(buf);
-	// find address of character constructor return
-	ParseCharacter = (CharacterConstRetrunPtr)((uint32_t)game_handle+CHARACTER_CONST_OFFSET+CHARACTER_CONST_RETN_OFFSET);
-	wsprintf (buf, "Address of retn in CharacterConstructor 0x%x", ParseCharacter);
-	OutputDebugString(buf);
-
-
-	// If jabia_characters is not empty, clear it. Every time the game loads a level, character pointers change.
-	//TODO need to hook load level function and do this then too.
-	jabia_characters.clear();
-
 	DWORD oldProtection;
-	// read + write
-	VirtualProtect(ParseCharacter, 6, PAGE_EXECUTE_READWRITE, &oldProtection);
-	DWORD JMPSize = ((DWORD)myCharacterConstRetrun - (DWORD)ParseCharacter - 5);
 	BYTE Before_JMP[6]; // save retn here
-	BYTE JMP[6] = {0xE9, 0x90, 0x90, 0x90, 0x90, 0x90}; // JMP NOP NOP ...
-	memcpy((void *)Before_JMP, (void *)ParseCharacter, 6); // save retn
-	memcpy(&JMP[1], &JMPSize, 4);
-	wsprintf(buf, "JMP: %x%x%x%x%x", JMP[0], JMP[1], JMP[2], JMP[3], JMP[4], JMP[5]);
-    OutputDebugString(buf);
-	// overwrite retn with JMP
-	memcpy((void *)ParseCharacter, (void *)JMP, 6);
-	// restore protection
-    VirtualProtect((LPVOID)ParseCharacter, 6, oldProtection, NULL);
+	// find base address of GameDemo.exe in memory
+	if(GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, ProcessName, &game_handle) == NULL) {
+		wsprintf(buf, "Failed to get module handle");
+		OutputDebugString(buf);
+		/*
+		HWND hDialog = 0;
 
-	wsprintf(buf, "DLL successfully loaded. Load a save game and press F7 to bring up editor.");
-	MessageBox (0, buf, "JABIA character editor", MB_ICONEXCLAMATION | MB_OK | MB_SYSTEMMODAL);
-	wsprintf(buf, "Size of struct %i", sizeof(JABIA_Character));
-	OutputDebugString(buf);
-    while(true)
-    {
-        if(GetAsyncKeyState(VK_F7) & 1)
-        {
-			if(jabia_characters.at(last_character_selected_index) == NULL) {
-				MessageBox (0, buf, "Memory error", MB_ICONEXCLAMATION | MB_OK | MB_SYSTEMMODAL);
-			} else {
-			    HWND hDialog = 0;
-				
-			    hDialog = CreateDialog (g_hModule,
-                            MAKEINTRESOURCE (IDD_DIALOG1),
-                            0,
-                            DialogProc);
+		hDialog = CreateDialog (g_hModule,
+			MAKEINTRESOURCE (IDD_DIALOG1),
+			0,
+			DialogProc);
+		JABIA_Character character;
+		strcpy_s(character.merc_name, 5, "NULL");
+		character.name_length = 4;
+		std::vector<JABIA_Character *> jabia_characters_local;
+		jabia_characters_local.push_back(&character);
+		fillDialog(hDialog, (uint32_t)jabia_characters_local.at(last_character_selected_index));
+		*/
 
-				fillDialog(hDialog, (uint32_t)jabia_characters.at(last_character_selected_index));
+	} else {
+		// find address of character constructor
+		ParseCharacter = (CharacterConstRetrunPtr)((uint32_t)game_handle+CHARACTER_CONST_OFFSET);
+		wsprintf (buf, "Address of CharacterConstructor 0x%x", ParseCharacter);
+		OutputDebugString(buf);
+		// find address of character constructor return
+		ParseCharacter = (CharacterConstRetrunPtr)((uint32_t)game_handle+CHARACTER_CONST_OFFSET+CHARACTER_CONST_RETN_OFFSET);
+		wsprintf (buf, "Address of retn in CharacterConstructor 0x%x", ParseCharacter);
+		OutputDebugString(buf);
+
+
+		// If jabia_characters is not empty, clear it. Every time the game loads a level, character pointers change.
+		//TODO need to hook load level function and do this then too.
+		jabia_characters.clear();
+		
+		// read + write
+		VirtualProtect(ParseCharacter, 6, PAGE_EXECUTE_READWRITE, &oldProtection);
+		DWORD JMPSize = ((DWORD)myCharacterConstRetrun - (DWORD)ParseCharacter - 5);
+		
+		BYTE JMP[6] = {0xE9, 0x90, 0x90, 0x90, 0x90, 0x90}; // JMP NOP NOP ...
+		memcpy((void *)Before_JMP, (void *)ParseCharacter, 6); // save retn
+		memcpy(&JMP[1], &JMPSize, 4);
+		wsprintf(buf, "JMP: %x%x%x%x%x", JMP[0], JMP[1], JMP[2], JMP[3], JMP[4], JMP[5]);
+		OutputDebugString(buf);
+		// overwrite retn with JMP
+		memcpy((void *)ParseCharacter, (void *)JMP, 6);
+		// restore protection
+		VirtualProtect((LPVOID)ParseCharacter, 6, oldProtection, NULL);
+
+		wsprintf(buf, "DLL successfully loaded. Load a save game and press F7 to bring up editor.");
+		MessageBox (0, buf, "JABIA character editor", MB_ICONEXCLAMATION | MB_OK | MB_SYSTEMMODAL);
+		wsprintf(buf, "Size of struct %i", sizeof(JABIA_Character));
+		OutputDebugString(buf);
+	
+		while(true)
+		{
+			if(GetAsyncKeyState(VK_F7) & 1)
+			{
+				if(jabia_characters.at(last_character_selected_index) == NULL) {
+					MessageBox (0, buf, "Memory error", MB_ICONEXCLAMATION | MB_OK | MB_SYSTEMMODAL);
+				} else {
+					HWND hDialog = 0;
 				
-				if (!hDialog)
-				{
-					char buf [100];
-					wsprintf (buf, "Error x%x", GetLastError ());
-					MessageBox (0, buf, "CreateDialog", MB_ICONEXCLAMATION | MB_OK | MB_SYSTEMMODAL);
-					return 1;
-				 }
+					hDialog = CreateDialog (g_hModule,
+								MAKEINTRESOURCE (IDD_DIALOG1),
+								0,
+								DialogProc);
+
+					fillDialog(hDialog, (uint32_t)jabia_characters.at(last_character_selected_index));
 				
-				MSG  msg;
-				int status;
-				while ((status = GetMessage (& msg, 0, 0, 0)) != 0)
-				{
-					if (status == -1)
-						return -1;
-					if (!IsDialogMessage (hDialog, & msg))
+					if (!hDialog)
 					{
-						TranslateMessage ( & msg );
-						DispatchMessage ( & msg );
+						char buf [100];
+						wsprintf (buf, "Error x%x", GetLastError ());
+						MessageBox (0, buf, "CreateDialog", MB_ICONEXCLAMATION | MB_OK | MB_SYSTEMMODAL);
+						return 1;
+					 }
+				
+					MSG  msg;
+					int status;
+					while ((status = GetMessage (& msg, 0, 0, 0)) != 0)
+					{
+						if (status == -1)
+							return -1;
+						if (!IsDialogMessage (hDialog, & msg))
+						{
+							TranslateMessage ( & msg );
+							DispatchMessage ( & msg );
+						}
 					}
 				}
 			}
-        }
-        else if(GetAsyncKeyState(VK_F8) &1) {
-			OutputDebugString("Unloading DLL");
-            break;
+			else if(GetAsyncKeyState(VK_F8) &1) {
+				OutputDebugString("Unloading DLL");
+				break;
+			}
+		Sleep(100);
 		}
-    Sleep(100);
-    }
-	// restore retn hook
-	// read + write
-	VirtualProtect(ParseCharacter, 6, PAGE_EXECUTE_READWRITE, &oldProtection);
-	memcpy((void *)ParseCharacter, (void *)Before_JMP, 6);
-	// restore protection
-    VirtualProtect((LPVOID)ParseCharacter, 6, oldProtection, NULL);
+		// restore retn hook
+		// read + write
+		VirtualProtect(ParseCharacter, 6, PAGE_EXECUTE_READWRITE, &oldProtection);
+		memcpy((void *)ParseCharacter, (void *)Before_JMP, 6);
+		// restore protection
+		VirtualProtect((LPVOID)ParseCharacter, 6, oldProtection, NULL);
 
-	FreeLibraryAndExitThread(g_hModule, 0);
+		FreeLibraryAndExitThread(g_hModule, 0);
+	}
     return 0;
 }
 
@@ -301,6 +295,9 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 					address = (uint32_t)jabia_characters.at(last_character_selected_index);
 					dump_current_character(hwnd, address);
 					break;
+				case IDM_DUMP_ALL:				
+					dump_all_characters(hwnd);
+					break;
                 case IDCANCEL:
                     DestroyWindow(hwnd);
 					PostQuitMessage(0);
@@ -313,6 +310,7 @@ BOOL CALLBACK DialogProc (HWND hwnd,
     return FALSE;
 }
 
+//TODO this should take in a pointer to a character
 void dump_current_character(HWND hwnd, uint32_t ptr) {
 	char buf[100];
 	JABIA_Character character;
@@ -343,149 +341,182 @@ void dump_current_character(HWND hwnd, uint32_t ptr) {
 	}
 }
 
+BOOL dump_all_characters(HWND hwnd) {
+	char buf[100];
+	
+	LPITEMIDLIST pidl     = NULL;
+	BROWSEINFO   bi       = { 0 };
+	BOOL         bResult  = FALSE;
+
+	bi.hwndOwner      = hwnd;
+	bi.pszDisplayName = buf;
+	bi.pidlRoot       = NULL;
+	bi.lpszTitle      = "Select directory";
+	bi.ulFlags        = BIF_RETURNONLYFSDIRS | BIF_USENEWUI;
+
+	if ((pidl = SHBrowseForFolder(&bi)) != NULL)
+	{
+		bResult = SHGetPathFromIDList(pidl, buf);
+		CoTaskMemFree(pidl);
+	}
+
+	if(bResult) {
+		for(unsigned int i = 0; i < jabia_characters.size(); i++) {
+			char full_path[100];
+			wsprintf(full_path, "%s/%s", buf, jabia_characters.at(i)->merc_name);
+			dump_character(jabia_characters.at(i), full_path);
+		}
+	} else {
+		//TODO show error
+	}
+	return bResult;
+	
+}
+
 void fillDialog(HWND hwnd, uint32_t ptr) {
 	char buf[100];
 	JABIA_Character character;
-	memcpy(&character, (void *)ptr, sizeof(JABIA_Character));		
+	if(ptr != NULL) {
+		memcpy(&character, (void *)ptr, sizeof(JABIA_Character));		
 
-	// address of character
-	_itoa_s(ptr, buf, 100, 16);
-	SetDlgItemText(hwnd, IDC_ADDRESS, buf);	
-	
-	_itoa_s(character.level, buf, 100, 10);
-	SetDlgItemText(hwnd, IDC_LEV, buf);
+		// address of character
+		_itoa_s(ptr, buf, 100, 16);
+		SetDlgItemText(hwnd, IDC_ADDRESS, buf);	
 
-	_itoa_s(character.experience, buf, 100, 10);
-	SetDlgItemText(hwnd, IDC_EX, buf);
+		_itoa_s(character.level, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_LEV, buf);
 
-	_itoa_s(character.training_points, buf, 100, 10);
-	SetDlgItemText(hwnd, IDC_TP, buf);
-	
-	_itoa_s(character.weapon_in_hand, buf, 100, 10);
-	SetDlgItemText(hwnd, IDC_WPN_EQ, buf);
+		_itoa_s(character.experience, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_EX, buf);
 
-	_itoa_s(character.weapon_in_hand_durability, buf, 100, 10);
-	SetDlgItemText(hwnd, IDC_WPN_EQ_DUR, buf);
+		_itoa_s(character.training_points, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_TP, buf);
 
-	_itoa_s(character.helmet_equiped, buf, 100, 10);
-	SetDlgItemText(hwnd, IDC_HELM_EQ, buf);
+		_itoa_s(character.weapon_in_hand, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_WPN_EQ, buf);
 
-	_itoa_s(character.helmet_equiped_durability, buf, 100, 10);
-	SetDlgItemText(hwnd, IDC_HELM_EQ_DUR, buf);
+		_itoa_s(character.weapon_in_hand_durability, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_WPN_EQ_DUR, buf);
 
-	_itoa_s(character.eyewear_equiped, buf, 100, 10);
-	SetDlgItemText(hwnd, IDC_EYE_EQ, buf);
+		_itoa_s(character.helmet_equiped, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_HELM_EQ, buf);
 
-	_itoa_s(character.eyewear_equiped_durability, buf, 100, 10);
-	SetDlgItemText(hwnd, IDC_EYE_EQ_DUR, buf);
+		_itoa_s(character.helmet_equiped_durability, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_HELM_EQ_DUR, buf);
 
-	_itoa_s(character.special_equiped, buf, 100, 10);
-	SetDlgItemText(hwnd, IDC_SPC_EQ, buf);
+		_itoa_s(character.eyewear_equiped, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_EYE_EQ, buf);
 
-	_itoa_s(character.special_equiped_charges, buf, 100, 10);
-	SetDlgItemText(hwnd, IDC_SPC_EQ_LEFT, buf);
+		_itoa_s(character.eyewear_equiped_durability, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_EYE_EQ_DUR, buf);
 
-	_itoa_s(character.shirt_equiped, buf, 100, 10);
-	SetDlgItemText(hwnd, IDC_SHRT_EQ, buf);
+		_itoa_s(character.special_equiped, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_SPC_EQ, buf);
 
-	_itoa_s(character.shirt_equiped_durability, buf, 100, 10);
-	SetDlgItemText(hwnd, IDC_SHRT_EQ_DUR, buf);
+		_itoa_s(character.special_equiped_charges, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_SPC_EQ_LEFT, buf);
 
-	_itoa_s(character.vest_equiped, buf, 100, 10);
-	SetDlgItemText(hwnd, IDC_VEST_EQ, buf);
+		_itoa_s(character.shirt_equiped, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_SHRT_EQ, buf);
 
-	_itoa_s(character.vest_equiped_durability, buf, 100, 10);
-	SetDlgItemText(hwnd, IDC_VEST_DUR, buf);
+		_itoa_s(character.shirt_equiped_durability, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_SHRT_EQ_DUR, buf);
 
-	_itoa_s(character.shoes_equiped, buf, 100, 10);
-	SetDlgItemText(hwnd, IDC_SHOES_EQ, buf);
+		_itoa_s(character.vest_equiped, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_VEST_EQ, buf);
 
-	_itoa_s(character.shoes_equiped_durability, buf, 100, 10);
-	SetDlgItemText(hwnd, IDC_SHOES_DUR, buf);
+		_itoa_s(character.vest_equiped_durability, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_VEST_DUR, buf);
 
-	_itoa_s(character.pants_equiped, buf, 100, 10);
-	SetDlgItemText(hwnd, IDC_PANTS_EQ, buf);
+		_itoa_s(character.shoes_equiped, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_SHOES_EQ, buf);
 
-	_itoa_s(character.pants_equiped_durability, buf, 100, 10);
-	SetDlgItemText(hwnd, IDC_PANTS_DUR, buf);
+		_itoa_s(character.shoes_equiped_durability, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_SHOES_DUR, buf);
 
-	_itoa_s(character.ammo_equiped, buf, 100, 10);
-	SetDlgItemText(hwnd, IDC_AMMO_EQ, buf);
+		_itoa_s(character.pants_equiped, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_PANTS_EQ, buf);
 
-	_itoa_s(character.ammo_equiped_count, buf, 100, 10);
-	SetDlgItemText(hwnd, IDC_AMMO_EQ_CNT, buf);
+		_itoa_s(character.pants_equiped_durability, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_PANTS_DUR, buf);
 
-	_itoa_s(character.ammo_equiped_count, buf, 100, 10);
-	SetDlgItemText(hwnd, IDC_AMMO_EQ_CNT, buf);
+		_itoa_s(character.ammo_equiped, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_AMMO_EQ, buf);
 
-	_itoa_s(character.weapon_attachment_removable, buf, 100, 10);
-	SetDlgItemText(hwnd, IDC_WPN_MOD, buf);
+		_itoa_s(character.ammo_equiped_count, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_AMMO_EQ_CNT, buf);
 
-	// health and stamina 	
-	sprintf_s(buf, "%.1f", character.health, 4);
-	//OutputDebugString(buf);
-	SetDlgItemText(hwnd, IDC_HLTH, buf);
+		_itoa_s(character.ammo_equiped_count, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_AMMO_EQ_CNT, buf);
 
-	sprintf_s(buf, "%.1f", character.stamina, 4);
-	SetDlgItemText(hwnd, IDC_STAMINA, buf);
+		_itoa_s(character.weapon_attachment_removable, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_WPN_MOD, buf);
 
-	// name
-	memset(buf, 0x00, 16);
-	memcpy(buf, character.merc_name, character.name_length);
-	SetDlgItemText(hwnd, IDC_MERC_NAME, buf);
+		// health and stamina 	
+		sprintf_s(buf, "%.1f", character.health, 4);
+		//OutputDebugString(buf);
+		SetDlgItemText(hwnd, IDC_HLTH, buf);
 
-	_itoa_s(character.faction, buf, 100, 10);
-	SetDlgItemText(hwnd, IDC_MERC_FAC, buf);
+		sprintf_s(buf, "%.1f", character.stamina, 4);
+		SetDlgItemText(hwnd, IDC_STAMINA, buf);
 
-	_itoa_s(character.medical_condition, buf, 100, 10);
-	SetDlgItemText(hwnd, IDC_MED_COND, buf);
+		// name
+		memset(buf, 0x00, 16);
+		memcpy(buf, character.merc_name, character.name_length);
+		SetDlgItemText(hwnd, IDC_MERC_NAME, buf);
 
-	// inventory
-	_itoa_s(character.weapons[last_weaponslot_selected_index].weapon, buf, 100, 10);
-	SetDlgItemText(hwnd, IDC_WPN_INV, buf);
+		_itoa_s(character.faction, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_MERC_FAC, buf);
 
-	_itoa_s(character.weapons[last_weaponslot_selected_index].weapon_durability, buf, 100, 10);
-	SetDlgItemText(hwnd, IDC_WPN_INV_DUR, buf);
+		_itoa_s(character.medical_condition, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_MED_COND, buf);
 
-	_itoa_s(character.weapons[last_weaponslot_selected_index].ammo_count, buf, 100, 10);
-	SetDlgItemText(hwnd, IDC_AMMO_INV_CNT, buf);
+		// inventory
+		_itoa_s(character.weapons[last_weaponslot_selected_index].weapon, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_WPN_INV, buf);
 
-	_itoa_s(character.inventory_items[last_inventory_selected_index].item_id, buf, 100, 10);
-	SetDlgItemText(hwnd, IDC_INV_ITEM_ID, buf);
+		_itoa_s(character.weapons[last_weaponslot_selected_index].weapon_durability, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_WPN_INV_DUR, buf);
 
-	// attributes
-	_itoa_s(character.agility, buf, 100, 10);
-	SetDlgItemText(hwnd, IDC_AG, buf);
+		_itoa_s(character.weapons[last_weaponslot_selected_index].ammo_count, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_AMMO_INV_CNT, buf);
 
-	_itoa_s(character.dexterity, buf, 100, 10);
-	SetDlgItemText(hwnd, IDC_DEX, buf);
+		_itoa_s(character.inventory_items[last_inventory_selected_index].item_id, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_INV_ITEM_ID, buf);
 
-	_itoa_s(character.strength, buf, 100, 10);
-	SetDlgItemText(hwnd, IDC_STR, buf);
+		// attributes
+		_itoa_s(character.agility, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_AG, buf);
 
-	_itoa_s(character.intelligence, buf, 100, 10);
-	SetDlgItemText(hwnd, IDC_INT, buf);
+		_itoa_s(character.dexterity, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_DEX, buf);
 
-	_itoa_s(character.perception, buf, 100, 10);
-	SetDlgItemText(hwnd, IDC_PER, buf);
+		_itoa_s(character.strength, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_STR, buf);
 
-	// skills
+		_itoa_s(character.intelligence, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_INT, buf);
 
-	_itoa_s(character.medical, buf, 100, 10);
-	SetDlgItemText(hwnd, IDC_MED, buf);
+		_itoa_s(character.perception, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_PER, buf);
 
-	_itoa_s(character.explosives, buf, 100, 10);
-	SetDlgItemText(hwnd, IDC_EXPL, buf);
+		// skills
 
-	_itoa_s(character.marksmanship, buf, 100, 10);
-	SetDlgItemText(hwnd, IDC_MARK, buf);
+		_itoa_s(character.medical, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_MED, buf);
 
-	_itoa_s(character.stealth, buf, 100, 10);
-	SetDlgItemText(hwnd, IDC_STEALTH, buf);
+		_itoa_s(character.explosives, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_EXPL, buf);
 
-	_itoa_s(character.mechanical, buf, 100, 10);
-	SetDlgItemText(hwnd, IDC_MECH, buf);
-	
+		_itoa_s(character.marksmanship, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_MARK, buf);
+
+		_itoa_s(character.stealth, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_STEALTH, buf);
+
+		_itoa_s(character.mechanical, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_MECH, buf);
+	}	
 }
 
 void setCharacter(HWND hwnd, uint32_t ptr) {
