@@ -41,8 +41,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Program Files %28x86%29\boost_1_52_0;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Program Files %28x86%29\boost_1_52_0\stage\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\sbobovyc\workspace\WinHookInject\VS12\WinHookInject\Detours Express 3.0\include;C:\Program Files %28x86%29\boost_1_52_0;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\sbobovyc\workspace\WinHookInject\VS12\WinHookInject\Detours Express 3.0\lib.X86;C:\Program Files %28x86%29\boost_1_52_0\stage\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -82,6 +82,7 @@
     <ClCompile Include="src\xpmod.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\h\JABIA_gui.h" />
     <ClInclude Include="h\xpmod.h" />
     <ClInclude Include="resource\resource.h" />
   </ItemGroup>

@@ -25,9 +25,12 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <vector>
 
+#include "detours.h"
 #include "../../h/character.h"
+#include "../../h/JABIA_gui.h"
 #include "../h/xpmod.h"
 
+#pragma comment(lib,"detours.lib")
 
 #define WITH_XP_MOD
 #define CHARACTER_CONST_OFFSET 0x132880
@@ -42,9 +45,13 @@ BOOL CALLBACK DialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 DWORD WINAPI MyThread(LPVOID);
 void* myUpdateCharacterExp();
 void changeCharacterStats(void* instance);
+void myPrintCharacterXpGain(wchar_t * xp_increase, int unknown, wchar_t * xp_string);
 
 
 UpdateCharacterExpPtr UpdateCharacterExp;
+PrintCharacterXpGainPtr PrintCharacterXpGain;
+
+
 JABIA_XPMOD_parameters xpmod_params;
 
 HMODULE game_handle; // address of GameDemo.exe
@@ -83,6 +90,12 @@ DWORD WINAPI MyThread(LPVOID)
 	OutputDebugString(buf);
 
 
+	// find address of print character xp function
+		// find address of character update xp function
+	PrintCharacterXpGain = (PrintCharacterXpGainPtr)((uint32_t)game_handle+PRINT_XP_FUN_OFFSET);
+	wsprintf (buf, "Address of PrintCharacterXpGain 0x%x", PrintCharacterXpGain);
+	OutputDebugString(buf);
+
 	// UpdateCharacterExp redirection
 	DWORD oldProtection;
 	// read + write
@@ -99,6 +112,14 @@ DWORD WINAPI MyThread(LPVOID)
 	// restore protection
     VirtualProtect((LPVOID)UpdateCharacterExp, 6, oldProtection, NULL);
 
+	// detour print xp function
+	DetourRestoreAfterWith();
+
+    DetourTransactionBegin();
+    DetourUpdateThread(GetCurrentThread());
+	DetourAttach(&(PVOID&)PrintCharacterXpGain, myPrintCharacterXpGain);
+	DetourTransactionCommit();
+
     while(true)
     {
 		if(GetAsyncKeyState(VK_F8) &1) {
@@ -113,6 +134,13 @@ DWORD WINAPI MyThread(LPVOID)
 	memcpy((void *)UpdateCharacterExp, (void *)Before_JMP, 6);
 	// restore protection
     VirtualProtect((LPVOID)UpdateCharacterExp, 6, oldProtection, NULL);
+
+	// restore print xp function
+    DetourTransactionBegin();
+    DetourUpdateThread(GetCurrentThread());
+    DetourDetach(&(PVOID&)PrintCharacterXpGain, myPrintCharacterXpGain);
+    DetourTransactionCommit();
+
 
 	FreeLibraryAndExitThread(g_hModule, 0);
     return 0;
@@ -182,4 +210,13 @@ void changeCharacterStats(void* instance) {
 		double accuracy = double(character_ptr->bullets_hit) / double(character_ptr->bullets_fired);
 		character_ptr->marksmanship += calc_marksmanship(&xpmod_params, character_ptr->enemies_killed, accuracy);
 	}
+}
+
+void myPrintCharacterXpGain(wchar_t * xp_increase, int unknown, wchar_t * xp_string) {
+	wchar_t wbuf[100];
+	char buf[100];
+	wsprintf(buf, "%ls %i %ls", xp_increase, unknown, xp_string);
+	OutputDebugString(buf);
+	swprintf(wbuf, 100, L"%ls\nYay", xp_string);
+	PrintCharacterXpGain(xp_increase, unknown, wbuf);
 }
