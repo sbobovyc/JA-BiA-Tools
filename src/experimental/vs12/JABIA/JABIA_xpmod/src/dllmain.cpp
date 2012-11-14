@@ -105,8 +105,8 @@ DWORD WINAPI MyThread(LPVOID)
 	BYTE JMP2[6] = {0xE9, 0x90, 0x90, 0x90, 0x90, 0x90}; // JMP NOP NOP ...
 	memcpy((void *)Before_JMP, (void *)UpdateCharacterExp, 6); // save retn
 	memcpy(&JMP2[1], &JMPSize2, 4);
-	wsprintf(buf, "JMP2: %x%x%x%x%x", JMP2[0], JMP2[1], JMP2[2], JMP2[3], JMP2[4], JMP2[5]);
-    OutputDebugString(buf);
+	//wsprintf(buf, "JMP2: %x%x%x%x%x", JMP2[0], JMP2[1], JMP2[2], JMP2[3], JMP2[4], JMP2[5]);
+    //OutputDebugString(buf);
 	// overwrite retn with JMP
 	memcpy((void *)UpdateCharacterExp, (void *)JMP2, 6);
 	// restore protection
@@ -127,6 +127,11 @@ DWORD WINAPI MyThread(LPVOID)
             break;
 		}
     Sleep(100);
+	/*
+		wchar_t wbuf[512];
+		swprintf(wbuf, 512, L"THIS is a tEst!");
+		PrintCharacterXpGain(L"+++", 0x200, wbuf);
+	*/
     }
 	// restore exp update hook
 	// read + write
@@ -206,17 +211,29 @@ void changeCharacterStats(void* instance) {
 	OutputDebugString(buf);
 
 	// do whatever i want with the character	
+	if(! (character_ptr->total_amount_health_restored % xpmod_params.medical_modulo) ) {
+		character_ptr->medical += calc_medical(&xpmod_params, character_ptr);
+	}
+	unsigned int total_explosives_actions = 0;
+	total_explosives_actions += character_ptr->grenades_thrown + 
+										character_ptr->successful_mines_planted + 
+										character_ptr->successful_mines_disarmed + character_ptr->successful_explosives_planted;
+	if(! (total_explosives_actions % xpmod_params.explosives_modulo) ) {
+		character_ptr->explosives += calc_explosives(&xpmod_params, character_ptr);
+	}
 	if(! (character_ptr->enemies_killed % xpmod_params.marksmanship_modulo) ) {
 		double accuracy = double(character_ptr->bullets_hit) / double(character_ptr->bullets_fired);
 		character_ptr->marksmanship += calc_marksmanship(&xpmod_params, character_ptr->enemies_killed, accuracy);
-	}
+	}	
 }
 
 void myPrintCharacterXpGain(wchar_t * xp_increase, int unknown, wchar_t * xp_string) {
+	// this function possibly uses thiscall
+	//006AF52E  /$  8BFF          MOV EDI,EDI
 	wchar_t wbuf[100];
 	char buf[100];
 	wsprintf(buf, "%ls %i %ls", xp_increase, unknown, xp_string);
 	OutputDebugString(buf);
-	swprintf(wbuf, 100, L"%ls\nYay", xp_string);
+	swprintf(wbuf, 100, L"%ls\nXPmod", xp_string);
 	PrintCharacterXpGain(xp_increase, unknown, wbuf);
 }
