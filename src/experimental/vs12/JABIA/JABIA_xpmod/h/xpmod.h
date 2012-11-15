@@ -25,12 +25,18 @@ typedef struct JABIA_XPMOD_parameters {
 	double marksmanship_b;
 	double marksmanship_xoffset;
 	std::vector<double> marksmanship_accuracy_modifier;
-	
+
+	unsigned int stealth_modulo;	// how often do we update stealth (default is every 10 stealth related actions)
+	double stealth_kills_to_counterstealth_ratio_modifier;
+	double stealth_damage_ratio_modifier;
+
+
 	// initializer list to use copy constructor instead of default constructor
     JABIA_XPMOD_parameters() : 	
 		medical_modulo(100), medical_a(0.004), medical_b(4.5), medical_xoffset(-2), medical_modifier(2),
 		explosives_modulo(10), explosives_a(0.015), explosives_b(3), explosives_xoffset(-1.5), explosives_modifier(3),
-		marksmanship_modulo(5), marksmanship_a(0.042), marksmanship_b(5), marksmanship_xoffset(-2), marksmanship_accuracy_modifier(2)
+		marksmanship_modulo(5), marksmanship_a(0.042), marksmanship_b(5), marksmanship_xoffset(-2), marksmanship_accuracy_modifier(2),
+		stealth_modulo(10), stealth_kills_to_counterstealth_ratio_modifier(1), stealth_damage_ratio_modifier(0.35)
     {
 		medical_modifier[0] = 1.25;
 		medical_modifier[1] = 1.0;
@@ -73,7 +79,8 @@ typedef struct JABIA_XPMOD_parameters {
 		archive & BOOST_SERIALIZATION_NVP(marksmanship_xoffset);
 		archive & BOOST_SERIALIZATION_NVP(marksmanship_accuracy_modifier); 
 
-
+		archive & BOOST_SERIALIZATION_NVP(stealth_kills_to_counterstealth_ratio_modifier);
+		archive & BOOST_SERIALIZATION_NVP(stealth_damage_ratio_modifier);
     }
 } JABIA_XPMOD_parameters;
 
@@ -82,5 +89,6 @@ void load(JABIA_XPMOD_parameters * dr) ;
 unsigned int calc_medical(JABIA_XPMOD_parameters * params, JABIA_Character * ptr);
 unsigned int calc_explosives(JABIA_XPMOD_parameters * params, JABIA_Character * ptr);
 unsigned int calc_marksmanship(JABIA_XPMOD_parameters * params, unsigned int kills, double accuracy);
+unsigned int calc_stealth(JABIA_XPMOD_parameters * params, JABIA_Character * ptr);
 
 #endif

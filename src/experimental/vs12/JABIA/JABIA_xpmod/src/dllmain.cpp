@@ -215,16 +215,24 @@ void changeCharacterStats(void* instance) {
 		character_ptr->medical += calc_medical(&xpmod_params, character_ptr);
 	}
 	unsigned int total_explosives_actions = 0;
+	unsigned int total_stealth_actions = 0;
+
 	total_explosives_actions += character_ptr->grenades_thrown + 
 										character_ptr->successful_mines_planted + 
 										character_ptr->successful_mines_disarmed + character_ptr->successful_explosives_planted;
 	if(! (total_explosives_actions % xpmod_params.explosives_modulo) ) {
 		character_ptr->explosives += calc_explosives(&xpmod_params, character_ptr);
 	}
+
 	if(! (character_ptr->enemies_killed % xpmod_params.marksmanship_modulo) ) {
 		double accuracy = double(character_ptr->bullets_hit) / double(character_ptr->bullets_fired);
 		character_ptr->marksmanship += calc_marksmanship(&xpmod_params, character_ptr->enemies_killed, accuracy);
 	}	
+
+	total_stealth_actions += character_ptr->times_bleeding + character_ptr->times_wounded + character_ptr->times_rescued_from_dying + character_ptr->enemies_killed;
+	if(! (total_stealth_actions % xpmod_params.stealth_modulo) ) {
+		character_ptr->stealth += calc_stealth(&xpmod_params, character_ptr);
+	}
 }
 
 void myPrintCharacterXpGain(wchar_t * xp_increase, int unknown, wchar_t * xp_string) {

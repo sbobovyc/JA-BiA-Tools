@@ -55,7 +55,7 @@ unsigned int calc_explosives(JABIA_XPMOD_parameters * params, JABIA_Character * 
 	} else {
 		explosives_modifier = params->explosives_modifier[2];
 	}
-	total_explosives_actions += ptr->grenades_thrown + ptr->successful_mines_planted + ptr->successful_mines_disarmed + ptr->successful_explosives_planted;
+	total_explosives_actions += ptr->grenades_thrown + ptr->successful_mines_planted + ptr->successful_mines_disarmed + ptr->successful_explosives_planted + ptr->rockets_fired;
 	points = (params->explosives_a * (total_explosives_actions % params->explosives_modulo)) + params->explosives_xoffset;
 	points *= points;
 	points *= -1.0;
@@ -91,3 +91,28 @@ unsigned int calc_marksmanship(JABIA_XPMOD_parameters * params, unsigned int kil
 	return unsigned int(points);
 }
 
+unsigned int calc_stealth(JABIA_XPMOD_parameters * params, JABIA_Character * ptr) {
+
+	double points = 0.0;
+	double counter_stealth_actions;
+	double damage_taken = 0.0;
+	
+	counter_stealth_actions = ptr->times_bleeding + ptr->times_wounded + ptr->times_rescued_from_dying;
+	// Watch out for divide by zero, since counter_stealth_actions and/or enemies killed could be 0.
+	// In either case, assume 1:2 ration in favor of stealth and kills. This is probably fine since this
+	// case would arise most likely only in the early game.
+	if(counter_stealth_actions == 0.0) {
+		counter_stealth_actions = ptr->enemies_killed * 0.5;
+	}
+	if(ptr->total_damage_taken == 0.0) {
+		damage_taken = ptr->total_damage_taken * 0.5;
+	} else {
+		damage_taken = ptr->total_damage_taken;
+	}
+
+	// y = modifier_1 * (enemies killed / counter stealth) + modifier_2 * (damage dealt / damage taken)
+	points = params->stealth_kills_to_counterstealth_ratio_modifier * (ptr->enemies_killed / counter_stealth_actions) + params->stealth_damage_ratio_modifier * (ptr->total_damage_dealt / damage_taken);
+
+
+	return unsigned int(points);
+}
