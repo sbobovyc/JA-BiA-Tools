@@ -19,6 +19,7 @@
 #define IDC_TP                                  1011
 #define IDC_AG                                  1012
 #define IDC_EX                                  1013
+#define IDC_BLEED_RATE                          1014
 #define IDC_INV_ITEM_ID                         1015
 #define IDC_HELM_EQ                             1016
 #define IDC_WPN_INV                             1018
@@ -44,7 +45,6 @@
 #define IDC_MECH                                1062
 #define IDC_HLTH                                1066
 #define IDC_STAMINA                             1067
-#define IDC_MORAL                               1068
 #define IDC_EYE_EQ                              1074
 #define IDC_EYE_EQ_DUR                          1075
 #define IDC_MED_COND                            1077

@@ -103,9 +103,9 @@ FONT 8, "Ms Shell Dlg"
     LTEXT           "Marksmanship", IDC_STATIC, 316, 284, 46, 8, SS_LEFT
     LTEXT           "Stealth", IDC_STATIC, 316, 307, 23, 8, SS_LEFT
     LTEXT           "Mechanical", IDC_STATIC, 316, 327, 38, 8, SS_LEFT
-    LTEXT           "Moral", IDC_STATIC, 182, 57, 18, 8, SS_LEFT
+    LTEXT           "Bleed rate", IDC_STATIC, 182, 57, 33, 8, SS_LEFT
     LTEXT           "Health", IDC_STATIC, 182, 21, 22, 8, SS_LEFT
-    EDITTEXT        IDC_MORAL, 237, 57, 40, 14, WS_DISABLED | ES_AUTOHSCROLL
+    EDITTEXT        IDC_BLEED_RATE, 237, 57, 40, 14, ES_AUTOHSCROLL
     EDITTEXT        IDC_HLTH, 237, 21, 40, 14, ES_AUTOHSCROLL
     EDITTEXT        IDC_STAMINA, 237, 39, 40, 14, ES_AUTOHSCROLL
     LTEXT           "Stamina", IDC_STATIC, 182, 39, 26, 8, SS_LEFT

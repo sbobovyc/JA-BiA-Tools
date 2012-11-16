@@ -516,6 +516,9 @@ void fillDialog(HWND hwnd, uint32_t ptr) {
 
 		_itoa_s(character.mechanical, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_MECH, buf);
+
+		_itoa_s(character.bleed_rate, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_BLEED_RATE, buf);
 	}	
 }
 
@@ -567,6 +570,8 @@ void setCharacter(HWND hwnd, uint32_t ptr) {
 	uint32_t marksmanship;
 	uint32_t stealth;
 	uint32_t mechanical;
+
+	uint32_t bleed_rate;
 
 	GetDlgItemText(hwnd, IDC_LEV, buf, 100);
 	level = atoi(buf);
@@ -739,6 +744,10 @@ void setCharacter(HWND hwnd, uint32_t ptr) {
 	GetDlgItemText(hwnd, IDC_MECH, buf, 100);
 	mechanical = atoi(buf);
 	character_ptr->mechanical = mechanical;
+
+	GetDlgItemText(hwnd, IDC_BLEED_RATE, buf, 100);
+	bleed_rate = atoi(buf);
+	character_ptr->bleed_rate = bleed_rate;
 }
 
 __declspec(naked) void* myCharacterConstRetrun(){	

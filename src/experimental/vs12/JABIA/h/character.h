@@ -48,7 +48,12 @@ typedef struct JABIA_Character_inventory_item {
 } JABIA_Character_inventory_item;
 
 typedef struct JABIA_Character {			
-	uint32_t uk0[22];
+
+	uint32_t unknown_ptr;
+	char rahc[4]; // just a string "char"  = character 
+	uint32_t unknown_const0;
+	uint32_t uk0[19];
+
 	char ctsc[4]; // just a string "ctsc"  = character statistics
 	uint32_t u0;
 	uint32_t u1;
@@ -212,12 +217,15 @@ typedef struct JABIA_Character {
 	uint32_t unknown25;
 	uint32_t unknown26;
 
-	// modifier
-	uint32_t mod_agility;
+	// pentalty modifier
+	uint32_t mod_agility;		// agility = base agility - penalty
 	uint32_t mod_dexterity;
 	uint32_t mod_strength;
 	uint32_t mod_intelligence;
-	uint32_t mod_perception;
+	uint32_t mod_perception;	// as of 1.13g this does not seem to have an affect
+
+	uint32_t bleed_rate;		// setting this to 0 stops bleeding
+
 
 
 } JABIA_Character;
