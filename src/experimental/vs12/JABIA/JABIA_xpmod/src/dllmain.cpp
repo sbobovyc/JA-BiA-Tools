@@ -33,8 +33,6 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #pragma comment(lib,"detours.lib")
 
 #define WITH_XP_MOD
-#define CHARACTER_CONST_OFFSET 0x132880
-#define CHARACTER_CONST_RETN_OFFSET 0x2D8
 static char ProcessName[] = "GameJABiA.exe";
 
 // modding exp function
@@ -79,7 +77,16 @@ INT APIENTRY DllMain(HMODULE hDLL, DWORD Reason, LPVOID Reserved)
 
 DWORD WINAPI MyThread(LPVOID)
 {
-	save();
+	
+	//DWORD cwdsz = GetCurrentDirectory(0,0); // determine size needed
+	//char *cwd = (char*)malloc(cwdsz);
+	//if ( GetCurrentDirectory(cwdsz, cwd) == 0 ) { /*OS error.. */ }
+	//else { /* success.. */ 
+	//	OutputDebugString(cwd);
+	//}
+	//free((void*)cwd);
+	
+
 	load(&xpmod_params);
 	char buf [100];
 	// find base address of GameDemo.exe in memory
@@ -96,7 +103,7 @@ DWORD WINAPI MyThread(LPVOID)
 	wsprintf (buf, "Address of PrintCharacterXpGain 0x%x", PrintCharacterXpGain);
 	OutputDebugString(buf);
 
-	// UpdateCharacterExp redirection
+	// start UpdateCharacterExp redirection
 	DWORD oldProtection;
 	// read + write
 	VirtualProtect(UpdateCharacterExp, 6, PAGE_EXECUTE_READWRITE, &oldProtection);
@@ -105,20 +112,19 @@ DWORD WINAPI MyThread(LPVOID)
 	BYTE JMP2[6] = {0xE9, 0x90, 0x90, 0x90, 0x90, 0x90}; // JMP NOP NOP ...
 	memcpy((void *)Before_JMP, (void *)UpdateCharacterExp, 6); // save retn
 	memcpy(&JMP2[1], &JMPSize2, 4);
-	//wsprintf(buf, "JMP2: %x%x%x%x%x", JMP2[0], JMP2[1], JMP2[2], JMP2[3], JMP2[4], JMP2[5]);
-    //OutputDebugString(buf);
 	// overwrite retn with JMP
 	memcpy((void *)UpdateCharacterExp, (void *)JMP2, 6);
 	// restore protection
     VirtualProtect((LPVOID)UpdateCharacterExp, 6, oldProtection, NULL);
+	// end UpdateCharacterExp redirection
 
-	// detour print xp function
+	// start detour print xp function
 	DetourRestoreAfterWith();
-
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
 	DetourAttach(&(PVOID&)PrintCharacterXpGain, myPrintCharacterXpGain);
 	DetourTransactionCommit();
+	// end detour print xp function
 
     while(true)
     {
@@ -188,7 +194,7 @@ __declspec(naked) void* myUpdateCharacterExp(){
 		add DWORD PTR DS:[ecx+0x14],eax         // add training points into character data structure
 #endif
 	jmp2:
-		cmp DWORD PTR DS: [ecx+0x0C],0x0A		// current level > 10?
+		cmp DWORD PTR DS: [ecx+0x0C],0x0A		// current level < 10?
 		mov al,0x01
 		jb jmp3									// if yes, then jump
 	jmp1:
@@ -224,9 +230,8 @@ void changeCharacterStats(void* instance) {
 		character_ptr->explosives += calc_explosives(&xpmod_params, character_ptr);
 	}
 
-	if(! (character_ptr->enemies_killed % xpmod_params.marksmanship_modulo) ) {
-		double accuracy = double(character_ptr->bullets_hit) / double(character_ptr->bullets_fired);
-		character_ptr->marksmanship += calc_marksmanship(&xpmod_params, character_ptr->enemies_killed, accuracy);
+	if(! (character_ptr->enemies_killed % xpmod_params.marksmanship_modulo) ) {		
+		character_ptr->marksmanship += calc_marksmanship(&xpmod_params, character_ptr);
 	}	
 
 	total_stealth_actions += character_ptr->times_bleeding + character_ptr->times_wounded + character_ptr->times_rescued_from_dying + character_ptr->enemies_killed;
@@ -241,7 +246,7 @@ void myPrintCharacterXpGain(wchar_t * xp_increase, int unknown, wchar_t * xp_str
 	wchar_t wbuf[100];
 	char buf[100];
 	wsprintf(buf, "%ls %i %ls", xp_increase, unknown, xp_string);
-	OutputDebugString(buf);
+	//OutputDebugString(buf);
 	swprintf(wbuf, 100, L"%ls\nXPmod", xp_string);
 	PrintCharacterXpGain(xp_increase, unknown, wbuf);
 }
