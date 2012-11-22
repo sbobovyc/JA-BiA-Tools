@@ -32,6 +32,10 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #define JABIA_CHARACTER_MAX_NAME_LENGTH  16
 #define JABIA_CHARACTER_INV_SLOTS  15
 
+// medical conditions
+#define JABIA_CHARACTER_MED_HEALTHY		0x0000
+#define JABIA_CHARACTER_MED_DEAD		0x0003
+
 typedef struct JABIA_Character_weapon {
 	// all equipment, if empty is 0xFFFF and durability 0
 	uint16_t weapon; 
@@ -230,7 +234,11 @@ typedef struct JABIA_Character {
 
 } JABIA_Character;
 
-#endif /* _CHARACTER_H_ */
 
+void heal_character(JABIA_Character * ptr);
+void kill_character(JABIA_Character * ptr);
+void stun_character(JABIA_Character * ptr);
 void dump_character(JABIA_Character * ptr, char * filepath);
+
+#endif /* _CHARACTER_H_ */
 

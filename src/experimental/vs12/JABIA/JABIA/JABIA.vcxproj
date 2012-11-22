@@ -54,7 +54,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Users\sbobovyc\workspace\WinHookInject\VS12\WinHookInject\Detours Express 3.0\include;C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\JABIA;C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\JABIA\h;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\h;C:\Users\sbobovyc\workspace\WinHookInject\VS12\WinHookInject\Detours Express 3.0\include;C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\JABIA;C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\JABIA\h;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\sbobovyc\workspace\WinHookInject\VS12\WinHookInject\Detours Express 3.0\lib.X86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

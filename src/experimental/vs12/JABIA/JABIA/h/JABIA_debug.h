@@ -1,6 +1,7 @@
 #ifndef JABIA_DEBUG
 #define JABIA_DEBUG
 
+#include "character.h"
 
 #ifdef JABIA_EXPORTS
 #define EXPORT __declspec(dllexport)
@@ -12,25 +13,16 @@
 #define WITH_XP_MOD
 //#define DEMO
 
-#ifdef DEMO
-#define CHARACTER_CONST_OFFSET 0x112450
-#define CHARACTER_CONST_RETN_OFFSET 0x210
-static ProcessName = "GameDemo.exe";
-#else
+
 #define CHARACTER_CONST_OFFSET 0x132880
 #define CHARACTER_CONST_RETN_OFFSET 0x2D8
+#define CHARACTER_DESTRUCTOR_OFFSET 0x132B60
 static char ProcessName[] = "GameJABiA.exe";
-#endif
-
-
-// modding exp function
-#ifdef FULL
-#define UPDATE_EXP_OFFSET 0x14C470
-#endif
 
 
 typedef void * (_stdcall *CharacterConstRetrunPtr)();
 typedef void * (_stdcall *UpdateCharacterExpPtr)();
+typedef int (_stdcall *CharacterDestructorPtr)(JABIA_Character *);
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,14 +35,16 @@ EXPORT BOOL CALLBACK DialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
 
 
 DWORD WINAPI MyThread(LPVOID);
+// my hooks
 void* myCharacterConstRetrun();
 void recordCharacters(void* instance);
+int myCharacterDestructor(JABIA_Character * ptr);
 
-
-void dump_current_character(HWND hwnd, uint32_t ptr);
+// gui functions
+void dump_current_character(HWND hwnd, JABIA_Character * ptr);
 BOOL dump_all_characters(HWND hwnd);
-void fillDialog(HWND hwnd, uint32_t ptr);
-void setCharacter(HWND hwnd, uint32_t ptr);
+void fillDialog(HWND hwnd, JABIA_Character * ptr);
+void setCharacter(HWND hwnd, JABIA_Character * ptr);
 
 
 #endif /* JABIA_DEBUG */

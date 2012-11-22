@@ -28,15 +28,16 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #include <objbase.h>
 #include <detours.h>
 
-#include "../h/JABIA_debug.h"
+#include "JABIA_debug.h"
 #include "resource.h"
-#include "../h/character.h"
+#include "character.h"
 
 #pragma comment(lib, "detours.lib")
 
 
 
 CharacterConstRetrunPtr ParseCharacter;
+CharacterDestructorPtr CharacterDestructor;
 
 HMODULE game_handle; // address of GameDemo.exe
 DWORD g_threadID;
@@ -101,10 +102,22 @@ DWORD WINAPI MyThread(LPVOID)
 		ParseCharacter = (CharacterConstRetrunPtr)((uint32_t)game_handle+CHARACTER_CONST_OFFSET+CHARACTER_CONST_RETN_OFFSET);
 		wsprintf (buf, "Address of retn in CharacterConstructor 0x%x", ParseCharacter);
 		OutputDebugString(buf);
-
+		// find address of character destructor
+		CharacterDestructor = (CharacterDestructorPtr)((uint32_t)game_handle+CHARACTER_DESTRUCTOR_OFFSET);
+		wsprintf (buf, "Address of CharacterDestructor 0x%x", CharacterDestructor);
+		OutputDebugString(buf);
 
 		// If jabia_characters is not empty, clear it. Every time the game loads a level, character pointers change.
 		//TODO need to hook load level function and do this then too.
+		// start detour characer destructor function
+		
+		DetourRestoreAfterWith();
+		DetourTransactionBegin();
+		DetourUpdateThread(GetCurrentThread());
+		DetourAttach(&(PVOID&)CharacterDestructor, myCharacterDestructor);
+		DetourTransactionCommit();
+		
+		// end detour characer destructor function
 		jabia_characters.clear();
 		
 		// read + write
@@ -121,6 +134,7 @@ DWORD WINAPI MyThread(LPVOID)
 		// restore protection
 		VirtualProtect((LPVOID)ParseCharacter, 6, oldProtection, NULL);
 
+		// give user instructions
 		wsprintf(buf, "DLL successfully loaded. Load a save game and press F7 to bring up editor.");
 		MessageBox (0, buf, "JABIA character editor", MB_ICONEXCLAMATION | MB_OK | MB_SYSTEMMODAL);
 		wsprintf(buf, "Size of struct %i", sizeof(JABIA_Character));
@@ -140,7 +154,7 @@ DWORD WINAPI MyThread(LPVOID)
 								0,
 								DialogProc);
 
-					fillDialog(hDialog, (uint32_t)jabia_characters.at(last_character_selected_index));
+					fillDialog(hDialog, jabia_characters.at(last_character_selected_index));
 				
 					if (!hDialog)
 					{
@@ -195,7 +209,7 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 	comboControl2=GetDlgItem(hwnd,IDC_COMBO2);	
 	comboControl3=GetDlgItem(hwnd,IDC_COMBO3);	
 	BOOL status = FALSE;
-	uint32_t address = 0; // character address
+	JABIA_Character * ptr = 0; // character address
 
     switch (message)
     {
@@ -258,8 +272,8 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 						case CBN_CLOSEUP:
 							// use combo box selected index to get a character out of the vector
 							last_character_selected_index = SendMessage(comboControl1, CB_GETCURSEL, 0, 0);
-							address = (uint32_t)jabia_characters.at(last_character_selected_index);
-							fillDialog(hwnd, address);
+							ptr = jabia_characters.at(last_character_selected_index);
+							fillDialog(hwnd, ptr);
 							break;
 					}
 					break;
@@ -269,8 +283,8 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 						case CBN_CLOSEUP:
 							// use combo box selected index to get weapon from inventory
 							last_weaponslot_selected_index = SendMessage(comboControl2, CB_GETCURSEL, 0, 0);
-							address = (uint32_t)jabia_characters.at(last_character_selected_index);
-							fillDialog(hwnd, address);
+							ptr = jabia_characters.at(last_character_selected_index);
+							fillDialog(hwnd, ptr);
 							break;
 					}
 					break;
@@ -280,20 +294,32 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 						case CBN_CLOSEUP:
 							// use combo box selected index to get weapon from inventory
 							last_inventory_selected_index = SendMessage(comboControl3, CB_GETCURSEL, 0, 0);
-							address = (uint32_t)jabia_characters.at(last_character_selected_index);
-							fillDialog(hwnd, address);
+							ptr = jabia_characters.at(last_character_selected_index);
+							fillDialog(hwnd, ptr);
 							break;
 					}
 					break;
                 case IDSET:
 					char buf[50];
 					wsprintf(buf, "Setting");
-					address = (uint32_t)jabia_characters.at(last_character_selected_index);
-					setCharacter(hwnd, address);
+					ptr = jabia_characters.at(last_character_selected_index);
+					setCharacter(hwnd, ptr);
+					break;
+				case IDM_HEAL_CHARACTER:					
+					ptr = jabia_characters.at(last_character_selected_index);
+					heal_character(ptr);
+					break;
+				case IDM_KILL_CHARACTER:					
+					ptr = jabia_characters.at(last_character_selected_index);
+					kill_character(ptr);
+					break;
+				case IDM_STUN_CHARACTER:
+					ptr = jabia_characters.at(last_character_selected_index);
+					stun_character(ptr);
 					break;
 				case IDM_DUMP_CHARACTER:					
-					address = (uint32_t)jabia_characters.at(last_character_selected_index);
-					dump_current_character(hwnd, address);
+					ptr = jabia_characters.at(last_character_selected_index);
+					dump_current_character(hwnd, ptr);
 					break;
 				case IDM_DUMP_ALL:				
 					dump_all_characters(hwnd);
@@ -311,7 +337,7 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 }
 
 //TODO this should take in a pointer to a character
-void dump_current_character(HWND hwnd, uint32_t ptr) {
+void dump_current_character(HWND hwnd, JABIA_Character * ptr) {
 	char buf[100];
 	JABIA_Character character;
 	wsprintf(buf, "Character address 0x%X | ptr address 0x%x", &character, ptr);
@@ -373,14 +399,14 @@ BOOL dump_all_characters(HWND hwnd) {
 	
 }
 
-void fillDialog(HWND hwnd, uint32_t ptr) {
+void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 	char buf[100];
 	JABIA_Character character;
 	if(ptr != NULL) {
 		memcpy(&character, (void *)ptr, sizeof(JABIA_Character));		
 
 		// address of character
-		_itoa_s(ptr, buf, 100, 16);
+		_itoa_s((uint32_t)ptr, buf, 100, 16);
 		SetDlgItemText(hwnd, IDC_ADDRESS, buf);	
 
 		_itoa_s(character.level, buf, 100, 10);
@@ -522,9 +548,9 @@ void fillDialog(HWND hwnd, uint32_t ptr) {
 	}	
 }
 
-void setCharacter(HWND hwnd, uint32_t ptr) {
+void setCharacter(HWND hwnd, JABIA_Character * ptr) {
 	char buf [100];
-	JABIA_Character * character_ptr = (JABIA_Character *)ptr;
+	JABIA_Character * character_ptr = ptr;
 	uint32_t level = 0;
 	uint32_t experience;
 	uint32_t training_points;
@@ -795,3 +821,13 @@ void __cdecl recordCharacters(void* instance){
 	OutputDebugString(buf);
 }
 
+int myCharacterDestructor(JABIA_Character * ptr) {
+	char buf[100];
+	wsprintf(buf, "Removing character at 0x%X", ptr);
+	OutputDebugString(buf);
+	wsprintf(buf, "Character is %s", ptr->merc_name);
+	OutputDebugString(buf);
+
+	int value = CharacterDestructor(ptr);
+	return value;
+}

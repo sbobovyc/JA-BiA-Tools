@@ -21,7 +21,27 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
-#include "../h/character.h"
+#include "character.h"
+
+void heal_character(JABIA_Character * ptr) {
+	// set medical status to healthy
+	ptr->medical_condition = JABIA_CHARACTER_MED_HEALTHY;
+	ptr->health = 100; // may overflow max health
+	ptr->stamina = 100;
+	ptr->mod_strength = 0;
+	ptr->bleed_rate = 0;
+}
+
+void kill_character(JABIA_Character * ptr) {
+	// set medical status to healthy
+	ptr->medical_condition |= JABIA_CHARACTER_MED_DEAD;
+	ptr->health = -1;
+}
+
+void stun_character(JABIA_Character * ptr) {
+	// set medical status to dead, but don't set health to negative 
+	ptr->medical_condition |= JABIA_CHARACTER_MED_DEAD;
+}
 
 void dump_character(JABIA_Character * ptr, char * filepath) {
 	FILE *fp;

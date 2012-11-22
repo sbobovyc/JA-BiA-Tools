@@ -7,6 +7,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "JABIA_xpmod", "JABIA_xpmod\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "JABIA_character_debugger", "JABIA_character_debugger\JABIA_character_debugger.vcxproj", "{5488AE68-5DEB-457F-9272-29B97FC3C205}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "JABIA_mod_launcher", "JABIA_mod_launcher\JABIA_mod_launcher.vcxproj", "{7DEF12FC-2577-4C18-859B-F237189FF6C3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -25,6 +27,10 @@ Global
 		{5488AE68-5DEB-457F-9272-29B97FC3C205}.Debug|Win32.Build.0 = Debug|Win32
 		{5488AE68-5DEB-457F-9272-29B97FC3C205}.Release|Win32.ActiveCfg = Release|Win32
 		{5488AE68-5DEB-457F-9272-29B97FC3C205}.Release|Win32.Build.0 = Release|Win32
+		{7DEF12FC-2577-4C18-859B-F237189FF6C3}.Debug|Win32.ActiveCfg = Debug|Win32
+		{7DEF12FC-2577-4C18-859B-F237189FF6C3}.Debug|Win32.Build.0 = Debug|Win32
+		{7DEF12FC-2577-4C18-859B-F237189FF6C3}.Release|Win32.ActiveCfg = Release|Win32
+		{7DEF12FC-2577-4C18-859B-F237189FF6C3}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
