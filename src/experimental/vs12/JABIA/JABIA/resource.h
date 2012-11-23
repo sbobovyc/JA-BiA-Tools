@@ -50,10 +50,10 @@
 #define IDC_MED_COND                            1077
 #define IDC_MERC_FAC                            1078
 #define IDC_COMBO1                              1079
+#define IDC_AMMO_INV_CNT                        1090
 #define IDC_WPN_INV_DUR                         20000
-#define IDM_HEAL_CHARACTER                      40000
-#define IDM_KILL_CHARACTER                      40001
-#define IDC_AMMO_INV_CNT                        40002
-#define IDM_STUN_CHARACTER                     40002
-#define IDM_DUMP_CHARACTER                      50000
-#define IDM_DUMP_ALL                            50001
+#define IDM_HEAL_CHARACTER                      50000
+#define IDM_KILL_CHARACTER                      50001
+#define IDM_STUN_CHARACTER						50002
+#define IDM_DUMP_CHARACTER                      50003
+#define IDM_DUMP_ALL                            50004

@@ -108,16 +108,17 @@ DWORD WINAPI MyThread(LPVOID)
 		OutputDebugString(buf);
 
 		// If jabia_characters is not empty, clear it. Every time the game loads a level, character pointers change.
-		//TODO need to hook load level function and do this then too.
-		// start detour characer destructor function
-		
+		//TODO this function crashes on exit game
+		/*
+		// start detour characer destructor function		
 		DetourRestoreAfterWith();
 		DetourTransactionBegin();
 		DetourUpdateThread(GetCurrentThread());
 		DetourAttach(&(PVOID&)CharacterDestructor, myCharacterDestructor);
-		DetourTransactionCommit();
-		
+		DetourTransactionCommit();		
 		// end detour characer destructor function
+		*/
+
 		jabia_characters.clear();
 		
 		// read + write
@@ -135,7 +136,7 @@ DWORD WINAPI MyThread(LPVOID)
 		VirtualProtect((LPVOID)ParseCharacter, 6, oldProtection, NULL);
 
 		// give user instructions
-		wsprintf(buf, "DLL successfully loaded. Load a save game and press F7 to bring up editor.");
+		wsprintf(buf, "DLL successfully loaded. Load a save game and press F7 to bring up editor. Due to some bugs, you need to exit the game before you load another savegame or exit the map.");
 		MessageBox (0, buf, "JABIA character editor", MB_ICONEXCLAMATION | MB_OK | MB_SYSTEMMODAL);
 		wsprintf(buf, "Size of struct %i", sizeof(JABIA_Character));
 		OutputDebugString(buf);
@@ -177,8 +178,7 @@ DWORD WINAPI MyThread(LPVOID)
 						}
 					}
 				}
-			}
-			else if(GetAsyncKeyState(VK_F8) &1) {
+			} else if(GetAsyncKeyState(VK_F8) &1) {
 				OutputDebugString("Unloading DLL");
 				break;
 			}
