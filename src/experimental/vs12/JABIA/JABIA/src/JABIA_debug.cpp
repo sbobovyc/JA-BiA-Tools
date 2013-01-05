@@ -128,8 +128,8 @@ DWORD WINAPI MyThread(LPVOID)
 		BYTE JMP[6] = {0xE9, 0x90, 0x90, 0x90, 0x90, 0x90}; // JMP NOP NOP ...
 		memcpy((void *)Before_JMP, (void *)ParseCharacter, 6); // save retn
 		memcpy(&JMP[1], &JMPSize, 4);
-		wsprintf(buf, "JMP: %x%x%x%x%x", JMP[0], JMP[1], JMP[2], JMP[3], JMP[4], JMP[5]);
-		OutputDebugString(buf);
+		//wsprintf(buf, "JMP: %x%x%x%x%x", JMP[0], JMP[1], JMP[2], JMP[3], JMP[4], JMP[5]);
+		//OutputDebugString(buf);
 		// overwrite retn with JMP
 		memcpy((void *)ParseCharacter, (void *)JMP, 6);
 		// restore protection
@@ -236,8 +236,9 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 			// add characters to drop down list
 			for(unsigned long i = 0; i < jabia_characters.size(); i++) {							
 				SendMessage(comboControl1,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCTSTR)jabia_characters.at(i)->merc_name));
-				//wsprintf(buf, "In init, Character at 0x%X", jabia_characters.at(i));	
-				//OutputDebugString(buf);
+				char buf[255];
+				wsprintf(buf, "In init, Character at 0x%X", jabia_characters.at(i));	
+				OutputDebugString(buf);
 			}
 				// select fist item in list
 			SendMessage(comboControl1, CB_SETCURSEL, last_character_selected_index, 0);
@@ -780,40 +781,37 @@ __declspec(naked) void* myCharacterConstRetrun(){
 	// Character constructor uses thiscall calling convention and as an optimization passes something in EDX. I don't hook the call to the constructor.
 	// Instead, I hook the return of the character constructor. The "this" pointer will be in EAX.
 
-#ifdef DEMO
+	//__asm{
+	//	push eax;
+	//	call recordCharacters;
+	//	pop eax;
+	//	retn 0x1C;
+	//} old crap from using cdecl
+
 	__asm{
 		push eax;
-		call recordCharacters;
-		pop eax;
-		retn 0x10;
-	}
-#else if FULL
-	__asm{
-		push eax;
+		mov ecx, eax;
 		call recordCharacters;
 		pop eax;
 		retn 0x1C;
 	}
-#endif
-
 }
 
 
-void __cdecl recordCharacters(void* instance){
+//void __cdecl recordCharacters(void* instance){
+void __fastcall recordCharacters(void* instance){
 	char buf [100];
 	JABIA_Character * character_ptr;
 	OutputDebugString("Parsing character!");
-#ifdef DEMO
-	__asm{
-		mov eax, [esp+4];
-		mov character_ptr, eax;
-	}
-#else 
-	__asm{
-		mov eax, [esp+0x148];	//TODO fix this stupid mistake, if i ever change what happends to the stack this offset will be wrong
-		mov character_ptr, eax;
-	}
-#endif
+
+	//__asm{
+	//	//mov eax, [esp+0x148];	//TODO fix this stupid mistake, if i ever change what happends to the stack this offset will be wrong
+	//	mov eax, [esp];
+	//	mov character_ptr, eax;
+	//} old crap from using cdelc //TODO remove this eventually so i won't get confused
+
+	character_ptr = (JABIA_Character *)instance;
+
 	wsprintf(buf, "Character at 0x%X", character_ptr);
 	OutputDebugString(buf);
 	jabia_characters.push_back(character_ptr);

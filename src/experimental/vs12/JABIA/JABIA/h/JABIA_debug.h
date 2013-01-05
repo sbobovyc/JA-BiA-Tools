@@ -37,7 +37,7 @@ EXPORT BOOL CALLBACK DialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
 DWORD WINAPI MyThread(LPVOID);
 // my hooks
 void* myCharacterConstRetrun();
-void recordCharacters(void* instance);
+void __fastcall recordCharacters(void* instance);
 int myCharacterDestructor(JABIA_Character * ptr);
 
 // gui functions
