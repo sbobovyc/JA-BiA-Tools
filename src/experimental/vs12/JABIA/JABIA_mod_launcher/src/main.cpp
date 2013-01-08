@@ -2,13 +2,14 @@
 #include "libutils.h"
 #include "resource.h"
 
-#define LAUNCHER_VERSION_STRING "Version 0.1a\r\n"
+#define LAUNCHER_VERSION_STRING "Version 0.2a\r\n"
 
 #define LAUNCHER_NAME "JaggedAllianceBIA.exe"
 #define EXE_NAME "GameJABiA.exe"
 
 #define DEBUGGER_DLL_PATH "\\mods\\debugger\\JABIA_debug.dll"
 #define XPMOD_DLL_PATH "\\mods\\xpmod\\JABIA_xpmod.dll"
+#define LOOTDROP_DLL_PATH "\\mods\\loot_drop\\JABIA_loot_drop.dll"
 
 BOOL CALLBACK DialogProc (HWND hwnd, 
                           UINT message, 
@@ -22,7 +23,7 @@ void inject_dlls();
 HINSTANCE TheInstance = 0;
 UINT debug = 0;
 UINT xpmod = 0;
-
+UINT lootmod = 0;
 
 HWND cancel_handle;
 HWND dialog_handle;
@@ -97,6 +98,8 @@ BOOL CALLBACK DialogProc (HWND hwnd,
                 case IDOK:
 					debug = IsDlgButtonChecked(hwnd, IDC_CHECKBOX1);
 					xpmod = IsDlgButtonChecked(hwnd, IDC_CHECKBOX2);
+					lootmod = IsDlgButtonChecked(hwnd, IDC_CHECKBOX3);
+
 					// disable launch button
 					EnableWindow( GetDlgItem( hwnd, IDOK ), FALSE );
 
@@ -119,14 +122,14 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 }
 
 void append_text(HWND hwnd, char * buf) {
-		HWND hEdit;
+	HWND hEdit;
 	int ndx;
-			   hEdit = GetDlgItem (hwnd, IDC_EDIT1);
-		   ndx = GetWindowTextLength (hEdit);
-		   SetFocus (hEdit);
+	hEdit = GetDlgItem (hwnd, IDC_EDIT1);
+	ndx = GetWindowTextLength (hEdit);
+	SetFocus (hEdit);
 		   
-		  SendMessage (hEdit, EM_SETSEL, (WPARAM)ndx, (LPARAM)ndx);
-		  SendMessage (hEdit, EM_REPLACESEL, 0, (LPARAM) ((LPSTR) buf));
+	SendMessage (hEdit, EM_SETSEL, (WPARAM)ndx, (LPARAM)ndx);
+	SendMessage (hEdit, EM_REPLACESEL, 0, (LPARAM) ((LPSTR) buf));
 }
 
 
@@ -144,7 +147,7 @@ DWORD WINAPI launch_game(LPVOID) {
 	status = CreateProcessA(NULL, LAUNCHER_NAME, NULL, NULL, FALSE, 0, NULL, NULL, &StartupInfo, &ProcessInformation);
 	if(!status) {
 		char buf [100];
-		wsprintf (buf, "Error x%x", GetLastError ());
+		wsprintf (buf, "Error x%x", GetLastError());
 		MessageBox (0, buf, "CreateProcessA", MB_ICONEXCLAMATION | MB_OK);
 	}
 
@@ -172,6 +175,11 @@ void inject_dlls() {
 					Sleep(1000);
 					append_text(dialog_handle, "Injecting xpmod\r\n");
 					LoadDll(EXE_NAME, XPMOD_DLL_PATH);
+				}
+				if(lootmod) {
+					Sleep(1000);
+					append_text(dialog_handle, "Injecting drop loot mod\r\n");
+					LoadDll(EXE_NAME, LOOTDROP_DLL_PATH);
 				}
 			}
 			Sleep(1000);
