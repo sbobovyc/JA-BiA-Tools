@@ -43,6 +43,37 @@ void stun_character(JABIA_Character * ptr) {
 	ptr->medical_condition |= JABIA_CHARACTER_MED_DEAD;
 }
 
+void give_equipment1(JABIA_Character * ptr) {
+	ptr->inventory.helmet_equiped = 1125; // urban camo
+	ptr->inventory.helmet_equiped_durability = 100;
+
+	ptr->inventory.shirt_equiped = 2105; // urban uniform
+	ptr->inventory.shirt_equiped_durability = 100;
+
+	ptr->inventory.pants_equiped = 3065; // urban spectra pants
+	ptr->inventory.pants_equiped_durability = 100;
+
+	ptr->inventory.vest_equiped = 4006; // special guardian vest
+	ptr->inventory.vest_equiped_durability = 100;
+
+	ptr->inventory.shoes_equiped = 5040; // black military boots
+	ptr->inventory.shoes_equiped_durability = 100;
+
+	ptr->inventory.eyewear_equiped = 6040; // gas mask
+	ptr->inventory.eyewear_equiped_durability = 100;
+	ptr->inventory.eyewear_equiped_status = 1;
+
+	ptr->inventory.weapon_in_hand = 1; // ak
+	ptr->inventory.weapon_in_hand_durability = 1200;
+	ptr->inventory.weapon_in_hand_removable = 1;
+
+	ptr->inventory.ammo_equiped = 907; // 5_45mm
+	ptr->inventory.ammo_equiped_count = 1000;
+
+	ptr->inventory.weapon_attachment_removable = 97; // eotech
+	ptr->inventory.weapon_attachment_status = 1; 
+}
+
 void dump_character(JABIA_Character * ptr, char * filepath) {
 	FILE *fp;
 	fp=fopen(filepath, "wb");

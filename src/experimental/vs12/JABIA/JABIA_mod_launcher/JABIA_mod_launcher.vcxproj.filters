@@ -42,5 +42,8 @@
     <ClInclude Include="..\..\..\..\..\..\WinHookInject\VS12\WinHookInject\injector\libutils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="h\mod_launcher.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

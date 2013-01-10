@@ -1,15 +1,15 @@
 #include <windows.h>
+#include <boost/archive/xml_oarchive.hpp> 
+#include <boost/archive/xml_iarchive.hpp> 
+#include <boost/filesystem.hpp>
+#include <iostream> 
+#include <fstream> 
+
+#include "mod_launcher.h"
 #include "libutils.h"
 #include "resource.h"
 
-#define LAUNCHER_VERSION_STRING "Version 0.2a\r\n"
 
-#define LAUNCHER_NAME "JaggedAllianceBIA.exe"
-#define EXE_NAME "GameJABiA.exe"
-
-#define DEBUGGER_DLL_PATH "\\mods\\debugger\\JABIA_debug.dll"
-#define XPMOD_DLL_PATH "\\mods\\xpmod\\JABIA_xpmod.dll"
-#define LOOTDROP_DLL_PATH "\\mods\\loot_drop\\JABIA_loot_drop.dll"
 
 BOOL CALLBACK DialogProc (HWND hwnd, 
                           UINT message, 
@@ -20,6 +20,8 @@ void append_text(HWND hwnd, char * buf);
 DWORD WINAPI launch_game(LPVOID);
 void inject_dlls();
 
+JABIA_mod_launcher_parameters params;
+
 HINSTANCE TheInstance = 0;
 UINT debug = 0;
 UINT xpmod = 0;
@@ -27,6 +29,39 @@ UINT lootmod = 0;
 
 HWND cancel_handle;
 HWND dialog_handle;
+
+
+void save(JABIA_mod_launcher_parameters * dr) 
+{ 	
+	boost::filesystem::path working_dir = boost::filesystem::current_path();
+	boost::filesystem::path modpath(PATH_TO_MOD_LAUNCHER_XML);
+	boost::filesystem::path fullpath = working_dir / modpath;
+	OutputDebugString(fullpath.string().c_str());
+	std::ofstream file(fullpath.string()); 	
+	boost::archive::xml_oarchive oa(file); 
+	OutputDebugString("Done saving xml");
+	oa & BOOST_SERIALIZATION_NVP(dr); 
+} 
+
+JABIA_mod_launcher_parameters load() 
+{ 
+	JABIA_mod_launcher_parameters param;
+	boost::filesystem::path working_dir = boost::filesystem::current_path();
+	boost::filesystem::path modpath(PATH_TO_MOD_LAUNCHER_XML);
+	boost::filesystem::path fullpath = working_dir / modpath;
+	if ( !(boost::filesystem::exists(fullpath) && boost::filesystem::is_regular_file(fullpath)) )    // does p actually exist and is p a regular file?   
+	{
+		save(&param);
+	}
+	OutputDebugString(fullpath.string().c_str());
+	std::ifstream file(fullpath.string()); 
+	boost::archive::xml_iarchive ia(file);   
+	
+	ia >> BOOST_SERIALIZATION_NVP(param); 
+	OutputDebugString("Done loading xml");
+	return param;
+}
+
 
 int WINAPI WinMain
    (HINSTANCE hInst, HINSTANCE hPrevInst, char * cmdParam, int cmdShow)
@@ -84,8 +119,20 @@ BOOL CALLBACK DialogProc (HWND hwnd,
                            0);
 			if(hIcon) {
 				SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+			}			
+
+			// initialize checkboxes			
+			params = load();
+			if(params.debug_mod) {		
+				SendDlgItemMessage(hwnd, IDC_CHECKBOX1, BM_SETCHECK, BST_CHECKED, 0);
 			}
-			
+			if(params.xp_mod) {
+				SendDlgItemMessage(hwnd, IDC_CHECKBOX2, BM_SETCHECK, BST_CHECKED, 0);
+			}
+			if(params.loot_drop_mod) {
+				SendDlgItemMessage(hwnd, IDC_CHECKBOX3, BM_SETCHECK, BST_CHECKED, 0);
+			}
+
 			cancel_handle = GetDlgItem(hwnd,IDCANCEL);
 			dialog_handle = hwnd;
 
@@ -99,6 +146,12 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 					debug = IsDlgButtonChecked(hwnd, IDC_CHECKBOX1);
 					xpmod = IsDlgButtonChecked(hwnd, IDC_CHECKBOX2);
 					lootmod = IsDlgButtonChecked(hwnd, IDC_CHECKBOX3);
+
+					// save params
+					params.debug_mod = debug;
+					params.xp_mod = xpmod;
+					params.loot_drop_mod = lootmod;
+					save(&params);
 
 					// disable launch button
 					EnableWindow( GetDlgItem( hwnd, IDOK ), FALSE );
@@ -141,8 +194,7 @@ DWORD WINAPI launch_game(LPVOID) {
 	StartupInfo.cb = sizeof(StartupInfo);
 	ZeroMemory(&ProcessInformation, sizeof(ProcessInformation));
 
-	char buffer[] = "Starting JABIA launcher\r\n";
-	append_text(dialog_handle, buffer);
+	append_text(dialog_handle, "Starting JABIA launcher\r\n");
 
 	status = CreateProcessA(NULL, LAUNCHER_NAME, NULL, NULL, FALSE, 0, NULL, NULL, &StartupInfo, &ProcessInformation);
 	if(!status) {
@@ -158,7 +210,6 @@ DWORD WINAPI launch_game(LPVOID) {
 void inject_dlls() {
 	unsigned long pid = 0;
 	int loopcount = 0;
-	char buf[100];
 
 	if(IsWindowsNT()) {
 		while(pid == 0 && loopcount < 100) {

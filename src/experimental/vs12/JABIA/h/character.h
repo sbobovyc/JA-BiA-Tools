@@ -51,6 +51,67 @@ typedef struct JABIA_Character_inventory_item {
 	uint16_t item_charges;
 } JABIA_Character_inventory_item;
 
+typedef struct JABIA_Character_inventory {
+	uint32_t maybe_ptr3;
+	char cinv[4]; // just a string "cinv" = character inventory
+	uint32_t maybe_ptr4;
+	uint32_t maybe_ptr5;
+
+	// all equipment, if empty is 0xFFFF and durability 0
+	uint16_t weapon_in_hand; 
+	uint16_t weapon_in_hand_removable; // 0 for not removable	
+	uint16_t weapon_in_hand_durability; // divide by ten to get number reported in gui
+	uint16_t unknown3;
+
+	uint16_t special_equiped; // lockpick, c4, etc
+	uint16_t unknown4;
+	uint16_t unknown5;
+	uint16_t special_equiped_charges; // charges left 
+
+	uint16_t helmet_equiped;
+	uint16_t unknown6;
+	uint16_t helmet_equiped_durability; // divide by ten to get number reported in gui	
+	uint16_t unknown7;
+
+	uint16_t eyewear_equiped; 
+	uint16_t eyewear_equiped_status;
+	uint16_t eyewear_equiped_durability;
+	uint16_t unknown10;
+
+	uint16_t shirt_equiped;
+	uint16_t unknown11;
+	uint16_t shirt_equiped_durability;
+	uint16_t unknown12;
+
+	uint16_t vest_equiped;
+	uint16_t unknown13;
+	uint16_t vest_equiped_durability;
+	uint16_t unknown14;
+
+	uint16_t shoes_equiped;
+	uint16_t unknown15;
+	uint16_t shoes_equiped_durability;
+	uint16_t unknown16;
+
+	uint16_t pants_equiped;
+	uint16_t unknown17;
+	uint16_t pants_equiped_durability;
+	uint16_t unknown18;
+
+	uint16_t ammo_equiped;
+	uint16_t ammo_equiped_count;
+	uint32_t unknown19;
+
+	uint16_t weapon_attachment_removable;
+	uint16_t weapon_attachment_status; // 0 > means you can remove it, less than 0 means you can't
+	uint32_t unknown20;
+
+	// inventory is divided between weapons and items
+	JABIA_Character_weapon weapons[3];
+	JABIA_Character_inventory_item inventory_items[15];
+} JABIA_Character_inventory;
+
+
 typedef struct JABIA_Character {			
 
 	uint32_t unknown_ptr;
@@ -120,63 +181,8 @@ typedef struct JABIA_Character {
 	uint32_t mechanical_inc;
 	uint32_t unknown1[10];
 
-	uint32_t maybe_ptr3;
-	char cinv[4]; // just a string "cinv" = character inventory
-	uint32_t maybe_ptr4;
-	uint32_t maybe_ptr5;
 
-	// all equipment, if empty is 0xFFFF and durability 0
-	uint16_t weapon_in_hand; 
-	uint16_t weapon_in_hand_removable; // 0 for not removable	
-	uint16_t weapon_in_hand_durability; // divide by ten to get number reported in gui
-	uint16_t unknown3;
-
-	uint16_t special_equiped; // lockpick, c4, etc
-	uint16_t unknown4;
-	uint16_t unknown5;
-	uint16_t special_equiped_charges; // charges left 
-
-	uint16_t helmet_equiped;
-	uint16_t unknown6;
-	uint16_t helmet_equiped_durability; // divide by ten to get number reported in gui	
-	uint16_t unknown7;
-
-	uint16_t eyewear_equiped; 
-	uint16_t unknown8;
-	uint16_t eyewear_equiped_durability;
-	uint16_t unknown10;
-
-	uint16_t shirt_equiped;
-	uint16_t unknown11;
-	uint16_t shirt_equiped_durability;
-	uint16_t unknown12;
-
-	uint16_t vest_equiped;
-	uint16_t unknown13;
-	uint16_t vest_equiped_durability;
-	uint16_t unknown14;
-
-	uint16_t shoes_equiped;
-	uint16_t unknown15;
-	uint16_t shoes_equiped_durability;
-	uint16_t unknown16;
-
-	uint16_t pants_equiped;
-	uint16_t unknown17;
-	uint16_t pants_equiped_durability;
-	uint16_t unknown18;
-
-	uint16_t ammo_equiped;
-	uint16_t ammo_equiped_count;
-	uint32_t unknown19;
-
-	uint16_t weapon_attachment_removable;
-	uint16_t weapon_attachment_status; // 0 > means you can remove it, less than 0 means you can't
-	uint32_t unknown20;
-
-	// inventory is divided between weapons and items
-	JABIA_Character_weapon weapons[3];
-	JABIA_Character_inventory_item inventory_items[15];
+	JABIA_Character_inventory inventory;
 
 	uint32_t unknown23[4]; //3 is possibly length of something
 
@@ -238,6 +244,7 @@ typedef struct JABIA_Character {
 void heal_character(JABIA_Character * ptr);
 void kill_character(JABIA_Character * ptr);
 void stun_character(JABIA_Character * ptr);
+void give_equipment1(JABIA_Character * ptr);
 void dump_character(JABIA_Character * ptr, char * filepath);
 
 #endif /* _CHARACTER_H_ */

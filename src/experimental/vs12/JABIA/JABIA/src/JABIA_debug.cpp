@@ -318,6 +318,10 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 					ptr = jabia_characters.at(last_character_selected_index);
 					stun_character(ptr);
 					break;
+				case IDM_EQUIPMENT1:
+					ptr = jabia_characters.at(last_character_selected_index);
+					give_equipment1(ptr);
+					break;
 				case IDM_DUMP_CHARACTER:					
 					ptr = jabia_characters.at(last_character_selected_index);
 					dump_current_character(hwnd, ptr);
@@ -337,7 +341,7 @@ BOOL CALLBACK DialogProc (HWND hwnd,
     return FALSE;
 }
 
-//TODO this should take in a pointer to a character
+
 void dump_current_character(HWND hwnd, JABIA_Character * ptr) {
 	char buf[100];
 	JABIA_Character character;
@@ -419,64 +423,64 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 		_itoa_s(character.training_points, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_TP, buf);
 
-		_itoa_s(character.weapon_in_hand, buf, 100, 10);
+		_itoa_s(character.inventory.weapon_in_hand, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_WPN_EQ, buf);
 
-		_itoa_s(character.weapon_in_hand_durability, buf, 100, 10);
+		_itoa_s(character.inventory.weapon_in_hand_durability, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_WPN_EQ_DUR, buf);
 
-		_itoa_s(character.helmet_equiped, buf, 100, 10);
+		_itoa_s(character.inventory.helmet_equiped, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_HELM_EQ, buf);
 
-		_itoa_s(character.helmet_equiped_durability, buf, 100, 10);
+		_itoa_s(character.inventory.helmet_equiped_durability, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_HELM_EQ_DUR, buf);
 
-		_itoa_s(character.eyewear_equiped, buf, 100, 10);
+		_itoa_s(character.inventory.eyewear_equiped, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_EYE_EQ, buf);
 
-		_itoa_s(character.eyewear_equiped_durability, buf, 100, 10);
+		_itoa_s(character.inventory.eyewear_equiped_durability, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_EYE_EQ_DUR, buf);
 
-		_itoa_s(character.special_equiped, buf, 100, 10);
+		_itoa_s(character.inventory.special_equiped, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_SPC_EQ, buf);
 
-		_itoa_s(character.special_equiped_charges, buf, 100, 10);
+		_itoa_s(character.inventory.special_equiped_charges, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_SPC_EQ_LEFT, buf);
 
-		_itoa_s(character.shirt_equiped, buf, 100, 10);
+		_itoa_s(character.inventory.shirt_equiped, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_SHRT_EQ, buf);
 
-		_itoa_s(character.shirt_equiped_durability, buf, 100, 10);
+		_itoa_s(character.inventory.shirt_equiped_durability, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_SHRT_EQ_DUR, buf);
 
-		_itoa_s(character.vest_equiped, buf, 100, 10);
+		_itoa_s(character.inventory.vest_equiped, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_VEST_EQ, buf);
 
-		_itoa_s(character.vest_equiped_durability, buf, 100, 10);
+		_itoa_s(character.inventory.vest_equiped_durability, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_VEST_DUR, buf);
 
-		_itoa_s(character.shoes_equiped, buf, 100, 10);
+		_itoa_s(character.inventory.shoes_equiped, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_SHOES_EQ, buf);
 
-		_itoa_s(character.shoes_equiped_durability, buf, 100, 10);
+		_itoa_s(character.inventory.shoes_equiped_durability, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_SHOES_DUR, buf);
 
-		_itoa_s(character.pants_equiped, buf, 100, 10);
+		_itoa_s(character.inventory.pants_equiped, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_PANTS_EQ, buf);
 
-		_itoa_s(character.pants_equiped_durability, buf, 100, 10);
+		_itoa_s(character.inventory.pants_equiped_durability, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_PANTS_DUR, buf);
 
-		_itoa_s(character.ammo_equiped, buf, 100, 10);
+		_itoa_s(character.inventory.ammo_equiped, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_AMMO_EQ, buf);
 
-		_itoa_s(character.ammo_equiped_count, buf, 100, 10);
+		_itoa_s(character.inventory.ammo_equiped_count, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_AMMO_EQ_CNT, buf);
 
-		_itoa_s(character.ammo_equiped_count, buf, 100, 10);
+		_itoa_s(character.inventory.ammo_equiped_count, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_AMMO_EQ_CNT, buf);
 
-		_itoa_s(character.weapon_attachment_removable, buf, 100, 10);
+		_itoa_s(character.inventory.weapon_attachment_removable, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_WPN_MOD, buf);
 
 		// health and stamina 	
@@ -499,16 +503,16 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 		SetDlgItemText(hwnd, IDC_MED_COND, buf);
 
 		// inventory
-		_itoa_s(character.weapons[last_weaponslot_selected_index].weapon, buf, 100, 10);
+		_itoa_s(character.inventory.weapons[last_weaponslot_selected_index].weapon, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_WPN_INV, buf);
 
-		_itoa_s(character.weapons[last_weaponslot_selected_index].weapon_durability, buf, 100, 10);
+		_itoa_s(character.inventory.weapons[last_weaponslot_selected_index].weapon_durability, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_WPN_INV_DUR, buf);
 
-		_itoa_s(character.weapons[last_weaponslot_selected_index].ammo_count, buf, 100, 10);
+		_itoa_s(character.inventory.weapons[last_weaponslot_selected_index].ammo_count, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_AMMO_INV_CNT, buf);
 
-		_itoa_s(character.inventory_items[last_inventory_selected_index].item_id, buf, 100, 10);
+		_itoa_s(character.inventory.inventory_items[last_inventory_selected_index].item_id, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_INV_ITEM_ID, buf);
 
 		// attributes
@@ -614,83 +618,83 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr) {
 
 	GetDlgItemText(hwnd, IDC_WPN_EQ, buf, 100);
 	weapon_in_hand = atoi(buf);
-	character_ptr->weapon_in_hand = weapon_in_hand;
+	character_ptr->inventory.weapon_in_hand = weapon_in_hand;
 
-	character_ptr->weapon_in_hand_removable = 1;
+	character_ptr->inventory.weapon_in_hand_removable = 1;
 
 	GetDlgItemText(hwnd, IDC_WPN_EQ_DUR, buf, 100);
 	weapon_in_hand_durability = atoi(buf);
-	character_ptr->weapon_in_hand_durability = weapon_in_hand_durability;
+	character_ptr->inventory.weapon_in_hand_durability = weapon_in_hand_durability;
 
 	GetDlgItemText(hwnd, IDC_HELM_EQ, buf, 100);
 	helmet_equiped = atoi(buf);
-	character_ptr->helmet_equiped = helmet_equiped;
+	character_ptr->inventory.helmet_equiped = helmet_equiped;
 
 	GetDlgItemText(hwnd, IDC_HELM_EQ_DUR, buf, 100);
 	helmet_equiped_durability = atoi(buf);
-	character_ptr->helmet_equiped_durability = helmet_equiped_durability;
+	character_ptr->inventory.helmet_equiped_durability = helmet_equiped_durability;
 
 	GetDlgItemText(hwnd, IDC_EYE_EQ, buf, 100);
 	eyewear_equiped = atoi(buf);
-	character_ptr->eyewear_equiped = eyewear_equiped;
+	character_ptr->inventory.eyewear_equiped = eyewear_equiped;
 
 	GetDlgItemText(hwnd, IDC_EYE_EQ_DUR, buf, 100);
 	eyewear_equiped_durability = atoi(buf);
-	character_ptr->eyewear_equiped_durability = eyewear_equiped_durability;
+	character_ptr->inventory.eyewear_equiped_durability = eyewear_equiped_durability;
 
 	GetDlgItemText(hwnd, IDC_SPC_EQ, buf, 100);
 	special_equiped = atoi(buf);
-	character_ptr->special_equiped = special_equiped;
+	character_ptr->inventory.special_equiped = special_equiped;
 
 	GetDlgItemText(hwnd, IDC_SPC_EQ_LEFT, buf, 100);
 	special_equiped_charges = atoi(buf);
-	character_ptr->special_equiped_charges = special_equiped_charges;
+	character_ptr->inventory.special_equiped_charges = special_equiped_charges;
 
 	GetDlgItemText(hwnd, IDC_SHRT_EQ, buf, 100);
 	shirt_equiped = atoi(buf);
-	character_ptr->shirt_equiped = shirt_equiped;
+	character_ptr->inventory.shirt_equiped = shirt_equiped;
 
 	GetDlgItemText(hwnd, IDC_SHRT_EQ_DUR, buf, 100);
 	shirt_equiped_durability = atoi(buf);
-	character_ptr->shirt_equiped_durability = shirt_equiped_durability;
+	character_ptr->inventory.shirt_equiped_durability = shirt_equiped_durability;
 
 	GetDlgItemText(hwnd, IDC_VEST_EQ, buf, 100);
 	vest_equiped = atoi(buf);
-	character_ptr->vest_equiped = vest_equiped;
+	character_ptr->inventory.vest_equiped = vest_equiped;
 
 	GetDlgItemText(hwnd, IDC_VEST_DUR, buf, 100);
 	vest_equiped_durability = atoi(buf);
-	character_ptr->vest_equiped_durability = vest_equiped_durability;
+	character_ptr->inventory.vest_equiped_durability = vest_equiped_durability;
 
 	GetDlgItemText(hwnd, IDC_SHOES_EQ, buf, 100);
 	shoes_equiped = atoi(buf);
-	character_ptr->shoes_equiped = shoes_equiped;
+	character_ptr->inventory.shoes_equiped = shoes_equiped;
 
 	GetDlgItemText(hwnd, IDC_SHOES_DUR, buf, 100);
 	shoes_equiped_durability = atoi(buf);
-	character_ptr->vest_equiped_durability = shoes_equiped_durability;
+	character_ptr->inventory.vest_equiped_durability = shoes_equiped_durability;
 
 	GetDlgItemText(hwnd, IDC_PANTS_EQ, buf, 100);
 	pants_equiped = atoi(buf);
-	character_ptr->pants_equiped = pants_equiped;
+	character_ptr->inventory.pants_equiped = pants_equiped;
 
 	GetDlgItemText(hwnd, IDC_PANTS_DUR, buf, 100);
 	pants_equiped_durability = atoi(buf);
-	character_ptr->pants_equiped_durability = pants_equiped_durability;
+	character_ptr->inventory.pants_equiped_durability = pants_equiped_durability;
 
 	GetDlgItemText(hwnd, IDC_AMMO_EQ, buf, 100);
 	ammo_equiped = atoi(buf);
-	character_ptr->ammo_equiped = ammo_equiped;
+	character_ptr->inventory.ammo_equiped = ammo_equiped;
 
 	GetDlgItemText(hwnd, IDC_AMMO_EQ_CNT, buf, 100);
 	ammo_equiped_count = atoi(buf);
-	character_ptr->ammo_equiped_count = ammo_equiped_count;
+	character_ptr->inventory.ammo_equiped_count = ammo_equiped_count;
 
 	GetDlgItemText(hwnd, IDC_WPN_MOD, buf, 100);
 	weapon_attachment_removable = atoi(buf);
-	character_ptr->weapon_attachment_removable = weapon_attachment_removable;
+	character_ptr->inventory.weapon_attachment_removable = weapon_attachment_removable;
 	
-	character_ptr->weapon_attachment_status = 1;
+	character_ptr->inventory.weapon_attachment_status = 1;
 
 	// get name and it's length
 	memset(buf, 0x0, JABIA_CHARACTER_MAX_NAME_LENGTH);
@@ -701,17 +705,17 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr) {
 	// inventory
 	GetDlgItemText(hwnd, IDC_WPN_INV, buf, 100);
 	weapon = atoi(buf);
-	character_ptr->weapons[last_weaponslot_selected_index].weapon = weapon;
+	character_ptr->inventory.weapons[last_weaponslot_selected_index].weapon = weapon;
 
 	GetDlgItemText(hwnd, IDC_WPN_INV_DUR, buf, 100);
 	weapon_durability = atoi(buf);
-	character_ptr->weapons[last_weaponslot_selected_index].weapon_durability = weapon_durability;
+	character_ptr->inventory.weapons[last_weaponslot_selected_index].weapon_durability = weapon_durability;
 
 	GetDlgItemText(hwnd, IDC_AMMO_INV_CNT, buf, 100);
 	ammo_count = atoi(buf);
-	character_ptr->weapons[last_weaponslot_selected_index].ammo_count = ammo_count;
+	character_ptr->inventory.weapons[last_weaponslot_selected_index].ammo_count = ammo_count;
 
-	character_ptr->weapons[last_weaponslot_selected_index].removable = 1;
+	character_ptr->inventory.weapons[last_weaponslot_selected_index].removable = 1;
 
 	// health and stamina
 	GetDlgItemText(hwnd, IDC_HLTH, buf, 100);

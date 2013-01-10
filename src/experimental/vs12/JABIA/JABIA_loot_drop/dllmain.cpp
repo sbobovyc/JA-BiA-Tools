@@ -21,16 +21,33 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
 #include <windows.h>
+#include "detours.h"
+#include "character.h"
+
+#pragma comment(lib,"detours.lib")
+
+static char ProcessName[] = "GameJABiA.exe";
 
 // modding drop loot functionality
+#define CALC_DROP_LOOT_OFFSET 0x0013A3F0
+#define DROP_LOOT_OFFSET 0x00030C40
+
 #define WEAPON_DROP_FLD_OFFSET 0x0053A4C5
 #define ITEM_DROP_FLD_OFFSET 0x0053A519
 #define ONE_FLT 0x0071E02C // 1.0 constant in .rdata segment
+#define INVENTORY_DROP_SWTCH_TABLE 0x0053A540
+
+typedef void * (_stdcall *CalcDropLootPtr)();
 
 DWORD WINAPI MyThread(LPVOID);
+void myCalcDropedLoot();
+void CustomCalcDroppedLoot(JABIA_Character_inventory * ptr, void * drop_ptr, int unknown);
 
+HMODULE game_handle; // address of GameDemo.exe
 HMODULE g_hModule;
 DWORD g_threadID;
+
+CalcDropLootPtr CalcDropLoot;
 
 INT APIENTRY DllMain(HMODULE hDLL, DWORD Reason, LPVOID Reserved)
 {
@@ -50,6 +67,34 @@ INT APIENTRY DllMain(HMODULE hDLL, DWORD Reason, LPVOID Reserved)
     return TRUE;
 }
 
+//DWORD WINAPI MyThread(LPVOID) {
+//	char buf [100];
+//	// find base address of GameDemo.exe in memory
+//	GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, ProcessName, &game_handle);
+//	// find address of character update xp function
+//	CalcDropLoot = (CalcDropLootPtr)((uint32_t)game_handle+CALC_DROP_LOOT_OFFSET);
+//	wsprintf (buf, "Address of CalcDropLoot 0x%x", CalcDropLoot);
+//	OutputDebugString(buf);
+//
+//
+//	// start UpdateCharacterExp redirection
+//	DWORD oldProtection;
+//	// read + write
+//	VirtualProtect(CalcDropLoot, 6, PAGE_EXECUTE_READWRITE, &oldProtection);
+//	DWORD JMPSize = ((DWORD)myCalcDropedLoot - (DWORD)CalcDropLoot - 5);
+//	//BYTE Before_JMP[6]; // save retn here
+//	BYTE JMP2[6] = {0xE9, 0x90, 0x90, 0x90, 0x90, 0x90}; // JMP NOP NOP ...
+//	//memcpy((void *)Before_JMP, (void *)UpdateCharacterExp, 6); // save retn
+//	memcpy(&JMP2[1], &JMPSize, 4);
+//	// overwrite retn with JMP
+//	memcpy((void *)CalcDropLoot, (void *)JMP2, 6);
+//	// restore protection
+//    VirtualProtect((LPVOID)CalcDropLoot, 6, oldProtection, NULL);
+//	// end UpdateCharacterExp redirection
+//
+//	return 0;
+//}
+
 DWORD WINAPI MyThread(LPVOID) {
 	char buf [100];
 	wsprintf (buf, "Address of weapon drop floating point load 0x%x", WEAPON_DROP_FLD_OFFSET);
@@ -57,8 +102,9 @@ DWORD WINAPI MyThread(LPVOID) {
 	wsprintf (buf, "Address of item drop floating point load 0x%x", ITEM_DROP_FLD_OFFSET);
 	OutputDebugString(buf);
 
-	// overwrite weapon drop chance from 0.25 to 1.0
+	// overwrite weapon drop chance from 0.25 to 1.0	
 	// overwrite item drop chance from 0.125 to 1.0
+	// change switch table to drop all items in inventory
 	DWORD oldProtection;
 	// read + write
 	VirtualProtect((LPVOID)WEAPON_DROP_FLD_OFFSET, 6, PAGE_EXECUTE_READWRITE, &oldProtection);
@@ -69,7 +115,18 @@ DWORD WINAPI MyThread(LPVOID) {
 
 	// fld ds:0x00728F48 replaced with 
 	// fld ds:0x0071E02C	
-	//memcpy((void *)ITEM_DROP_FLD_OFFSET, FLD, 6);
+	memcpy((void *)ITEM_DROP_FLD_OFFSET, FLD, 6);
+
+	// db      0,     3,     3,     3  ; indirect table for switch statement
+    // db      1,     3,     1,     1 
+    // db      2
+	// replaced with
+	// db      0,     1,     1,     1  ; indirect table for switch statement
+    // db      1,     1,     1,     1 
+    // db      2
+
+	BYTE NEW_SWTCH[9] = {0x0, 0x3, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x2};
+	memcpy((void *)INVENTORY_DROP_SWTCH_TABLE, NEW_SWTCH, 9);
 
 	// restore protection
     VirtualProtect((LPVOID)WEAPON_DROP_FLD_OFFSET, 6, oldProtection, NULL);
@@ -77,4 +134,26 @@ DWORD WINAPI MyThread(LPVOID) {
 	// done
 	FreeLibraryAndExitThread(g_hModule, 0);
     return 0;
+}
+
+__declspec(naked) void myCalcDropedLoot() {	
+	_asm {		
+		push [esp+8]
+		push [esp+8]		
+		push esi
+		call CustomCalcDroppedLoot
+		pop ebx
+		pop ebx
+		pop ebx
+		ret 
+	}
+}
+
+void CustomCalcDroppedLoot(JABIA_Character_inventory * ptr, void * drop_ptr, int unknown) {
+	char buf[100];
+	OutputDebugString("In Custom Drop Loot");
+	wsprintf(buf, "0x%X \n0x%X \n0x%x", ptr, drop_ptr, unknown);
+	OutputDebugString(buf);
+	
+
 }
