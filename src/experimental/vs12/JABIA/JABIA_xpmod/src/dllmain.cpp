@@ -52,7 +52,7 @@ PrintCharacterXpGainPtr PrintCharacterXpGain;
 
 JABIA_XPMOD_parameters xpmod_params;
 
-HMODULE game_handle; // address of GameDemo.exe
+HMODULE game_handle; // address of GameJABiA.exe
 DWORD g_threadID;
 HMODULE g_hModule;
 

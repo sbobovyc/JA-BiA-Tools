@@ -11,6 +11,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "JABIA_mod_launcher", "JABIA
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "JABIA_loot_drop", "JABIA_loot_drop\JABIA_loot_drop.vcxproj", "{769A93CA-3DD1-4CB2-B740-0AE2CF549DEB}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "JABIA_camera", "JABIA_camera\JABIA_camera.vcxproj", "{F8142DA7-7E20-4E60-9632-C1D1164C96A4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -37,6 +39,10 @@ Global
 		{769A93CA-3DD1-4CB2-B740-0AE2CF549DEB}.Debug|Win32.Build.0 = Debug|Win32
 		{769A93CA-3DD1-4CB2-B740-0AE2CF549DEB}.Release|Win32.ActiveCfg = Release|Win32
 		{769A93CA-3DD1-4CB2-B740-0AE2CF549DEB}.Release|Win32.Build.0 = Release|Win32
+		{F8142DA7-7E20-4E60-9632-C1D1164C96A4}.Debug|Win32.ActiveCfg = Debug|Win32
+		{F8142DA7-7E20-4E60-9632-C1D1164C96A4}.Debug|Win32.Build.0 = Debug|Win32
+		{F8142DA7-7E20-4E60-9632-C1D1164C96A4}.Release|Win32.ActiveCfg = Release|Win32
+		{F8142DA7-7E20-4E60-9632-C1D1164C96A4}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
