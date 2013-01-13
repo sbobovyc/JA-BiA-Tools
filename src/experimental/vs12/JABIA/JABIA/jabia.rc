@@ -21,7 +21,7 @@ IDR_MENU1 MENU
         MENUITEM "Heal character", IDM_HEAL_CHARACTER
         MENUITEM "Kill character", IDM_KILL_CHARACTER
         MENUITEM "Stun character", IDM_STUN_CHARACTER
-        MENUITEM "Equipment1", IDM_EQUIPMENT1
+        MENUITEM "Urban+AK", IDM_EQUIPMENT1
         MENUITEM "Dump character", IDM_DUMP_CHARACTER
         MENUITEM "Dump all", IDM_DUMP_ALL, INACTIVE
         MENUITEM SEPARATOR

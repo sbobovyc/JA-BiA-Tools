@@ -24,6 +24,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #include <stdint.h>
 #include <stdio.h>
 #include <vector>
+#include <algorithm>
 #include <shlobj.h>
 #include <objbase.h>
 #include <detours.h>
@@ -36,13 +37,13 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
 
-CharacterConstRetrunPtr ParseCharacter;
+CharacterConstReturnPtr ParseCharacter;
+CharacterDestReturnPtr RemoveCharacter;
 CharacterDestructorPtr CharacterDestructor;
 
 HMODULE game_handle; // address of GameDemo.exe
 DWORD g_threadID;
 HMODULE g_hModule;
-//void __stdcall CallFunction(void);
 HINSTANCE TheInstance = 0;
 
 
@@ -78,37 +79,28 @@ DWORD WINAPI MyThread(LPVOID)
 	if(GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, ProcessName, &game_handle) == NULL) {
 		wsprintf(buf, "Failed to get module handle");
 		OutputDebugString(buf);
-		/*
-		HWND hDialog = 0;
-
-		hDialog = CreateDialog (g_hModule,
-			MAKEINTRESOURCE (IDD_DIALOG1),
-			0,
-			DialogProc);
-		JABIA_Character character;
-		strcpy_s(character.merc_name, 5, "NULL");
-		character.name_length = 4;
-		std::vector<JABIA_Character *> jabia_characters_local;
-		jabia_characters_local.push_back(&character);
-		fillDialog(hDialog, (uint32_t)jabia_characters_local.at(last_character_selected_index));
-		*/
-
 	} else {
 		// find address of character constructor
-		ParseCharacter = (CharacterConstRetrunPtr)((uint32_t)game_handle+CHARACTER_CONST_OFFSET);
+		ParseCharacter = (CharacterConstReturnPtr)((uint32_t)game_handle+CHARACTER_CONST_OFFSET);
 		wsprintf (buf, "Address of CharacterConstructor 0x%x", ParseCharacter);
 		OutputDebugString(buf);
 		// find address of character constructor return
-		ParseCharacter = (CharacterConstRetrunPtr)((uint32_t)game_handle+CHARACTER_CONST_OFFSET+CHARACTER_CONST_RETN_OFFSET);
+		ParseCharacter = (CharacterConstReturnPtr)((uint32_t)game_handle+CHARACTER_CONST_OFFSET+CHARACTER_CONST_RETN_OFFSET);
 		wsprintf (buf, "Address of retn in CharacterConstructor 0x%x", ParseCharacter);
+		OutputDebugString(buf);
+		// find addres of character destructor return
+		RemoveCharacter = (CharacterDestReturnPtr)((uint32_t)game_handle+CHARACTER_DESTRUCTOR_RETN_OFFSET);
+		wsprintf (buf, "Address of retn in CharacterDestReturnPtr 0x%x", RemoveCharacter);
 		OutputDebugString(buf);
 		// find address of character destructor
 		CharacterDestructor = (CharacterDestructorPtr)((uint32_t)game_handle+CHARACTER_DESTRUCTOR_OFFSET);
 		wsprintf (buf, "Address of CharacterDestructor 0x%x", CharacterDestructor);
 		OutputDebugString(buf);
+		
 
 		// If jabia_characters is not empty, clear it. Every time the game loads a level, character pointers change.
 		//TODO this function crashes on exit game
+		
 		/*
 		// start detour characer destructor function		
 		DetourRestoreAfterWith();
@@ -123,8 +115,7 @@ DWORD WINAPI MyThread(LPVOID)
 		
 		// read + write
 		VirtualProtect(ParseCharacter, 6, PAGE_EXECUTE_READWRITE, &oldProtection);
-		DWORD JMPSize = ((DWORD)myCharacterConstRetrun - (DWORD)ParseCharacter - 5);
-		
+		DWORD JMPSize = ((DWORD)myCharacterConstReturn - (DWORD)ParseCharacter - 5);		
 		BYTE JMP[6] = {0xE9, 0x90, 0x90, 0x90, 0x90, 0x90}; // JMP NOP NOP ...
 		memcpy((void *)Before_JMP, (void *)ParseCharacter, 6); // save retn
 		memcpy(&JMP[1], &JMPSize, 4);
@@ -135,8 +126,17 @@ DWORD WINAPI MyThread(LPVOID)
 		// restore protection
 		VirtualProtect((LPVOID)ParseCharacter, 6, oldProtection, NULL);
 
+		// hook destructor return
+		VirtualProtect(RemoveCharacter, 6, PAGE_EXECUTE_READWRITE, &oldProtection);
+		JMPSize = ((DWORD)myCharacterDestReturn - (DWORD)RemoveCharacter - 5);		
+		memcpy(&JMP[1], &JMPSize, 4);
+		// overwrite retn with JMP
+		memcpy((void *)RemoveCharacter, (void *)JMP, 6);
+		// restore protection
+		VirtualProtect((LPVOID)RemoveCharacter, 6, oldProtection, NULL);
+
 		// give user instructions
-		wsprintf(buf, "DLL successfully loaded. Load a save game and press F7 to bring up editor. Due to some bugs, you need to exit the game before you load another savegame or exit the map.");
+		wsprintf(buf, "DLL successfully loaded. Load a save game and press F7 to bring up editor. Due to some bugs, you need to quit to main menu before you load another savegame.");
 		MessageBox (0, buf, "JABIA character editor", MB_ICONEXCLAMATION | MB_OK | MB_SYSTEMMODAL);
 		wsprintf(buf, "Size of struct %i", sizeof(JABIA_Character));
 		OutputDebugString(buf);
@@ -309,18 +309,22 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 				case IDM_HEAL_CHARACTER:					
 					ptr = jabia_characters.at(last_character_selected_index);
 					heal_character(ptr);
+					fillDialog(hwnd, ptr);
 					break;
 				case IDM_KILL_CHARACTER:					
 					ptr = jabia_characters.at(last_character_selected_index);
 					kill_character(ptr);
+					fillDialog(hwnd, ptr);
 					break;
 				case IDM_STUN_CHARACTER:
 					ptr = jabia_characters.at(last_character_selected_index);
 					stun_character(ptr);
+					fillDialog(hwnd, ptr);
 					break;
 				case IDM_EQUIPMENT1:
 					ptr = jabia_characters.at(last_character_selected_index);
 					give_equipment1(ptr);
+					fillDialog(hwnd, ptr);
 					break;
 				case IDM_DUMP_CHARACTER:					
 					ptr = jabia_characters.at(last_character_selected_index);
@@ -630,6 +634,8 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr) {
 	helmet_equiped = atoi(buf);
 	character_ptr->inventory.helmet_equiped = helmet_equiped;
 
+	character_ptr->inventory.helmet_equiped_removable = 1;
+
 	GetDlgItemText(hwnd, IDC_HELM_EQ_DUR, buf, 100);
 	helmet_equiped_durability = atoi(buf);
 	character_ptr->inventory.helmet_equiped_durability = helmet_equiped_durability;
@@ -641,6 +647,8 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr) {
 	GetDlgItemText(hwnd, IDC_EYE_EQ_DUR, buf, 100);
 	eyewear_equiped_durability = atoi(buf);
 	character_ptr->inventory.eyewear_equiped_durability = eyewear_equiped_durability;
+
+	character_ptr->inventory.eyewear_equiped_status = 1;
 
 	GetDlgItemText(hwnd, IDC_SPC_EQ, buf, 100);
 	special_equiped = atoi(buf);
@@ -692,8 +700,8 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr) {
 
 	GetDlgItemText(hwnd, IDC_WPN_MOD, buf, 100);
 	weapon_attachment_removable = atoi(buf);
-	character_ptr->inventory.weapon_attachment_removable = weapon_attachment_removable;
-	
+	character_ptr->inventory.weapon_attachment_removable = weapon_attachment_removable;	
+
 	character_ptr->inventory.weapon_attachment_status = 1;
 
 	// get name and it's length
@@ -781,16 +789,9 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr) {
 	character_ptr->bleed_rate = bleed_rate;
 }
 
-__declspec(naked) void* myCharacterConstRetrun(){	
+__declspec(naked) void* myCharacterConstReturn(){	
 	// Character constructor uses thiscall calling convention and as an optimization passes something in EDX. I don't hook the call to the constructor.
 	// Instead, I hook the return of the character constructor. The "this" pointer will be in EAX.
-
-	//__asm{
-	//	push eax;
-	//	call recordCharacters;
-	//	pop eax;
-	//	retn 0x1C;
-	//} old crap from using cdecl
 
 	__asm{
 		push eax;
@@ -801,18 +802,10 @@ __declspec(naked) void* myCharacterConstRetrun(){
 	}
 }
 
-
-//void __cdecl recordCharacters(void* instance){
 void __fastcall recordCharacters(void* instance){
 	char buf [100];
 	JABIA_Character * character_ptr;
 	OutputDebugString("Parsing character!");
-
-	//__asm{
-	//	//mov eax, [esp+0x148];	//TODO fix this stupid mistake, if i ever change what happends to the stack this offset will be wrong
-	//	mov eax, [esp];
-	//	mov character_ptr, eax;
-	//} old crap from using cdelc //TODO remove this eventually so i won't get confused
 
 	character_ptr = (JABIA_Character *)instance;
 
@@ -823,13 +816,37 @@ void __fastcall recordCharacters(void* instance){
 	OutputDebugString(buf);
 }
 
+__declspec(naked) void* myCharacterDestReturn(){	
+	__asm{
+		push ebx; // something needs to be pushed	
+		mov ecx, ebx; // saved
+		call removeCharacter;
+		pop ebx; // then poped
+		pop     edi; // .text:00532BB8      
+		pop     esi; // .text:00532BB9                   
+		pop     ebx; // .text:00532BBA                 
+        pop     ecx // .text:00532BBB
+        retn    4 // .text:00532BBC
+	}
+}
+
 int myCharacterDestructor(JABIA_Character * ptr) {
 	char buf[100];
 	wsprintf(buf, "Removing character at 0x%X", ptr);
 	OutputDebugString(buf);
 	wsprintf(buf, "Character is %s", ptr->merc_name);
 	OutputDebugString(buf);
+	
+	return CharacterDestructor(ptr);
+}
 
-	int value = CharacterDestructor(ptr);
-	return value;
+void __fastcall removeCharacter(JABIA_Character * ptr){
+	char buf[100];
+	wsprintf(buf, "Removing character at 0x%X", ptr);
+	OutputDebugString(buf);
+	wsprintf(buf, "Character is %s", ptr->merc_name);
+	OutputDebugString(buf);
+	std::vector<JABIA_Character *>::iterator position = std::find(jabia_characters.begin(), jabia_characters.end(), ptr);
+	if (position != jabia_characters.end()) // == vector.end() means the element was not found
+		jabia_characters.erase(position);
 }

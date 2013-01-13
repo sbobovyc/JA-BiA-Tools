@@ -17,11 +17,13 @@
 #define CHARACTER_CONST_OFFSET 0x132880
 #define CHARACTER_CONST_RETN_OFFSET 0x2D8
 #define CHARACTER_DESTRUCTOR_OFFSET 0x132B60
+#define CHARACTER_DESTRUCTOR_RETN_OFFSET 0x132BB8 // pop edi 
 static char ProcessName[] = "GameJABiA.exe";
 
 
-typedef void * (_stdcall *CharacterConstRetrunPtr)();
+typedef void * (_stdcall *CharacterConstReturnPtr)();
 typedef void * (_stdcall *UpdateCharacterExpPtr)();
+typedef void * (_stdcall *CharacterDestReturnPtr)();
 typedef int (_stdcall *CharacterDestructorPtr)(JABIA_Character *);
 
 #ifdef __cplusplus
@@ -36,8 +38,10 @@ EXPORT BOOL CALLBACK DialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
 
 DWORD WINAPI MyThread(LPVOID);
 // my hooks
-void* myCharacterConstRetrun();
+void* myCharacterConstReturn();
+void* myCharacterDestReturn();
 void __fastcall recordCharacters(void* instance);
+void __fastcall removeCharacter(JABIA_Character * ptr);
 int myCharacterDestructor(JABIA_Character * ptr);
 
 // gui functions

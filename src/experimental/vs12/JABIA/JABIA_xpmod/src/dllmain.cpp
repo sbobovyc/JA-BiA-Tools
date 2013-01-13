@@ -187,9 +187,11 @@ __declspec(naked) void* myUpdateCharacterExp(){
 		mov DWORD PTR DS:[ecx+0x0C],eax			// store level in character data structure
 		MOV EAX,DWORD PTR DS:[EAX*4+0x71DFAC]   // look up how many training points we get for this level
 #ifdef WITH_XP_MOD
-		nop										// don't add training points
-		nop
-		nop
+		add DWORD PTR DS:[ecx+0x190],0x1         // add 1 point to agility
+		add DWORD PTR DS:[ecx+0x194],0x1         // add 1 point to dexterity
+		add DWORD PTR DS:[ecx+0x198],0x1         // add 1 point to strength
+		add DWORD PTR DS:[ecx+0x19C],0x1         // add 1 point to intelligence
+		add DWORD PTR DS:[ecx+0x1A0],0x1         // add 1 point to perception
 #else
 		add DWORD PTR DS:[ecx+0x14],eax         // add training points into character data structure
 #endif
