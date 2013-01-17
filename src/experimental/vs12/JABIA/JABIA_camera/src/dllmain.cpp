@@ -21,6 +21,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include <windows.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include "detours.h"
 
@@ -28,6 +29,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 DWORD WINAPI MyThread(LPVOID);
 int _stdcall myCameraCallback(float, int);
+void print_camera_info();
 
 static char ProcessName[] = "GameJABiA.exe";
 
@@ -43,11 +45,14 @@ HMODULE g_hModule;
 
 
 typedef struct Camera {
-	float unknown[81];
+	float unknown1[77];
+	float current_angle;
+	float unknown2[3];
 	float camera_min;
 	float camera_max;
-	float min_angle;  
-	float max_angle;
+	float min_angle;  // 2.0 is 90 degree, ie directly overhead
+	float max_angle_delta; // min + delta = max angle
+	float current_height;
 } Camera;
 
 Camera * camera_ptr;
@@ -101,13 +106,27 @@ DWORD WINAPI MyThread(LPVOID)
     DetourDetach(&(PVOID&)CameraCallback, myCameraCallback);
     DetourTransactionCommit();
 
-	wsprintf(buf, "Camera at 0x%X", camera_ptr);
-	OutputDebugString(buf);
 
+	print_camera_info();
 	// mod the min, max camera height
-	camera_ptr->camera_min = 50; 
-	camera_ptr->camera_max = 2000; 
+	//camera_ptr->camera_min = 50; 
+	//camera_ptr->camera_max = 2000; 
 
+		while(true)
+		{
+			if(GetAsyncKeyState(VK_ADD) & 1)
+			{
+				camera_ptr->camera_min += 10;				
+			} else if (GetAsyncKeyState(VK_SUBTRACT) & 1) {
+				camera_ptr->camera_min -= 10;
+			} else if (GetAsyncKeyState(VK_NUMPAD0) & 1) {
+				print_camera_info();
+			} else if(GetAsyncKeyState(VK_F8) &1) {
+				OutputDebugString("Unloading DLL");
+				break;
+			}
+		Sleep(100);
+		}
 	
 	FreeLibraryAndExitThread(g_hModule, 0);
     return 0;
@@ -118,4 +137,18 @@ int _stdcall myCameraCallback(float u1, int u2) {
 		mov camera_ptr, ecx 
 	};
 	return CameraCallback(u1, u2);
+}
+
+void print_camera_info() {
+	char buf[1024];
+	wsprintf(buf, "Camera at 0x%X", camera_ptr);
+	OutputDebugString(buf);
+	sprintf(buf, "Camera angle: %f\nCamera min: %f\nCamera max: %f\nCamera min angle: %f\nCamera max angle delta: %f\nCamera height: %f", 
+		camera_ptr->current_angle,
+		camera_ptr->camera_min, 
+		camera_ptr->camera_max, 
+		camera_ptr->min_angle, 
+		camera_ptr->max_angle_delta,
+		camera_ptr->current_height);
+	OutputDebugString(buf);
 }
