@@ -22,19 +22,32 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #include <windows.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <boost/archive/xml_oarchive.hpp> 
+#include <boost/archive/xml_iarchive.hpp> 
+#include <boost/filesystem.hpp>
+#include <iostream> 
+#include <fstream> 
 
-
+#include "camera.h"
 #include "detours.h"
 #include "resource.h"
 
 #pragma comment(lib,"detours.lib")
 
+void save(JABIA_camera_parameters * dr);
+JABIA_camera_parameters load();
 DWORD WINAPI MyThread(LPVOID);
 int _stdcall myCameraCallback(float, int);
 void print_camera_info();
 BOOL CALLBACK DialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 void fillDialog(HWND hwnd);
+
 void setCamera(HWND hwnd);
+void SetCameraGTA(void);
+void SetCameraClose(void);
+void SetCameraLowHigh(void);	
+void SetCameraCustom(void);
+void SetCameraDefault(void);
 
 
 
@@ -45,24 +58,43 @@ static char ProcessName[] = "GameJABiA.exe";
 typedef int (_stdcall *CameraCallbackPtr)(float, int);
 
 CameraCallbackPtr CameraCallback;
-
 HMODULE game_handle; // address of GameJABiA.exe
 DWORD g_threadID;
 HMODULE g_hModule;
-
-
-typedef struct Camera {
-	float unknown1[77];
-	float current_angle;
-	float unknown2[3];
-	float camera_min;
-	float camera_max;
-	float min_angle;  // 2.0 is 90 degree, ie directly overhead
-	float max_angle_delta; // min + delta = max angle
-	float current_height;
-} Camera;
-
 Camera * camera_ptr;
+JABIA_camera_parameters params;
+
+void save(JABIA_camera_parameters * dr) 
+{ 	
+	boost::filesystem::path working_dir = boost::filesystem::current_path();
+	boost::filesystem::path modpath(PATH_TO_CAMERA_XML);
+	boost::filesystem::path fullpath = working_dir / modpath;
+	OutputDebugString(fullpath.string().c_str());
+	std::ofstream file(fullpath.string()); 	
+	boost::archive::xml_oarchive oa(file); 
+	OutputDebugString("Done saving xml");
+	oa & BOOST_SERIALIZATION_NVP(dr); 
+} 
+
+JABIA_camera_parameters load() 
+{ 
+	JABIA_camera_parameters param;
+	boost::filesystem::path working_dir = boost::filesystem::current_path();
+	boost::filesystem::path modpath(PATH_TO_CAMERA_XML);
+	boost::filesystem::path fullpath = working_dir / modpath;
+	if ( !(boost::filesystem::exists(fullpath) && boost::filesystem::is_regular_file(fullpath)) )    // does p actually exist and is p a regular file?   
+	{
+		save(&param);
+	}
+	OutputDebugString(fullpath.string().c_str());
+	std::ifstream file(fullpath.string()); 
+	boost::archive::xml_iarchive ia(file);   
+	
+	ia >> BOOST_SERIALIZATION_NVP(param); 
+	OutputDebugString("Done loading xml");
+	return param;
+}
+
 
 INT APIENTRY DllMain(HMODULE hDLL, DWORD Reason, LPVOID Reserved)
 {
@@ -115,6 +147,10 @@ DWORD WINAPI MyThread(LPVOID)
 
 
 	print_camera_info();
+
+	// load custom camera settings from xml and set camera 
+	params = load();
+	SetCameraCustom();
 
 	while(true)
 	{
@@ -186,12 +222,17 @@ BOOL CALLBACK DialogProc (HWND hwnd,
                           WPARAM wParam, 
                           LPARAM lParam)
 {
+	HMENU hMenu;
 
     switch (message)
     {
 		case WM_INITDIALOG:
 			BringWindowToTop(hwnd);
 			
+			// add menu
+			hMenu = LoadMenu(g_hModule, MAKEINTRESOURCE(IDR_MENU1));
+			SetMenu(hwnd,hMenu);
+
 			// add icon
 			//HICON hIcon;
 
@@ -208,6 +249,37 @@ BOOL CALLBACK DialogProc (HWND hwnd,
         case WM_COMMAND:
             switch(LOWORD(wParam))
             {				
+				case IDM_GTA:
+					SetCameraGTA();
+					fillDialog(hwnd);
+					OutputDebugString("GTA");
+					break;
+				case IDM_CLOSE_UP:
+					SetCameraClose();
+					fillDialog(hwnd);
+					OutputDebugString("CU");
+					break;
+				case IDM_LOW_AND_HIGH:
+					SetCameraLowHigh();
+					OutputDebugString("LW");
+					break;
+				case IDM_CUSTOM:
+					SetCameraCustom();
+					fillDialog(hwnd);
+					OutputDebugString("CUSTOM");
+					break;
+				case IDM_DEFAULT:
+					SetCameraDefault();
+					fillDialog(hwnd);
+					OutputDebugString("DEFAULT");
+					break;
+				case IDC_SAVE:
+					params.camera_min = camera_ptr->camera_min;
+					params.camera_max = camera_ptr->camera_max;
+					params.min_angle = camera_ptr->min_angle;
+					params.max_angle_delta = camera_ptr->max_angle_delta;
+					save(&params);
+					break;
                 case IDOK:
 					setCamera(hwnd);
 					break;
@@ -272,4 +344,40 @@ void setCamera(HWND hwnd) {
 	GetDlgItemText(hwnd, IDC_ANGLE_DELTA, buf, 100);
 	max_angle_delta = (float)atof(buf);
 	camera_ptr->max_angle_delta = max_angle_delta;
+}
+
+void SetCameraGTA(void) {
+	camera_ptr->camera_min = 50;
+	camera_ptr->camera_max = 520;
+	camera_ptr->min_angle = 2.0;
+	camera_ptr->max_angle_delta = 0;
+}
+
+void SetCameraClose(void) {
+	camera_ptr->camera_min = 50;
+	camera_ptr->camera_max = 520;
+	camera_ptr->min_angle = 1.5;
+	camera_ptr->max_angle_delta = 0.9;
+}
+
+void SetCameraLowHigh(void) {
+	camera_ptr->camera_min = 50;
+	camera_ptr->camera_max = 700;
+	camera_ptr->min_angle = 0.8;
+	camera_ptr->max_angle_delta = 0.6;
+}
+
+void SetCameraCustom(void) {
+	camera_ptr->camera_min = params.camera_min;
+	camera_ptr->camera_max = params.camera_max;
+	camera_ptr->min_angle = params.min_angle;
+	camera_ptr->max_angle_delta = params.max_angle_delta;
+}
+
+void SetCameraDefault(void) {
+	JABIA_camera_parameters default_params;
+	camera_ptr->camera_min = default_params.camera_min;
+	camera_ptr->camera_max = default_params.camera_max;
+	camera_ptr->min_angle = default_params.min_angle;
+	camera_ptr->max_angle_delta = default_params.max_angle_delta;
 }
