@@ -23,13 +23,20 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #include <stdint.h>
 #include <stdio.h>
 
+
 #include "detours.h"
+#include "resource.h"
 
 #pragma comment(lib,"detours.lib")
 
 DWORD WINAPI MyThread(LPVOID);
 int _stdcall myCameraCallback(float, int);
 void print_camera_info();
+BOOL CALLBACK DialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
+void fillDialog(HWND hwnd);
+void setCamera(HWND hwnd);
+
+
 
 static char ProcessName[] = "GameJABiA.exe";
 
@@ -108,25 +115,46 @@ DWORD WINAPI MyThread(LPVOID)
 
 
 	print_camera_info();
-	// mod the min, max camera height
-	//camera_ptr->camera_min = 50; 
-	//camera_ptr->camera_max = 2000; 
 
-		while(true)
+	while(true)
+	{
+		if(GetAsyncKeyState(VK_ADD) & 1)
 		{
-			if(GetAsyncKeyState(VK_ADD) & 1)
-			{
-				camera_ptr->camera_min += 10;				
-			} else if (GetAsyncKeyState(VK_SUBTRACT) & 1) {
-				camera_ptr->camera_min -= 10;
-			} else if (GetAsyncKeyState(VK_NUMPAD0) & 1) {
-				print_camera_info();
+				HWND hDialog = 0;
+				
+				hDialog = CreateDialog (g_hModule,
+							MAKEINTRESOURCE (IDD_DIALOG1),
+							0,
+							DialogProc);
+
+				fillDialog(hDialog);
+				
+				if (!hDialog)
+				{
+					char buf [100];
+					wsprintf (buf, "Error x%x", GetLastError ());
+					MessageBox (0, buf, "CreateDialog", MB_ICONEXCLAMATION | MB_OK | MB_SYSTEMMODAL);
+					return 1;
+					}
+				
+				MSG  msg;
+				int status;
+				while ((status = GetMessage (& msg, 0, 0, 0)) != 0)
+				{
+					if (status == -1)
+						return -1;
+					if (!IsDialogMessage (hDialog, & msg))
+					{
+						TranslateMessage ( & msg );
+						DispatchMessage ( & msg );
+					}
+				}
 			} else if(GetAsyncKeyState(VK_F8) &1) {
 				OutputDebugString("Unloading DLL");
 				break;
 			}
-		Sleep(100);
-		}
+		Sleep(100);		
+	}
 	
 	FreeLibraryAndExitThread(g_hModule, 0);
     return 0;
@@ -151,4 +179,97 @@ void print_camera_info() {
 		camera_ptr->max_angle_delta,
 		camera_ptr->current_height);
 	OutputDebugString(buf);
+}
+
+BOOL CALLBACK DialogProc (HWND hwnd, 
+                          UINT message, 
+                          WPARAM wParam, 
+                          LPARAM lParam)
+{
+
+    switch (message)
+    {
+		case WM_INITDIALOG:
+			BringWindowToTop(hwnd);
+			
+			// add icon
+			//HICON hIcon;
+
+			//hIcon = (HICON)LoadImage(   g_hModule,
+   //                        MAKEINTRESOURCE(IDI_ICON1),
+   //                        IMAGE_ICON,
+   //                        GetSystemMetrics(SM_CXSMICON),
+   //                        GetSystemMetrics(SM_CYSMICON),
+   //                        0);
+			//if(hIcon) {
+			//	SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+			//}
+			return TRUE;
+        case WM_COMMAND:
+            switch(LOWORD(wParam))
+            {				
+                case IDOK:
+					setCamera(hwnd);
+					break;
+                case IDCANCEL:
+                    DestroyWindow(hwnd);
+					PostQuitMessage(0);
+					break;
+            }
+        break;
+        default:
+            return FALSE;
+    }
+    return FALSE;
+}
+
+void fillDialog(HWND hwnd) {
+	char buf[100];
+	sprintf_s(buf, "%.1f", camera_ptr->current_height, 4);
+	//OutputDebugString(buf);
+	SetDlgItemText(hwnd, IDC_HEIGHT, buf);
+
+	sprintf_s(buf, "%.1f", camera_ptr->current_angle, 4);
+	//OutputDebugString(buf);
+	SetDlgItemText(hwnd, IDC_ANGLE, buf);
+
+	sprintf_s(buf, "%.1f", camera_ptr->camera_min, 4);
+	//OutputDebugString(buf);
+	SetDlgItemText(hwnd, IDC_MIN_HEIGHT, buf);
+
+	sprintf_s(buf, "%.1f", camera_ptr->camera_max, 4);
+	//OutputDebugString(buf);
+	SetDlgItemText(hwnd, IDC_MAX_HEIGHT, buf);
+
+	sprintf_s(buf, "%.1f", camera_ptr->min_angle, 4);
+	//OutputDebugString(buf);
+	SetDlgItemText(hwnd, IDC_MIN_ANGLE, buf);
+
+	sprintf_s(buf, "%.1f", camera_ptr->max_angle_delta, 4);
+	//OutputDebugString(buf);
+	SetDlgItemText(hwnd, IDC_ANGLE_DELTA, buf);
+}
+
+void setCamera(HWND hwnd) {
+	char buf[100];
+	float min;
+	float max;
+	float min_angle;
+	float max_angle_delta;
+
+	GetDlgItemText(hwnd, IDC_MIN_HEIGHT, buf, 100);
+	min = (float)atof(buf);
+	camera_ptr->camera_min = min;
+
+	GetDlgItemText(hwnd, IDC_MAX_HEIGHT, buf, 100);
+	max = (float)atof(buf);
+	camera_ptr->camera_max = max;
+
+	GetDlgItemText(hwnd, IDC_MIN_ANGLE, buf, 100);
+	min_angle = (float)atof(buf);
+	camera_ptr->min_angle = min_angle;
+
+	GetDlgItemText(hwnd, IDC_ANGLE_DELTA, buf, 100);
+	max_angle_delta = (float)atof(buf);
+	camera_ptr->max_angle_delta = max_angle_delta;
 }

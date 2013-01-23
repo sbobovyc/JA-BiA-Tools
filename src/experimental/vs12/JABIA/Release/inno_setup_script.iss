@@ -38,6 +38,7 @@ Source: "C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\Re
 Source: "C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\Release\JABIA_debug.dll"; DestDir: "{app}\mods\debugger"; Flags: ignoreversion 
 Source: "C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\Release\JABIA_xpmod.dll"; DestDir: "{app}\mods\xpmod"; Flags: ignoreversion 
 Source: "C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\Release\JABIA_loot_drop.dll"; DestDir: "{app}\mods\loot_drop"; Flags: ignoreversion 
+Source: "C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\Release\JABIA_camera.dll"; DestDir: "{app}\mods\camera"; Flags: ignoreversion 
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]

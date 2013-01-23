@@ -26,6 +26,7 @@ HINSTANCE TheInstance = 0;
 UINT debug = 0;
 UINT xpmod = 0;
 UINT lootmod = 0;
+UINT cameramod = 0;
 
 HWND cancel_handle;
 HWND dialog_handle;
@@ -132,6 +133,9 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 			if(params.loot_drop_mod) {
 				SendDlgItemMessage(hwnd, IDC_CHECKBOX3, BM_SETCHECK, BST_CHECKED, 0);
 			}
+			if(params.camera_mod) {
+				SendDlgItemMessage(hwnd, IDC_CHECKBOX4, BM_SETCHECK, BST_CHECKED, 0);
+			}
 
 			cancel_handle = GetDlgItem(hwnd,IDCANCEL);
 			dialog_handle = hwnd;
@@ -146,11 +150,13 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 					debug = IsDlgButtonChecked(hwnd, IDC_CHECKBOX1);
 					xpmod = IsDlgButtonChecked(hwnd, IDC_CHECKBOX2);
 					lootmod = IsDlgButtonChecked(hwnd, IDC_CHECKBOX3);
+					cameramod = IsDlgButtonChecked(hwnd, IDC_CHECKBOX4);
 
 					// save params
 					params.debug_mod = debug;
 					params.xp_mod = xpmod;
 					params.loot_drop_mod = lootmod;
+					params.camera_mod = cameramod;
 					save(&params);
 
 					// disable launch button
@@ -231,6 +237,11 @@ void inject_dlls() {
 					Sleep(1000);
 					append_text(dialog_handle, "Injecting drop loot mod\r\n");
 					LoadDll(EXE_NAME, LOOTDROP_DLL_PATH);
+				}
+				if(cameramod) {
+					Sleep(1000);
+					append_text(dialog_handle, "Injecting camera mod\r\n");
+					LoadDll(EXE_NAME, CAMERA_DLL_PATH);
 				}
 			}
 			Sleep(1000);

@@ -8,3 +8,4 @@
 #define IDC_CHECKBOX1                           1001
 #define IDC_CHECKBOX2                           1002
 #define IDC_CHECKBOX3                           1003
+#define IDC_CHECKBOX4                           1004
