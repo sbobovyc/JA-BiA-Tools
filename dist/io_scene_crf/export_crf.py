@@ -141,26 +141,34 @@ def _write(context, filepath,
         if "vertex_specular_colors" in mesh.tessface_vertex_colors:
             vtex_specular_colors = mesh.tessface_vertex_colors["vertex_specular_colors"]
         else:
-            vtex_specular_colors = mesh.tessface_vertex_colors.new()
-            vtex_specular_colors.name = "vertex_specular_colors"
+            vtex_specular_colors_m = mesh.vertex_colors.new()
+            vtex_specular_colors_m.name = "vertex_specular_colors"
+            mesh.update(calc_tessface=True)
+            vtex_specular_colors = mesh.tessface_vertex_colors["vertex_specular_colors"]
 
         if "vertex_specular_alpha" in mesh.tessface_vertex_colors:
             vtex_specular_alpha = mesh.tessface_vertex_colors["vertex_specular_alpha"]
         else:
-            vtex_specular_alpha = mesh.tessface_vertex_colors.new()
-            vtex_specular_alpha.name = "vertex_specular_alpha"
+            vtex_specular_alpha_m = mesh.vertex_colors.new()
+            vtex_specular_alpha_m.name = "vertex_specular_alpha"
+            mesh.update(calc_tessface=True)
+            vtex_specular_alpha = mesh.tessface_vertex_colors["vertex_specular_alpha"]
 
         if "vertex_blendweight_xyz" in mesh.tessface_vertex_colors:
             vtex_blendweights_xyz = mesh.tessface_vertex_colors["vertex_blendweight_xyz"]
         else:
-            vtex_blendweights_xyz = mesh.tessface_vertex_colors.new()
-            vtex_blendweights_xyz.name = "vertex_blendweight_xyz"
+            vtex_blendweights_xyz_m = mesh.vertex_colors.new()
+            vtex_blendweights_xyz_m.name = "vertex_blendweight_xyz"
+            mesh.update(calc_tessface=True)
+            vtex_blendweights_xyz = mesh.tessface_vertex_colors["vertex_blendweight_xyz"]
 
         if "vertex_blendweight_w" in mesh.tessface_vertex_colors:
             vtex_blendweights_w = mesh.tessface_vertex_colors["vertex_blendweight_w"]
         else:
-            vtex_blendweights_w = mesh.tessface_vertex_colors.new()
-            vtex_blendweights_w.name = "vertex_blendweight_w"
+            vtex_blendweights_w_m = mesh.vertex_colors.new()
+            vtex_blendweights_w_m.name = "vertex_blendweight_w"
+            mesh.update(calc_tessface=True)
+            vtex_blendweights_w = mesh.tessface_vertex_colors["vertex_blendweight_w"]
 
 
         vert_dict = {} # will store CRF_vertex objects
@@ -258,6 +266,8 @@ def _write(context, filepath,
         specular_texture_file = None
         
         # get textures
+        print(mesh.materials[0].texture_slots[0])
+        print(mesh.materials[0].texture_slots[1])        
         if mesh.materials[0].texture_slots[0] == None and mesh.materials[0].texture_slots[1] == None:
                raise Exception("Missing a diffuse or normal texture")
         else:
