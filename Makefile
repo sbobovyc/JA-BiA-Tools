@@ -21,5 +21,5 @@ deg:
 cui:
 	python $(PIP)/pyinstaller.py --upx-dir=$(UPX_PATH) --onefile --console --icon $(ICON5) --name cui_magick -p src/ src/cui_magick.py
 wizard:
-	python $(PIP)/pyinstaller.py --onefile --console --name jabia_wizard -p src/ src/experimental/jabia_wizard.py
+	python $(PIP)/pyinstaller.py --upx-dir=$(UPX_PATH) --onefile --console --name jabia_wizard -p src/ src/experimental/jabia_wizard.py
 

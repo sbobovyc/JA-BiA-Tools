@@ -44,10 +44,10 @@ class wizard_settings(object):
         self.filepath = "jabia_wizard"
         self.yaml_extension = ".txt"
         yaml_file = self.filepath + self.yaml_extension
-        #self.file_list = ["data_win32.pak", "data1_win32.pak", "data2_win32.pak", 
-        #                  "data3_win32.pak", "data4_win32.pak", \
-        #                  "configs_win32.pak.crypt", "interface_win32.pak.crypt"]
-        self.file_list = ["data_win32.pak"]        
+##        self.file_list = ["data_win32.pak", "data1_win32.pak", "data2_win32.pak", 
+##                          "data3_win32.pak", "data4_win32.pak", "data5_win32.pak", "data6_win32.pak"
+##                          "configs_win32.pak.crypt", "interface_win32.pak.crypt"]
+        self.file_list = ["data6_win32.pak"]
         if os.path.exists(os.path.join(os.getcwd(), yaml_file)):
             self.yaml2bin(yaml_file)
     
@@ -240,16 +240,17 @@ class JABIA_Tools_wizard(object):
 #        print str(message.data)
 #        self.dirText.SetValue(str(message.data))
         if self.mywiz.GetCurrentPage() == self.mywiz.pages[1]:
-            self.settings.jabia_path = message.data
+            self.settings.jabia_path = message
             self.dirText.SetValue(str(self.settings.jabia_path))            
         if self.mywiz.GetCurrentPage() == self.mywiz.pages[2]:
-            self.settings.workspace_path = message.data
+            self.settings.workspace_path = message
             self.dirText2.SetValue(str(self.settings.workspace_path))
         
     def opendir(self, event):
         dlg = wx.DirDialog(self.mywiz, "Choose a directory:", style=wx.DD_DEFAULT_STYLE | wx.DD_NEW_DIR_BUTTON)
         if dlg.ShowModal() == wx.ID_OK:
-            pub.sendMessage("DIR_CHANGED", dlg.GetPath())
+            print dlg.GetPath()
+            pub.sendMessage("DIR_CHANGED", message=dlg.GetPath())
         dlg.Destroy()
         
     def finish(self):
@@ -266,7 +267,9 @@ class JABIA_Tools_wizard(object):
             pak_filepath = os.path.join(self.settings.jabia_path, file)                
             cmd = "pak_magick.exe %s %s" % (pak_filepath, self.settings.workspace_path)
             wx.CallAfter(self.status.AppendText, cmd + "\n\n")
-            subprocess.call(cmd)
+            # piping pak_magick's output to avoid http://www.pyinstaller.org/ticket/6
+            proc = subprocess.call(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    
         self.mywiz.FindWindowById(wx.ID_FORWARD).Enable()
         self.mywiz.FindWindowById(wx.ID_BACKWARD).Disable()
         
