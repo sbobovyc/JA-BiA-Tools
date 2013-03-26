@@ -7,7 +7,8 @@
 #include <fstream> 
 
 #define PATH_TO_MOD_LAUNCHER_XML "\\mods\\JABIA_mod_launcher.xml"
-#define LAUNCHER_VERSION_STRING "Version 0.3a\r\n"
+#define LAUNCHER_VERSION_STRING "Version 0.3b\r\n"
+#define MOTD "For latest updates, check:\r\n http://www.moddb.com/mods/sbobovycs-jabia-mods-tools/downloads \r\n"
 
 #define LAUNCHER_NAME "JaggedAllianceBIA.exe"
 #define EXE_NAME "GameJABiA.exe"

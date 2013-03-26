@@ -680,7 +680,7 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr) {
 
 	GetDlgItemText(hwnd, IDC_SHOES_DUR, buf, 100);
 	shoes_equiped_durability = atoi(buf);
-	character_ptr->inventory.vest_equiped_durability = shoes_equiped_durability;
+	character_ptr->inventory.shoes_equiped_durability = shoes_equiped_durability;
 
 	GetDlgItemText(hwnd, IDC_PANTS_EQ, buf, 100);
 	pants_equiped = atoi(buf);

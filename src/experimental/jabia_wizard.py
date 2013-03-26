@@ -44,10 +44,10 @@ class wizard_settings(object):
         self.filepath = "jabia_wizard"
         self.yaml_extension = ".txt"
         yaml_file = self.filepath + self.yaml_extension
-##        self.file_list = ["data_win32.pak", "data1_win32.pak", "data2_win32.pak", 
-##                          "data3_win32.pak", "data4_win32.pak", "data5_win32.pak", "data6_win32.pak"
-##                          "configs_win32.pak.crypt", "interface_win32.pak.crypt"]
-        self.file_list = ["data6_win32.pak"]
+        self.file_list = ["data_win32.pak", "data1_win32.pak", "data2_win32.pak", 
+                          "data3_win32.pak", "data4_win32.pak", "data5_win32.pak", "data6_win32.pak"
+                          "configs_win32.pak.crypt", "interface_win32.pak.crypt"]
+        #self.file_list = ["data6_win32.pak"]
         if os.path.exists(os.path.join(os.getcwd(), yaml_file)):
             self.yaml2bin(yaml_file)
     

@@ -48,7 +48,7 @@ typedef struct JABIA_XPMOD_parameters {
 		explosives_modulo(10), explosives_norm_modulo(200), explosives_a(0.015), explosives_b(3), explosives_xoffset(-1.5), explosives_modifier(3),
 		marksmanship_modulo(5), marksmanship_norm_modulo(100), marksmanship_a(0.042), marksmanship_b(5), marksmanship_xoffset(-2), marksmanship_accuracy_modifier(2),
 		stealth_modulo(10), stealth_kills_to_counterstealth_ratio_modifier(1), stealth_damage_ratio_modifier(0.35),
-		mechanical_modulo(5), mechanical_norm_modulo(100), mechanical_a(0.025), mechanical_b(2), mechanical_xoffset(-1.5), mechanical_modifier(2)
+		mechanical_modulo(5), mechanical_norm_modulo(100), mechanical_a(0.025), mechanical_b(2), mechanical_xoffset(-1.5), mechanical_modifier(3)
     {
 		medical_modifier[0] = 1.25;
 		medical_modifier[1] = 1.0;
@@ -62,6 +62,7 @@ typedef struct JABIA_XPMOD_parameters {
 
 		mechanical_modifier[0] = 1.25;
 		mechanical_modifier[1] = 0.7;
+		mechanical_modifier[2] = 0.6;
 	}
 	
 	

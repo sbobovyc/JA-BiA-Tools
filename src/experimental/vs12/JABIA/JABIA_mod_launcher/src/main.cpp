@@ -141,6 +141,7 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 			dialog_handle = hwnd;
 
 			append_text(hwnd, LAUNCHER_VERSION_STRING);
+			append_text(hwnd, MOTD);
 
 			break;
         case WM_COMMAND:

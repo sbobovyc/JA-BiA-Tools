@@ -208,34 +208,45 @@ __declspec(naked) void* myUpdateCharacterExp(){
 }
 
 void changeCharacterStats(void* instance) {
+	unsigned int total_explosives_actions = 0;
+	unsigned int total_stealth_actions = 0;
+	unsigned int total_mechanical_actions = 0;
 	char buf [100];
 	JABIA_Character * character_ptr = (JABIA_Character *)((uint32_t)instance - 0x110);
 	OutputDebugString("Updating character stats!");
 
-	wsprintf(buf, "Character at 0x%X", character_ptr);
+	wsprintf(buf, "Character at 0x%X, %s", character_ptr, character_ptr->merc_name);
 	OutputDebugString(buf);
 
 	// do whatever i want with the character	
 	if(! (character_ptr->total_amount_health_restored % xpmod_params.medical_modulo) ) {
-		character_ptr->medical += calc_medical(&xpmod_params, character_ptr);
+		if(character_ptr->medical != 100)
+			character_ptr->medical += calc_medical(&xpmod_params, character_ptr);
 	}
-	unsigned int total_explosives_actions = 0;
-	unsigned int total_stealth_actions = 0;
 
 	total_explosives_actions += character_ptr->grenades_thrown + 
 										character_ptr->successful_mines_planted + 
 										character_ptr->successful_mines_disarmed + character_ptr->successful_explosives_planted;
-	if(! (total_explosives_actions % xpmod_params.explosives_modulo) ) {
-		character_ptr->explosives += calc_explosives(&xpmod_params, character_ptr);
+	if(!(total_explosives_actions % xpmod_params.explosives_modulo && total_explosives_actions != 0) ) {
+		if(character_ptr->explosives != 100)
+			character_ptr->explosives += calc_explosives(&xpmod_params, character_ptr);
 	}
 
-	if(! (character_ptr->enemies_killed % xpmod_params.marksmanship_modulo) ) {		
-		character_ptr->marksmanship += calc_marksmanship(&xpmod_params, character_ptr);
+	if(!(character_ptr->enemies_killed % xpmod_params.marksmanship_modulo) && character_ptr->enemies_killed != 0) {		
+		if(character_ptr->marksmanship != 100)
+			character_ptr->marksmanship += calc_marksmanship(&xpmod_params, character_ptr);
 	}	
 
 	total_stealth_actions += character_ptr->times_bleeding + character_ptr->times_wounded + character_ptr->times_rescued_from_dying + character_ptr->enemies_killed;
-	if(! (total_stealth_actions % xpmod_params.stealth_modulo) ) {
-		character_ptr->stealth += calc_stealth(&xpmod_params, character_ptr);
+	if(!(total_stealth_actions % xpmod_params.stealth_modulo) && total_stealth_actions != 0) {
+		if(character_ptr->stealth != 100)
+			character_ptr->stealth += calc_stealth(&xpmod_params, character_ptr);
+	}
+
+	total_mechanical_actions += character_ptr->successful_locks_picked + character_ptr->successful_doors_forced + character_ptr->successful_repair_checks;
+	if(!(total_mechanical_actions % xpmod_params.mechanical_modulo) && total_mechanical_actions != 0) {
+		if(character_ptr->mechanical != 100)
+			character_ptr->mechanical += calc_mechanical(&xpmod_params, character_ptr);
 	}
 }
 
