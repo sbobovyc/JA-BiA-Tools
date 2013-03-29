@@ -213,9 +213,8 @@ void changeCharacterStats(void* instance) {
 	unsigned int total_mechanical_actions = 0;
 	char buf [100];
 	JABIA_Character * character_ptr = (JABIA_Character *)((uint32_t)instance - 0x110);
-	OutputDebugString("Updating character stats!");
-
-	wsprintf(buf, "Character at 0x%X, %s", character_ptr, character_ptr->merc_name);
+	
+	wsprintf(buf, "Updating stats of character at 0x%X, %s", character_ptr, character_ptr->merc_name);
 	OutputDebugString(buf);
 
 	// do whatever i want with the character	

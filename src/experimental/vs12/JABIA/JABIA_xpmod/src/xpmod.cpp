@@ -73,6 +73,8 @@ unsigned int calc_medical(JABIA_XPMOD_parameters * params, JABIA_Character * ptr
 	points = floor(points);
 	if(points > 100)
 		points = 100;
+	if(points < 0)
+		points = 0;
 	return unsigned int(points);
 }
 
@@ -98,6 +100,8 @@ unsigned int calc_explosives(JABIA_XPMOD_parameters * params, JABIA_Character * 
 	points = floor(points);
 	if(points > 100)
 		points = 100;
+	if(points < 0)
+		points = 0;
 	return unsigned int(points);
 }
 
@@ -131,7 +135,8 @@ unsigned int calc_marksmanship(JABIA_XPMOD_parameters * params, JABIA_Character 
 
 	if(points > 100)
 		points = 100;
-
+	if(points < 0)
+		points = 0;
 	sprintf(buf, "Marksmanship point gain %f", points);
 	OutputDebugString(buf);
 	return unsigned int(points);
@@ -161,6 +166,8 @@ unsigned int calc_stealth(JABIA_XPMOD_parameters * params, JABIA_Character * ptr
 
 	if(points > 100)
 		points = 100;
+	if(points < 0)
+		points = 0;
 
 	char buf[100];
 	sprintf(buf, "Stealth point gain %f", points);
@@ -170,6 +177,7 @@ unsigned int calc_stealth(JABIA_XPMOD_parameters * params, JABIA_Character * ptr
 
 
 unsigned int calc_mechanical(JABIA_XPMOD_parameters * params, JABIA_Character * ptr) {
+	char buf[255];
 	// y = (-(mechanical_a * (mechanical actions % modulo) - mechanical_xoffset)^2 + mechanical_b)*mechanical_modifier
 	double points = 0.0;
 	double mechanical_modifier = 0.0;
@@ -183,17 +191,29 @@ unsigned int calc_mechanical(JABIA_XPMOD_parameters * params, JABIA_Character * 
 		mechanical_modifier = params->mechanical_modifier[2];
 	}
 	total_mechanical_actions += ptr->successful_repair_checks + ptr->successful_doors_forced + ptr->successful_locks_picked;
-	points = (params->mechanical_a * total_mechanical_actions) + params->mechanical_xoffset;
+	points = (params->mechanical_a * (total_mechanical_actions % params->mechanical_norm_modulo)) + params->mechanical_xoffset;
 	points *= points;
 	points *= -1.0;
 	points += params->mechanical_b;
 	points *= mechanical_modifier;
+	sprintf(buf, "Mechanical point gain before floor %f", points);
+	OutputDebugString(buf);
 	points = floor(points);		
 
 	if(points > 100)
 		points = 100;
-
-	char buf[100];
+	if(points < 0)
+		points = 0;
+	sprintf(buf, "(-(mechanical_a * mechanical actions + mechanical_xoffset)^2 + mechanical_b)*mechanical_modifier");
+	OutputDebugString(buf);
+	sprintf(buf, "(-(%f * %d + %f)^2 + %f)*%f", params->mechanical_a, total_mechanical_actions, params->mechanical_xoffset, params->mechanical_b, mechanical_modifier);
+	OutputDebugString(buf);
+	sprintf(buf, "Total mechanical actions %d", total_mechanical_actions);
+	OutputDebugString(buf);
+	sprintf(buf, "Mech a %f, mech b %f", params->mechanical_a, params->mechanical_b);
+	OutputDebugString(buf);
+	sprintf(buf, "Mechanical mod %f", mechanical_modifier);
+	OutputDebugString(buf);
 	sprintf(buf, "Mechanical point gain %f", points);
 	OutputDebugString(buf);
 	return unsigned int(points);

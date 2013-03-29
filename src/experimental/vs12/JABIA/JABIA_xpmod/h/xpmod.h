@@ -45,10 +45,10 @@ typedef struct JABIA_XPMOD_parameters {
 	// initializer list to use copy constructor instead of default constructor
     JABIA_XPMOD_parameters() : 	
 		medical_modulo(100), medical_norm_modulo(1000), medical_a(0.004), medical_b(4.5), medical_xoffset(-2), medical_modifier(2),
-		explosives_modulo(10), explosives_norm_modulo(200), explosives_a(0.015), explosives_b(3), explosives_xoffset(-1.5), explosives_modifier(3),
-		marksmanship_modulo(5), marksmanship_norm_modulo(100), marksmanship_a(0.042), marksmanship_b(5), marksmanship_xoffset(-2), marksmanship_accuracy_modifier(2),
+		explosives_modulo(10), explosives_norm_modulo(200), explosives_a(0.015), explosives_b(3.0), explosives_xoffset(-1.5), explosives_modifier(3),
+		marksmanship_modulo(5), marksmanship_norm_modulo(100), marksmanship_a(0.042), marksmanship_b(5.0), marksmanship_xoffset(-2.0), marksmanship_accuracy_modifier(2),
 		stealth_modulo(10), stealth_kills_to_counterstealth_ratio_modifier(1), stealth_damage_ratio_modifier(0.35),
-		mechanical_modulo(5), mechanical_norm_modulo(100), mechanical_a(0.025), mechanical_b(2), mechanical_xoffset(-1.5), mechanical_modifier(3)
+		mechanical_modulo(5), mechanical_norm_modulo(100), mechanical_a(0.025), mechanical_b(4.0), mechanical_xoffset(-1.5), mechanical_modifier(3)
     {
 		medical_modifier[0] = 1.25;
 		medical_modifier[1] = 1.0;

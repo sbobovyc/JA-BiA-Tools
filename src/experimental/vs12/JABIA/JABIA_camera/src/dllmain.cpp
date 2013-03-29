@@ -186,7 +186,7 @@ DWORD WINAPI MyThread(LPVOID)
 					}
 				}
 			} else if(GetAsyncKeyState(VK_F8) &1) {
-				OutputDebugString("Unloading DLL");
+				OutputDebugString("Unloading JABIA_camera DLL");
 				break;
 			}
 		Sleep(100);		

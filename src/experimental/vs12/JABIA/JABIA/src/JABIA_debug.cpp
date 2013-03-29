@@ -179,7 +179,7 @@ DWORD WINAPI MyThread(LPVOID)
 					}
 				}
 			} else if(GetAsyncKeyState(VK_F8) &1) {
-				OutputDebugString("Unloading DLL");
+				OutputDebugString("Unloading JABIA_debug DLL");
 				break;
 			}
 		Sleep(100);
@@ -256,7 +256,7 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 			// add inventory slots to their combo box
 			for(int i = 0; i < JABIA_CHARACTER_INV_SLOTS; i++) {
 				char buf[5];
-				wsprintf(buf, "%i", i);
+				//wsprintf(buf, "%i", i);
 				SendMessage(comboControl3,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCTSTR)buf));
 			}
 
@@ -301,8 +301,8 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 					}
 					break;
                 case IDSET:
-					char buf[50];
-					wsprintf(buf, "Setting");
+					//char buf[50];
+					//wsprintf(buf, "Setting");
 					ptr = jabia_characters.at(last_character_selected_index);
 					setCharacter(hwnd, ptr);
 					break;
@@ -803,17 +803,17 @@ __declspec(naked) void* myCharacterConstReturn(){
 }
 
 void __fastcall recordCharacters(void* instance){
-	char buf [100];
+	//char buf [100];
 	JABIA_Character * character_ptr;
-	OutputDebugString("Parsing character!");
+	//OutputDebugString("Parsing character!");
 
 	character_ptr = (JABIA_Character *)instance;
 
-	wsprintf(buf, "Character at 0x%X", character_ptr);
-	OutputDebugString(buf);
+	//wsprintf(buf, "Character at 0x%X", character_ptr);
+	//OutputDebugString(buf);
 	jabia_characters.push_back(character_ptr);
-	wsprintf(buf, "Size %i", jabia_characters.size());
-	OutputDebugString(buf);
+	//wsprintf(buf, "Size %i", jabia_characters.size());
+	//OutputDebugString(buf);
 }
 
 __declspec(naked) void* myCharacterDestReturn(){	
@@ -831,21 +831,21 @@ __declspec(naked) void* myCharacterDestReturn(){
 }
 
 int myCharacterDestructor(JABIA_Character * ptr) {
-	char buf[100];
-	wsprintf(buf, "Removing character at 0x%X", ptr);
-	OutputDebugString(buf);
-	wsprintf(buf, "Character is %s", ptr->merc_name);
-	OutputDebugString(buf);
+	//char buf[100];
+	//wsprintf(buf, "Removing character at 0x%X", ptr);
+	//OutputDebugString(buf);
+	//wsprintf(buf, "Character is %s", ptr->merc_name);
+	//OutputDebugString(buf);
 	
 	return CharacterDestructor(ptr);
 }
 
 void __fastcall removeCharacter(JABIA_Character * ptr){
-	char buf[100];
-	wsprintf(buf, "Removing character at 0x%X", ptr);
-	OutputDebugString(buf);
-	wsprintf(buf, "Character is %s", ptr->merc_name);
-	OutputDebugString(buf);
+	//char buf[100];
+	//wsprintf(buf, "Removing character at 0x%X", ptr);
+	//OutputDebugString(buf);
+	//wsprintf(buf, "Character is %s", ptr->merc_name);
+	//OutputDebugString(buf);
 	std::vector<JABIA_Character *>::iterator position = std::find(jabia_characters.begin(), jabia_characters.end(), ptr);
 	if (position != jabia_characters.end()) // == vector.end() means the element was not found
 		jabia_characters.erase(position);
