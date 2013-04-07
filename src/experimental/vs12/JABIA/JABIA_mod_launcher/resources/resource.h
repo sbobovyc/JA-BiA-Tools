@@ -9,3 +9,4 @@
 #define IDC_CHECKBOX2                           1002
 #define IDC_CHECKBOX3                           1003
 #define IDC_CHECKBOX4                           1004
+#define IDC_CHECKBOX5                           1005

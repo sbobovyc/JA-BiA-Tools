@@ -27,6 +27,7 @@ UINT debug = 0;
 UINT xpmod = 0;
 UINT lootmod = 0;
 UINT cameramod = 0;
+UINT pathmod = 0;
 
 HWND cancel_handle;
 HWND dialog_handle;
@@ -137,6 +138,10 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 				SendDlgItemMessage(hwnd, IDC_CHECKBOX4, BM_SETCHECK, BST_CHECKED, 0);
 			}
 
+			if(params.path_mod) {
+				SendDlgItemMessage(hwnd, IDC_CHECKBOX5, BM_SETCHECK, BST_CHECKED, 0);
+			}
+
 			cancel_handle = GetDlgItem(hwnd,IDCANCEL);
 			dialog_handle = hwnd;
 
@@ -152,12 +157,14 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 					xpmod = IsDlgButtonChecked(hwnd, IDC_CHECKBOX2);
 					lootmod = IsDlgButtonChecked(hwnd, IDC_CHECKBOX3);
 					cameramod = IsDlgButtonChecked(hwnd, IDC_CHECKBOX4);
+					pathmod = IsDlgButtonChecked(hwnd, IDC_CHECKBOX5);
 
 					// save params
 					params.debug_mod = debug;
 					params.xp_mod = xpmod;
 					params.loot_drop_mod = lootmod;
 					params.camera_mod = cameramod;
+					params.path_mod = pathmod;
 					save(&params);
 
 					// disable launch button
@@ -224,6 +231,15 @@ void inject_dlls() {
 			if(pid == 0) {
 				loopcount++;				
 			} else {
+				if(pathmod) {					
+					//Sleep(1000);
+					DebugSetProcessKillOnExit(FALSE);
+					DebugActiveProcess(pid);
+					LoadDll(EXE_NAME, PATHMOD_DLL_PATH);
+					append_text(dialog_handle, "Injecting path mod\r\n");
+					DebugActiveProcessStop(pid);
+
+				}
 				if(debug) {					
 					Sleep(1000);
 					append_text(dialog_handle, "Injecting character debugger\r\n");

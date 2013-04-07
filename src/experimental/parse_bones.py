@@ -86,6 +86,7 @@ def read_bones():
                 uint3, = struct.unpack("<I", f.read(4))
                 f41, f42, f43 = struct.unpack("<fff", f.read(12))
                 uint4, = struct.unpack("<I", f.read(4))
+                
                 print f11, f12, f13
                 print uint1
                 print f21, f22, f23
