@@ -69,12 +69,7 @@ class ImportCRF(bpy.types.Operator, ImportHelper):
             name="Verbose",
             description="Verbose output to console",
             default=False,
-            )
-    dump_first_only = BoolProperty(
-            name="DumpFirstOnly",
-            description="Import only the first model in file",
-            default=False,
-            )    
+            )   
     use_shadeless = BoolProperty(
             name="Shadeless Materials",
             description="Use shadeless materials",
@@ -182,7 +177,6 @@ class ImportCRF(bpy.types.Operator, ImportHelper):
 
         row = layout.row(align=True)
         row.prop(self, "use_verbose")
-        row.prop(self, "dump_first_only")
         row = layout.split(percentage=0.67)
         row.prop(self, "use_shadeless")        
 

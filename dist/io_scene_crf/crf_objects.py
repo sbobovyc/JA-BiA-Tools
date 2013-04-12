@@ -460,11 +460,11 @@ class CRF_mesh(object):
 
         print("Vertex information starts at ", hex(file.tell()))                
         streams, = struct.unpack("<B", file.read(1))
-        print("Number of steams", streams)
+        print("Number of streams", streams)
         # then the vertex declaration
         #TODO should probably parse this, but all meshes that I've seen tend to use the same layout
         vertex_declaration, = struct.unpack("<Q", file.read(8))
-
+        print("Vertex declaration", hex(vertex_declaration))
         
         # read in verteces, vertex normals, ks, and UVs
         for i in range(0, self.number_of_verteces):
@@ -475,24 +475,30 @@ class CRF_mesh(object):
             if verbose:
                 print(vertex)
 
-        #read in separator 0x000000080008000000
-        #TODO not all files have this separator
-        separator = struct.unpack("<8B", file.read(8))
-        print("Separator %s at %s", separator, hex(file.tell()))        
-        #print(map(print, separator))
 
-        print("First blendweight and blendindex stream at", hex(file.tell()))
-        for i in range(0, self.number_of_verteces):
-            vertex_blend = CRF_vertex_blend()
-            vertex_blend.bin2raw(file, file.tell(), i, verbose)
-            self.verteces2.append(vertex_blend)
+        if streams > 1:
+            #read in separator 0x000000080008000000
+            #TODO not all files have this separator
+            #TODO this separator is probaby a layout declaraton
+            separator = struct.unpack("<8B", file.read(8))
+            print("Separator %s at %s", separator, hex(file.tell()))        
+            #print(map(print, separator))            
+            print("First blendweight and blendindex stream at", hex(file.tell()))
+            for i in range(0, self.number_of_verteces):
+                vertex_blend = CRF_vertex_blend()
+                vertex_blend.bin2raw(file, file.tell(), i, verbose)
+                self.verteces2.append(vertex_blend)
             
         if streams > 2:
             print("Unknown stream, possibly second blendweight and blendindex stream at", hex(file.tell()))
-            unknown1, unknown2 = struct.unpack("<II", file.read(8))
-            print("Third stream has unknown cost", hex(unknown1), hex(unknown2))
+            #TODO third stream can have different layout, unknown2 seems to point to how many bytes are used by each entry
+            unknown1, stride = struct.unpack("<II", file.read(8))
+            print("Third stream has unknown cost", hex(unknown1), hex(stride))
             for i in range(0, self.number_of_verteces):
-                vertex_blend = CRF_vertex_blend()
+                if stride == 4:
+                    vertex_blend = CRF_vertex_blend_indeces_only()
+                elif stride == 8:
+                    vertex_blend = CRF_vertex_blend()
                 vertex_blend.bin2raw(file, file.tell(), i, verbose)
                 self.verteces3.append(vertex_blend)            
         print("End of vertex data", hex(file.tell()))
@@ -514,144 +520,264 @@ class CRF_materials(object):
         self.specular_constant = None # (R, G, B)
         self.specular_constant_alpha = None #TODO not sure if this is right
         self.overlay = None
+        self.custom_data_count = 0
         self.custom1 = None
         
-        print("Materials at: ", hex(file.tell()))
-        magick, = struct.unpack("2s", file.read(2))
-        print(magick)
-        material_type, = struct.unpack(">Q", file.read(8))
-        print("Material type ", hex(material_type))
+        print("Materials at:", hex(file.tell()))
+        material_type, = struct.unpack("2s", file.read(2))
+        print("Material type:", material_type)
+        material_subtype, = struct.unpack(">Q", file.read(8))
+        print("Material subtype:", hex(material_subtype))
 
         reading_materials = True
-        current_state = "read_diffuse"
-        if magick == b"nm" or magick == b'ts':
+        current_state = "start"
+
+        if material_type == b"nm":
             while(reading_materials):
-                print("Parsing materials, current current_state", current_state)
+                # state transition logic
+                if current_state == "start":
+                    current_state = "read_diffuse"
+                elif current_state == "read_diffuse":
+                    current_state = "read_normal"
+                elif current_state == "read_normal":
+                    current_state = "read_overlay"
+                elif current_state == "read_overlay":
+                    if material_subtype == 0x100000003000000:
+                        unknown, = struct.unpack("<I", file.read(4))
+                        print("Unknown, possible number of metadata following:", unknown)                        
+                        current_state = "read_specular_const"
+                    elif material_subtype == 0x100000004000000:
+                        current_state = "read_specular"
+                elif current_state == "read_specular":
+                    self.custom_data_count, = struct.unpack("<I", file.read(4))
+                    print("Custom data count", self.custom_data_count)
+                    current_state = "read_specular_const"
+                elif current_state == "read_specular_const":
+                    if material_subtype == 0x100000003000000:
+                        # read in unknown
+                        file.read(0x18)
+                        current_state = "done"
+                    elif material_subtype == 0x100000004000000:                        
+                        current_state = "read_custom_data"
+                elif current_state == "read_custom_data":
+                    # read in unknown
+                    file.read(0x18)
+                    current_state = "done"
+                elif current_state == "done":
+                    reading_materials = False
+
+                        
+                print("Current state =", current_state)
+                # state logic
                 if current_state == "read_diffuse":
+                    # read diffuse texture
                     data_type, = struct.unpack("4s", file.read(4))
-                    print(data_type)
+                    print("Type:", data_type)
                     if(data_type == CRF_Diffuse):
                         length, = struct.unpack("<I", file.read(4))
                         texture, = struct.unpack("%ss" % length, file.read(length))
-                        print(texture)
+                        print("Texture:", texture)
                         self.diffuse_texture = texture
+                        # read in some 0s
                         file.read(4)
-                        if magick == b"nm":
-                            current_state = "read_normals"
-                        elif magick == b"ts":
-                            current_state = "read_specular_texture"
                     else:
-                        print("Error reading diffuse")
+                        print("Error reading diffuse texture")
                         reading_materials = False
-
-                elif current_state == "read_normals":
+                    
+                elif current_state == "read_normal":
                     data_type, = struct.unpack("4s", file.read(4))
-                    print(data_type)
+                    print("Type:", data_type)
                     if(data_type == CRF_Normals):
                         length, = struct.unpack("<I", file.read(4))
                         texture, = struct.unpack("%ss" % length, file.read(length))
-                        print(texture)
+                        print("Texture:", texture)
                         self.normal_texture = texture
+                        # read in some 0s
                         file.read(4)
-                        if magick == b"nm":
-                            current_state = "read_overlay"
-                        elif magick == b"ts":
-                            current_state = "read_constants"                            
                     else:
-                        print("Error reading normals")                              
+                        print("Error reading normal texture")
                         reading_materials = False
-                        
                 elif current_state == "read_overlay":
+                    # read overlay
                     data_type, = struct.unpack("4s", file.read(4))
-                    print(data_type)
+                    print("Type:", data_type)
                     if(data_type == CRF_Custom1):
                         length, = struct.unpack("<I", file.read(4))
-                        if(length > 0):
-                            overlay, = struct.unpack("%ss" % length, file.read(length))
-                            print("Overlay", overlay)
-                            self.overlay = overlay
+                        texture, = struct.unpack("%ss" % length, file.read(length))
+                        print("Reference:", texture)
+                        self.overlay = texture
+                        # read in some 0s
                         file.read(4)
-                        current_state = "read_specular_texture"
-
-                elif current_state == "read_specular_texture":
+                    else:
+                        print("Error reading overlay reference")
+                        reading_materials = False
+                elif current_state == "read_specular":
                     data_type, = struct.unpack("4s", file.read(4))
-                    print(data_type)
+                    print("Type:", data_type)
                     if(data_type == CRF_Specular):
                         length, = struct.unpack("<I", file.read(4))
-                        if(length > 0):
-                            texture, = struct.unpack("%ss" % length, file.read(length))
-                            print(texture)
-                            self.specular_texture = texture
-                            if magick == b"nm":
-                                file.read(8)
-                                data_type, = struct.unpack("4s", file.read(4))
-                                print(data_type)
-                                R,G,B = struct.unpack("<III", file.read(12))
-                                print(hex(R),hex(G),hex(B))
-                                #TODO I have no idea if this is right
-                                # convert int32 to scaled float
-                                #TODO is it uint32 or int32?
-                                R = R / 4294967295
-                                G = G / 4294967295
-                                B = B / 4294967295
-                                self.specular_constant = (R, G, B)                                
-                                data_type, = struct.unpack("4s", file.read(4))
-                                print(data_type)
-                                R,G,B = struct.unpack("<III", file.read(12))
-                                print(hex(R),hex(G),hex(B))                                
-                                file.read(4)
-                                data_type, = struct.unpack("4s", file.read(4))
-                                print(data_type)
-                                file.read(0x18)
-                                reading_materials = False
-                            elif magick == b"ts":
-                                file.read(4)
-                                current_state = "read_normals"                                
-                        else:
-                            file.read(4)
-                            specular_type, = struct.unpack("<I", file.read(4))
-                            print(specular_type)
-                            if(specular_type == 0x1):
-                                data_type, = struct.unpack("4s", file.read(4))
-                                print(data_type)
-                                R,G,B,A = struct.unpack("<IIII", file.read(16))
-                                #TODO I have no idea if this is right
-                                # convert int32 to scaled float
-                                #TODO is it uint32 or int32?
-                                R = R / 4294967295
-                                G = G / 4294967295
-                                B = B / 4294967295                                    
-                                self.specular_constant = (R,G,B)
-                                print(self.specular_constant)
-                            if(specular_type == 0x2):
-                                data_type, = struct.unpack("4s", file.read(4))
-                                print(data_type)
-                                R,G,B = struct.unpack("<III", file.read(12))
-                                data_type, = struct.unpack("4s", file.read(4))
-                                print(data_type)
-                                if(data_type == CRF_Custom1):
-                                    A = struct.unpack("<IIII", file.read(16))
-                                    # convert int32 to scaled float
-                                    #TODO is it uint32 or int32?
-                                    R = R / 4294967295
-                                    G = G / 4294967295
-                                    B = B / 4294967295
-                                    self.specular_constant = (R, G, B)
-                                    print("Specular constant ", self.specular_constant)
-                                data_type, = struct.unpack("4s", file.read(4))
-                                print(data_type)
-                                unknown, = struct.unpack("<I", file.read(4))
-                                print("Unknown", hex(unknown))
-                            file.read(0x14)
-                            reading_materials = False                            
+                        texture, = struct.unpack("%ss" % length, file.read(length))
+                        print("Texture:", texture)
+                        self.specular_texture = texture
+                        # read in some 0s
+                        file.read(4)
+                    else:
+                        print("Error reading normal texture")
+                        reading_materials = False                    
+                elif current_state == "read_specular_const":
+                    # read specular constant
+                    data_type, = struct.unpack("4s", file.read(4))
+                    print("Type:", data_type)
+                    R,G,B = struct.unpack("<III", file.read(12))                    
+                    print(hex(R),hex(G),hex(B))
+                    #TODO I have no idea if this is right
+                    # convert int32 to scaled float
+                    #TODO is it uint32 or int32?
+                    R = R / 4294967295
+                    G = G / 4294967295
+                    B = B / 4294967295
+                    self.specular_constant = (R, G, B)
+                elif current_state == "read_custom_data":
+                    #TODO do better custom parsing
+                    if self.custom_data_count == 1:
+                        pass
+                    elif self.custom_data_count == 2:
+                        data_type, = struct.unpack("4s", file.read(4))
+                        print("Type:", data_type)
+                        file.read(12)
+                        file.read(4)
+                        data_type, = struct.unpack("4s", file.read(4))
+                        print("Type:", data_type)
+        else:
+            print("Material type is not supported")
+##        if magick == b"nm" or magick == b'ts':
+##            while(reading_materials):
+##                print("Parsing materials, current current_state", current_state)
+##                if current_state == "read_diffuse":
+##                    data_type, = struct.unpack("4s", file.read(4))
+##                    print(data_type)
+##                    if(data_type == CRF_Diffuse):
+##                        length, = struct.unpack("<I", file.read(4))
+##                        texture, = struct.unpack("%ss" % length, file.read(length))
+##                        print(texture)
+##                        self.diffuse_texture = texture
+##                        file.read(4)
+##                        if magick == b"nm":
+##                            current_state = "read_normals"
+##                        elif magick == b"ts":
+##                            current_state = "read_specular_texture"
+##                    else:
+##                        print("Error reading diffuse")
+##                        reading_materials = False
+##
+##                elif current_state == "read_normals":
+##                    data_type, = struct.unpack("4s", file.read(4))
+##                    print(data_type)
+##                    if(data_type == CRF_Normals):
+##                        length, = struct.unpack("<I", file.read(4))
+##                        texture, = struct.unpack("%ss" % length, file.read(length))
+##                        print(texture)
+##                        self.normal_texture = texture
+##                        file.read(4)
+##                        if magick == b"nm":
+##                            current_state = "read_overlay"
+##                        elif magick == b"ts":
+##                            current_state = "read_constants"                            
+##                    else:
+##                        print("Error reading normals")                              
+##                        reading_materials = False
+##                        
+##                elif current_state == "read_overlay":
+##                    data_type, = struct.unpack("4s", file.read(4))
+##                    print(data_type)
+##                    if(data_type == CRF_Custom1):
+##                        length, = struct.unpack("<I", file.read(4))
+##                        if(length > 0):
+##                            overlay, = struct.unpack("%ss" % length, file.read(length))
+##                            print("Overlay", overlay)
+##                            self.overlay = overlay
+##                        file.read(4)
+##                        current_state = "read_specular_texture"
+##
+##                elif current_state == "read_specular_texture":
+##                    data_type, = struct.unpack("4s", file.read(4))
+##                    print(data_type)
+##                    if(data_type == CRF_Specular):
+##                        length, = struct.unpack("<I", file.read(4))
+##                        if(length > 0):
+##                            texture, = struct.unpack("%ss" % length, file.read(length))
+##                            print(texture)
+##                            self.specular_texture = texture
+##                            if magick == b"nm":
+##                                file.read(8)
+##                                data_type, = struct.unpack("4s", file.read(4))
+##                                print(data_type)
+##                                R,G,B = struct.unpack("<III", file.read(12))
+##                                print(hex(R),hex(G),hex(B))
+##                                #TODO I have no idea if this is right
+##                                # convert int32 to scaled float
+##                                #TODO is it uint32 or int32?
+##                                R = R / 4294967295
+##                                G = G / 4294967295
+##                                B = B / 4294967295
+##                                self.specular_constant = (R, G, B)                                
+##                                data_type, = struct.unpack("4s", file.read(4))
+##                                print(data_type)
+##                                R,G,B = struct.unpack("<III", file.read(12))
+##                                print(hex(R),hex(G),hex(B))                                
+##                                file.read(4)
+##                                data_type, = struct.unpack("4s", file.read(4))
+##                                print(data_type)
+##                                file.read(0x18)
+##                                reading_materials = False
+##                            elif magick == b"ts":
+##                                file.read(4)
+##                                current_state = "read_normals"                                
+##                        else:
+##                            file.read(4)
+##                            specular_type, = struct.unpack("<I", file.read(4))
+##                            print(specular_type)
+##                            if(specular_type == 0x1):
+##                                data_type, = struct.unpack("4s", file.read(4))
+##                                print(data_type)
+##                                R,G,B,A = struct.unpack("<IIII", file.read(16))
+##                                #TODO I have no idea if this is right
+##                                # convert int32 to scaled float
+##                                #TODO is it uint32 or int32?
+##                                R = R / 4294967295
+##                                G = G / 4294967295
+##                                B = B / 4294967295                                    
+##                                self.specular_constant = (R,G,B)
+##                                print(self.specular_constant)
+##                            if(specular_type == 0x2):
+##                                data_type, = struct.unpack("4s", file.read(4))
+##                                print(data_type)
+##                                R,G,B = struct.unpack("<III", file.read(12))
+##                                data_type, = struct.unpack("4s", file.read(4))
+##                                print(data_type)
+##                                if(data_type == CRF_Custom1):
+##                                    A = struct.unpack("<IIII", file.read(16))
+##                                    # convert int32 to scaled float
+##                                    #TODO is it uint32 or int32?
+##                                    R = R / 4294967295
+##                                    G = G / 4294967295
+##                                    B = B / 4294967295
+##                                    self.specular_constant = (R, G, B)
+##                                    print("Specular constant ", self.specular_constant)
+##                                data_type, = struct.unpack("4s", file.read(4))
+##                                print(data_type)
+##                                unknown, = struct.unpack("<I", file.read(4))
+##                                print("Unknown", hex(unknown))
+##                            file.read(0x14)
+##                            reading_materials = False                            
+##
+##                elif current_state == "read_constants":
+##                    file.read(0x9C)
+##                    reading_materials = False
+##
+##                # state management
 
-                elif current_state == "read_constants":
-                    file.read(0x9C)
-                    reading_materials = False
-
-                # state management
-                
-            print("Materials end at: ", hex(file.tell()))
+        print("Materials end at: ", hex(file.tell()))
                     
     
 class CRF_vertex_blend(object):
@@ -663,6 +789,14 @@ class CRF_vertex_blend(object):
         self.blendindeces = struct.unpack("<bbbb", file.read(4))
         if verbose:
             print("vert index=%s, blendweights: %s, blendindeces: %s" % (self.index, self.blendweight, self.blendindeces))
+            
+class CRF_vertex_blend_indeces_only(object):
+    def bin2raw(self, file, file_offset, index, verbose=False):
+        self.index = index
+        self.blendindeces = None
+        self.blendindeces = struct.unpack("<bbbb", file.read(4))
+        if verbose:
+            print("vert index=%s, blendindeces: %s" % (self.index, self.blendindeces))
         
 class CRF_vertex(object):
     """
@@ -850,7 +984,7 @@ if __name__ == "__main__":
     if len(sys.argv) == 2:        
         path = os.path.abspath(sys.argv[1])
     else:
-        path = "D:\\bia\\animation\\m_torso_shirt_01.crf"
+        path = "D:\\bia\\animation\\barrel02.crf"
     print(path)
     file = open(path, "rb")
     
