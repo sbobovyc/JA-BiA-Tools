@@ -41,7 +41,7 @@ import struct
 from bpy_extras.io_utils import unpack_list, unpack_face_list
 from bpy_extras.image_utils import load_image
 
-from .crf_objects import CRF_header, CRF_footer, CRF_meshfile, CRF_vertex
+from .crf_objects import CRF_object
 
 def find_files(base, pattern):
     '''Return list of files matching pattern in base folder.'''
@@ -307,7 +307,7 @@ def parseMaterialInfo(file, specular_list):
                     print("Int is one", hex(file.tell()))
                     state = 99                            
                 
-        # specular constant        
+        # specular constant          
 ##        if state == 4:
 ##            print("STATE 4", flag)
 ##            if flag == "spcl":
@@ -362,13 +362,11 @@ def load(operator, context, filepath,
     time_main = time.time()
     print("\tparsing crf file...")
     time_sub = time.time()
-#     time_sub= sys.time()
 
-    file = open(filepath, "rb")         
-    header = CRF_header(file)
-    footer = CRF_footer(file, header.footer_offset1, header.footer_offset2, header.footer_entries)
-    meshfile = CRF_meshfile(file, footer.get_meshfile().file_offset, use_verbose)
-
+    file = open(filepath, "rb")
+    CRF = CRF_object(file)    
+    meshfile = CRF.meshfile
+    
     for i in range(0, meshfile.num_meshes):
         verts_loc = []
         verts_tex0 = []

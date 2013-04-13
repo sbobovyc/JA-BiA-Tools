@@ -333,6 +333,20 @@ CRF_SkinLayeredMP = "6tsc5tsc" #MP+ SkinLayered
 .rdata:00508248                 db 'el.',0Ah,0
 """
 
+class CRF_object(object):
+    def __init__(self, file):
+        self.header = CRF_header(file)
+        self.footer = CRF_footer(file, self.header.footer_offset1, self.header.footer_offset2, self.header.footer_entries)
+        self.meshfile = CRF_meshfile(file, self.footer.get_meshfile().file_offset)        
+
+    def get_bin(self):
+        data = b""
+        #TODO update all data structures, then write them out
+        data += self.header.get_bin()
+        data += self.meshfile.get_bin()
+        data += self.footer.get_bin()
+        return data
+    
 class CRF_header(object):
     def __init__(self, file):
         crf_magick, = struct.unpack("<Q", file.read(8))    
@@ -340,8 +354,17 @@ class CRF_header(object):
             print("Not a CRF file!")
             return 
         self.footer_offset1,self.footer_offset2 = struct.unpack("<II", file.read(8))
-        self.footer_entries, magick4, mesh_count = struct.unpack("<III", file.read(12))
-
+        self.footer_entries, = struct.unpack("<I", file.read(4))
+        
+    def get_bin(self):
+        data = b""
+        data += b"fknc"
+        data += struct.pack("<I", 0x1)
+        # footer offsets are blank and will get filled in later
+        data += struct.pack("<I", 0xFFFFFFFF)
+        data += struct.pack("<I", 0xFFFFFFFF)
+        data += struct.pack("<I", self.footer_entries)     
+        return data
         
 class CRF_footer(object):
     def __init__(self, file, footer_offset1, footer_offset2, footer_entries):
@@ -427,9 +450,31 @@ class CRF_meshfile(object):
         print("Number of meshes", self.num_meshes)        
         print("Bounding box of entire model: ", self.model_bounding_box)
 
-        #TODO add support for multiple meshes
         for i in range(0, self.num_meshes):
             self.meshes.append(CRF_mesh(file, file.tell(), i, verbose))
+
+    def scale(self, scale_factor):
+        # loop through each mesh and scale the verteces
+        #TODO need to scale the bounding box
+        #TODO finish this and test it
+        for mesh in self.meshes:
+            for vertex in mesh.verteces1:
+                vertex[0] = vertex[0]*scale_factor
+                vertex[1] = vertex[1]*scale_factor
+                vertex[2] = vertex[2]*scale_factor                
+
+    def get_bin(self):
+        data = b""
+        # some unknown magick number
+        data += struct.pack("<I", 0xFFFF0006)        
+        data += struct.pack("<I", self.num_meshes)
+        LoXYZ = self.model_bounding_box[0]
+        HiXYZ = self.model_bounding_box[1]
+        data += struct.pack("<fff", *list(LoXYZ))
+        data += struct.pack("<fff", *list(HiXYZ))
+        # loop through all meshes
+        data += self.meshes[0].get_bin()
+        return data
 
 class CRF_mesh(object):
     def __init__(self, file, file_offset, mesh_number, verbose=False):
@@ -437,8 +482,12 @@ class CRF_mesh(object):
         self.number_of_verteces = None
         self.number_of_faces = None
         self.face_list = []
+        self.stream_count = 0
+        self.vertex_stream1_layout = [] # [layout, stride]
         self.verteces1 = [] # 3d data, colors, uv, normals, specular, blendweight
+        self.vertex_stream2_layout = [] # [layout, stride]        
         self.verteces2 = [] # blendindeces and blendweight
+        self.vertex_stream3_layout = [] # [layout, stride]             
         self.verteces3 = [] # unknown stream, used on animated meshes
         self.bounding_box = [] # ((LoX, LoY, LoZ), (HiX, HiY, HZ))
         self.materials = None
@@ -459,13 +508,14 @@ class CRF_mesh(object):
                     print("face index %s, verts (%s, %s, %s)" % (i, v1, v2, v3))
 
         print("Vertex information starts at ", hex(file.tell()))                
-        streams, = struct.unpack("<B", file.read(1))
-        print("Number of streams", streams)
+        self.stream_count, = struct.unpack("<B", file.read(1))
+        print("Number of streams", self.stream_count)
         # then the vertex declaration
         #TODO should probably parse this, but all meshes that I've seen tend to use the same layout
-        vertex_declaration, = struct.unpack("<Q", file.read(8))
-        print("Vertex declaration", hex(vertex_declaration))
-        
+        layout, stride = struct.unpack("<II", file.read(8))
+        self.vertex_stream1_layout = [layout, stride]
+        print("Stream0 declaration", hex(self.vertex_stream1_layout[0]), self.vertex_stream1_layout[1])
+
         # read in verteces, vertex normals, ks, and UVs
         for i in range(0, self.number_of_verteces):
             vertex = CRF_vertex()
@@ -476,24 +526,21 @@ class CRF_mesh(object):
                 print(vertex)
 
 
-        if streams > 1:
-            #read in separator 0x000000080008000000
-            #TODO not all files have this separator
-            #TODO this separator is probaby a layout declaraton
-            separator = struct.unpack("<8B", file.read(8))
-            print("Separator %s at %s", separator, hex(file.tell()))        
-            #print(map(print, separator))            
+        if self.stream_count > 1:
+            layout, stride = struct.unpack("<II", file.read(8))
+            self.vertex_stream2_layout = [layout, stride]
+            print("Stream1 declaration", hex(self.vertex_stream2_layout[0]), self.vertex_stream2_layout[1])        
             print("First blendweight and blendindex stream at", hex(file.tell()))
             for i in range(0, self.number_of_verteces):
                 vertex_blend = CRF_vertex_blend()
                 vertex_blend.bin2raw(file, file.tell(), i, verbose)
                 self.verteces2.append(vertex_blend)
             
-        if streams > 2:
-            print("Unknown stream, possibly second blendweight and blendindex stream at", hex(file.tell()))
-            #TODO third stream can have different layout, unknown2 seems to point to how many bytes are used by each entry
-            unknown1, stride = struct.unpack("<II", file.read(8))
-            print("Third stream has unknown cost", hex(unknown1), hex(stride))
+        if self.stream_count > 2:
+            layout, stride = struct.unpack("<II", file.read(8))
+            self.vertex_stream3_layout = [layout, stride]
+            print("Stream2 declaration", hex(self.vertex_stream3_layout[0]), self.vertex_stream3_layout[1])
+            
             for i in range(0, self.number_of_verteces):
                 if stride == 4:
                     vertex_blend = CRF_vertex_blend_indeces_only()
@@ -509,11 +556,48 @@ class CRF_mesh(object):
         self.bounding_box = ((LoX, LoY, LoZ), (HiX, HiY, HiZ))        
         print("Bounding box of model %i: %s" % (self.mesh_number, self.bounding_box))
 
-        #TODO material info comes next
+        #material info comes next
         self.materials = CRF_materials(file, file.tell(), verbose)
+
+    def get_bin(self):
+        data = b""
+        data += struct.pack("<I", self.number_of_verteces)
+        data += struct.pack("<I", self.number_of_faces)
+        for face in self.face_list:
+            data += struct.pack("<HHH", *list(face))
+        data += struct.pack("<B", self.stream_count)
         
+        # write first stream
+        data += struct.pack("<II", *self.vertex_stream1_layout)
+        for vertex in self.verteces1:
+            #TODO should convert blender to raw here
+            data += vertex.convert2bin()
+            
+        # write second stream
+        if len(self.vertex_stream2_layout) != 0:
+            data += struct.pack("<II", *self.vertex_stream2_layout)
+            for vertex in self.verteces2:
+                #TODO should convert blender to raw here
+                data += vertex.convert2bin()
+
+        # write third stream
+        if len(self.vertex_stream3_layout) != 0:        
+            data += struct.pack("<II", *self.vertex_stream3_layout)
+            for vertex in self.verteces3:
+                #TODO should convert blender to raw here
+                data += vertex.convert2bin()
+
+        # write mesh's bounding box
+        LoXYZ = self.bounding_box[0]
+        HiXYZ = self.bounding_box[1]
+        data += struct.pack("<fff", *list(LoXYZ))
+        data += struct.pack("<fff", *list(HiXYZ))
+        
+        return data
+    
 class CRF_materials(object):
     def __init__(self, file, file_offset, verbose=False):
+        self.material_type = b''
         self.diffuse_texture = b''
         self.normal_texture = b''
         self.specular_texture = b''
@@ -524,15 +608,15 @@ class CRF_materials(object):
         self.custom1 = None
         
         print("Materials at:", hex(file.tell()))
-        material_type, = struct.unpack("2s", file.read(2))
-        print("Material type:", material_type)
+        self.material_type, = struct.unpack("2s", file.read(2))
+        print("Material type:", self.material_type)
         material_subtype, = struct.unpack(">Q", file.read(8))
         print("Material subtype:", hex(material_subtype))
 
         reading_materials = True
         current_state = "start"
 
-        if material_type == b"nm":
+        if self.material_type == b"nm" or self.material_type == b"tm":
             while(reading_materials):
                 # state transition logic
                 if current_state == "start":
@@ -540,7 +624,10 @@ class CRF_materials(object):
                 elif current_state == "read_diffuse":
                     current_state = "read_normal"
                 elif current_state == "read_normal":
-                    current_state = "read_overlay"
+                    if self.material_type == b"tm":
+                        current_state = "read_specular"
+                    else:
+                        current_state = "read_overlay"
                 elif current_state == "read_overlay":
                     if material_subtype == 0x100000003000000:
                         unknown, = struct.unpack("<I", file.read(4))
@@ -549,9 +636,14 @@ class CRF_materials(object):
                     elif material_subtype == 0x100000004000000:
                         current_state = "read_specular"
                 elif current_state == "read_specular":
-                    self.custom_data_count, = struct.unpack("<I", file.read(4))
-                    print("Custom data count", self.custom_data_count)
-                    current_state = "read_specular_const"
+                    if self.material_type == b"tm":
+                        # read in unknown
+                        file.read(0x1C)
+                        current_state = "done"
+                    else:
+                        self.custom_data_count, = struct.unpack("<I", file.read(4))
+                        print("Custom data count", self.custom_data_count)
+                        current_state = "read_specular_const"
                 elif current_state == "read_specular_const":
                     if material_subtype == 0x100000003000000:
                         # read in unknown
@@ -622,7 +714,7 @@ class CRF_materials(object):
                         # read in some 0s
                         file.read(4)
                     else:
-                        print("Error reading normal texture")
+                        print("Error reading specular texture")
                         reading_materials = False                    
                 elif current_state == "read_specular_const":
                     # read specular constant
@@ -778,7 +870,11 @@ class CRF_materials(object):
 ##                # state management
 
         print("Materials end at: ", hex(file.tell()))
-                    
+
+    def get_bin(self):
+        data = b""
+        #TODO
+        return data
     
 class CRF_vertex_blend(object):
     def bin2raw(self, file, file_offset, index, verbose=False):
@@ -789,7 +885,13 @@ class CRF_vertex_blend(object):
         self.blendindeces = struct.unpack("<bbbb", file.read(4))
         if verbose:
             print("vert index=%s, blendweights: %s, blendindeces: %s" % (self.index, self.blendweight, self.blendindeces))
-            
+
+    def convert2bin(self):
+        data = b""
+        data += struct.pack("<bbbb", *self.blendweight)
+        data += struct.pack("<bbbb", *self.blendindeces)
+        return data
+                                
 class CRF_vertex_blend_indeces_only(object):
     def bin2raw(self, file, file_offset, index, verbose=False):
         self.index = index
@@ -797,7 +899,12 @@ class CRF_vertex_blend_indeces_only(object):
         self.blendindeces = struct.unpack("<bbbb", file.read(4))
         if verbose:
             print("vert index=%s, blendindeces: %s" % (self.index, self.blendindeces))
-        
+            
+    def convert2bin(self):
+        data = b""
+        data += struct.pack("<bbbb", *self.blendindeces)
+        return data
+    
 class CRF_vertex(object):
     """
         Common variables:
@@ -976,23 +1083,4 @@ class CRF_vertex(object):
                                                         self.blendweights1_z, self.blendweights1_w)                                                
         return binstring
     
-if __name__ == "__main__":
 
-    import sys
-    import os
-
-    if len(sys.argv) == 2:        
-        path = os.path.abspath(sys.argv[1])
-    else:
-        path = "D:\\bia\\animation\\barrel02.crf"
-    print(path)
-    file = open(path, "rb")
-    
-    header = CRF_header(file)
-    footer = CRF_footer(file, header.footer_offset1, header.footer_offset2, header.footer_entries)
-    meshfile = CRF_meshfile(file, footer.get_meshfile().file_offset)
-    file.close()
-
-    # now write back data
-    file = open("dump.bin", "wb")
-    file.write(footer.get_bin())
