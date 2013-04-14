@@ -10,6 +10,7 @@ if __name__ == "__main__":
     parser.add_argument('file', nargs='?', help='Input file')
     parser.add_argument('outfile', nargs='?', default='dump.crf', help='Output file')
     parser.add_argument('outdir', nargs='?', default=os.getcwd(), help='Output directory')
+    parser.add_argument('-i', '--info', default=False, action='store_true', help='Print information about file')    
     parser.add_argument('-w', '--write', default=False, action='store_true', help='Write file')
     parser.add_argument('-s', '--scale', default=1.0, action='store', type=float, help='Uniform scale factor')
     parser.add_argument('-t', '--translate', nargs=3, default=[0, 0, 0], action='store', type=float, help='Translation')    
@@ -18,18 +19,13 @@ if __name__ == "__main__":
     file = args.file
     outfile = args.outfile
     outdir = args.outdir
+    info = args.info
     write = args.write
     scale_factor = args.scale
     translation = args.translate
     
-    if file != "":
-        path = os.path.abspath(file)
-    else:
-        path = "D:\\bia\\animation\\akm_01.crf"
-
-
+    path = os.path.abspath(file)
     outfile = os.path.abspath(outfile)
-
     print(path)
     
     file = open(path, "rb")    
@@ -41,6 +37,9 @@ if __name__ == "__main__":
 
     if translation != [0,0,0]:
         obj.meshfile.translate(translation)
+
+    if info:
+        print(obj.meshfile)
         
     if write:
         file = open(outfile, "wb")
