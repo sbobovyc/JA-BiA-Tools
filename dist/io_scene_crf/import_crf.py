@@ -100,6 +100,7 @@ def addDiffuseTexture(color_filepath, mat):
     mtex.texture = tex
     mtex.texture_coords = 'UV'
     mtex.use_map_color_diffuse = True
+    mtex.use_map_alpha = True
 
 def addNormalTexture(normals_filepath, mat):
     realpath = os.path.expanduser(normals_filepath)
@@ -439,6 +440,8 @@ def load(operator, context, filepath,
                 print("Adding diffuse texture ", diffuse_texture_filepath)        
                 if diffuse_texture_filepath != None and diffuse_texture_filepath != "":
                     addDiffuseTexture(diffuse_texture_filepath, mat)
+                    mat.use_transparency = True
+                    mat.alpha = 0 #TODO check model data for this param
             if use_normal_texture:
                 normal_texture = mesh.materials.normal_texture            
                 normal_texture_filepath = findTextureFile(os.fsdecode(filepath),  normal_texture.decode(sys.stdout.encoding))

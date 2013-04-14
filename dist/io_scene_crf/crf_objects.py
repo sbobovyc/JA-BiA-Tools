@@ -333,6 +333,9 @@ CRF_SkinLayeredMP = "6tsc5tsc" #MP+ SkinLayered
 .rdata:00508248                 db 'el.',0Ah,0
 """
 
+def float2uint32(number):
+    return int(number * 4294967295)    
+
 class CRF_object(object):
     def __init__(self, file):
         self.header = CRF_header(file)
@@ -342,8 +345,15 @@ class CRF_object(object):
     def get_bin(self):
         data = b""
         #TODO update all data structures, then write them out
+        mesh_data = self.meshfile.get_bin()
+        
+        meshfile_size = len(mesh_data)
+        footer1_size = len(self.footer.entries * 32)
+        self.footer.update_meshfile(meshfile_size)
+        self.header.footer_offset1 = 0x14 + meshfile_size 
+        self.header.footer_offset2 = 0x14 + meshfile_size + footer1_size
         data += self.header.get_bin()
-        data += self.meshfile.get_bin()
+        data += mesh_data
         data += self.footer.get_bin()
         return data
     
@@ -361,8 +371,8 @@ class CRF_header(object):
         data += b"fknc"
         data += struct.pack("<I", 0x1)
         # footer offsets are blank and will get filled in later
-        data += struct.pack("<I", 0xFFFFFFFF)
-        data += struct.pack("<I", 0xFFFFFFFF)
+        data += struct.pack("<I", self.footer_offset1)
+        data += struct.pack("<I", self.footer_offset2)
         data += struct.pack("<I", self.footer_entries)     
         return data
         
@@ -383,6 +393,12 @@ class CRF_footer(object):
             if entry.magick == CRF_MESHFILE:
                 return entry
         return None
+
+    def update_meshfile(self, new_size):
+        for i in range(0, len(self.entries)):
+            entry = self.entries[i]
+            if entry.magick == CRF_MESHFILE:
+                self.entries[i].size = new_size 
 
     def get_bin(self):
         data = b""
@@ -454,15 +470,22 @@ class CRF_meshfile(object):
             self.meshes.append(CRF_mesh(file, file.tell(), i, verbose))
 
     def scale(self, scale_factor):
-        # loop through each mesh and scale the verteces
         #TODO need to scale the bounding box
-        #TODO finish this and test it
         for mesh in self.meshes:
-            for vertex in mesh.verteces1:
-                vertex[0] = vertex[0]*scale_factor
-                vertex[1] = vertex[1]*scale_factor
-                vertex[2] = vertex[2]*scale_factor                
+            for i in range(0, len(mesh.verteces1)):
+                mesh.verteces1[i].x = mesh.verteces1[i].x*scale_factor
+                mesh.verteces1[i].y = mesh.verteces1[i].y*scale_factor
+                mesh.verteces1[i].z = mesh.verteces1[i].z*scale_factor                
 
+    def translate(self, translation):
+        x_offset, y_offset, z_offset = translation
+        #TODO need to translate the bounding box
+        for mesh in self.meshes:
+            for i in range(0, len(mesh.verteces1)):
+                mesh.verteces1[i].x = mesh.verteces1[i].x+x_offset
+                mesh.verteces1[i].y = mesh.verteces1[i].y+y_offset
+                mesh.verteces1[i].z = mesh.verteces1[i].z+z_offset
+                
     def get_bin(self):
         data = b""
         # some unknown magick number
@@ -473,7 +496,12 @@ class CRF_meshfile(object):
         data += struct.pack("<fff", *list(LoXYZ))
         data += struct.pack("<fff", *list(HiXYZ))
         # loop through all meshes
-        data += self.meshes[0].get_bin()
+        for mesh in self.meshes:
+            data += mesh.get_bin()
+            print("Writing mesh", mesh.mesh_number)
+            # write separator, unknown format
+            if self.num_meshes > 1:
+                data += struct.pack("<I%sx" % 0x10, 2)
         return data
 
 class CRF_mesh(object):
@@ -592,26 +620,31 @@ class CRF_mesh(object):
         HiXYZ = self.bounding_box[1]
         data += struct.pack("<fff", *list(LoXYZ))
         data += struct.pack("<fff", *list(HiXYZ))
+
+        # write materials
+        data += self.materials.get_bin()
         
         return data
     
 class CRF_materials(object):
     def __init__(self, file, file_offset, verbose=False):
         self.material_type = b''
+        self.material_subtype = b''
         self.diffuse_texture = b''
         self.normal_texture = b''
         self.specular_texture = b''
-        self.specular_constant = None # (R, G, B)
-        self.specular_constant_alpha = None #TODO not sure if this is right
-        self.overlay = None
+        self.specular_constant = (0.0, 0.0, 0.0) # (R, G, B)
+        self.specular_constant_alpha = 0.0 #TODO not sure if this is right
+        self.overlay = b''
         self.custom_data_count = 0
-        self.custom1 = None
+        self.custom1_1 = (0, 0, 0)
+        self.custom1_2 = 0        
         
         print("Materials at:", hex(file.tell()))
         self.material_type, = struct.unpack("2s", file.read(2))
         print("Material type:", self.material_type)
-        material_subtype, = struct.unpack(">Q", file.read(8))
-        print("Material subtype:", hex(material_subtype))
+        self.material_subtype, = struct.unpack(">Q", file.read(8))
+        print("Material subtype:", hex(self.material_subtype))
 
         reading_materials = True
         current_state = "start"
@@ -629,11 +662,11 @@ class CRF_materials(object):
                     else:
                         current_state = "read_overlay"
                 elif current_state == "read_overlay":
-                    if material_subtype == 0x100000003000000:
-                        unknown, = struct.unpack("<I", file.read(4))
-                        print("Unknown, possible number of metadata following:", unknown)                        
+                    if self.material_subtype == 0x100000003000000:
+                        self.custom_data_count, = struct.unpack("<I", file.read(4))
+                        print("Custom data count", self.custom_data_count)                      
                         current_state = "read_specular_const"
-                    elif material_subtype == 0x100000004000000:
+                    elif self.material_subtype == 0x100000004000000:
                         current_state = "read_specular"
                 elif current_state == "read_specular":
                     if self.material_type == b"tm":
@@ -645,15 +678,17 @@ class CRF_materials(object):
                         print("Custom data count", self.custom_data_count)
                         current_state = "read_specular_const"
                 elif current_state == "read_specular_const":
-                    if material_subtype == 0x100000003000000:
+                    if self.material_subtype == 0x100000003000000:
                         # read in unknown
-                        file.read(0x18)
+                        file.read(0x14)
                         current_state = "done"
-                    elif material_subtype == 0x100000004000000:                        
-                        current_state = "read_custom_data"
-                elif current_state == "read_custom_data":
+                    elif self.material_subtype == 0x100000004000000:                        
+                        current_state = "read_custom"
+                elif current_state == "read_custom":
                     # read in unknown
-                    file.read(0x18)
+                    trailer = file.read(0x14)
+                    import binascii
+                    print(binascii.hexlify(trailer))
                     current_state = "done"
                 elif current_state == "done":
                     reading_materials = False
@@ -720,26 +755,23 @@ class CRF_materials(object):
                     # read specular constant
                     data_type, = struct.unpack("4s", file.read(4))
                     print("Type:", data_type)
-                    R,G,B = struct.unpack("<III", file.read(12))                    
-                    print(hex(R),hex(G),hex(B))
-                    #TODO I have no idea if this is right
-                    # convert int32 to scaled float
-                    #TODO is it uint32 or int32?
-                    R = R / 4294967295
-                    G = G / 4294967295
-                    B = B / 4294967295
-                    self.specular_constant = (R, G, B)
-                elif current_state == "read_custom_data":
-                    #TODO do better custom parsing
+                    R,G,B = struct.unpack("<fff", file.read(12))                    
+                    print(R,G,B)
+                    self.specular_constant = (R, G, B)                    
                     if self.custom_data_count == 1:
-                        pass
-                    elif self.custom_data_count == 2:
+                        A, = struct.unpack("f", file.read(4))
+                        print(A)
+                        self.specular_constant_alpha = A                    
+                elif current_state == "read_custom":
+                    if self.custom_data_count == 2:
                         data_type, = struct.unpack("4s", file.read(4))
                         print("Type:", data_type)
-                        file.read(12)
-                        file.read(4)
+                        self.custom1_1 = struct.unpack("<IIII", file.read(16))
+                        print(self.custom1_1)
                         data_type, = struct.unpack("4s", file.read(4))
                         print("Type:", data_type)
+                        self.custom1_2, = struct.unpack("<I", file.read(4))
+                        print(self.custom1_2)                        
         else:
             print("Material type is not supported")
 ##        if magick == b"nm" or magick == b'ts':
@@ -873,9 +905,75 @@ class CRF_materials(object):
 
     def get_bin(self):
         data = b""
-        #TODO
+        writing_materials = True
+        current_state = "start"
+
+        while(writing_materials):
+            if self.material_type == b"nm":
+                if current_state == "start":
+                    data += struct.pack("2s", self.material_type)
+                    data += struct.pack(">Q", self.material_subtype)
+                    current_state = "write_diffuse"
+                elif current_state == "write_diffuse":
+                    current_state = "write_normal"
+                elif current_state == "write_normal":
+                        current_state = "write_overlay"
+                elif current_state == "write_overlay":
+                    if self.material_subtype == 0x100000003000000:
+                        current_state = "write_specular_constant"
+                    else:                    
+                        current_state = "write_specular"
+                elif current_state == "write_specular":
+                    current_state = "write_specular_constant"
+                elif current_state == "write_specular_constant":
+                    if self.material_subtype == 0x100000003000000:
+                        current_state = "done"
+                    else:
+                        current_state = "write_custom"
+                elif current_state == "write_custom":
+                    current_state = "done"
+                elif current_state == "done":
+                    writing_materials = False
+                    
+                print(current_state)
+                if current_state == "write_diffuse":                
+                    data += struct.pack("4s", "sffd")
+                    data += struct.pack("<I", len(self.diffuse_texture))            
+                    data += struct.pack("%ss" % len(self.diffuse_texture), self.diffuse_texture)
+                    data += struct.pack("xxxx")
+                elif current_state == "write_normal":            
+                    data += struct.pack("4s", "smrn")
+                    data += struct.pack("<I", len(self.normal_texture))            
+                    data += struct.pack("%ss" % len(self.normal_texture), self.normal_texture)
+                    data += struct.pack("xxxx")
+                elif current_state == "write_overlay":
+                    data += struct.pack("4s", "1tsc")
+                    data += struct.pack("<I", len(self.overlay))            
+                    data += struct.pack("%ss" % len(self.overlay), self.overlay)
+                    data += struct.pack("xxxx")
+                elif current_state == "write_specular":
+                    data += struct.pack("4s", "lcps")
+                    data += struct.pack("<I", len(self.specular_texture))            
+                    data += struct.pack("%ss" % len(self.specular_texture), self.specular_texture)
+                    data += struct.pack("xxxx")                    
+                elif current_state == "write_specular_constant":
+                    if self.custom_data_count == 1:
+                        data += struct.pack("<I", 0x1)
+                        data += struct.pack("4s", "lcps")
+                        data += struct.pack("<fff", *list(self.specular_constant))
+                        data += struct.pack("<f", self.specular_constant_alpha)
+                    elif self.custom_data_count == 2:
+                        data += struct.pack("<I", 0x2)
+                        data += struct.pack("4s", "lcps")
+                        data += struct.pack("<fff", *list(self.specular_constant))
+                elif current_state == "write_custom":
+                    if self.custom_data_count == 2:
+                        data += struct.pack("4s", "1tsc")
+                        data += struct.pack("<IIII", *list(self.custom1_1))
+                        data += struct.pack("4s", "1tsc")
+                        data += struct.pack("<I", self.custom1_2)                                                                    
         return data
-    
+        
 class CRF_vertex_blend(object):
     def bin2raw(self, file, file_offset, index, verbose=False):
         self.index = index
