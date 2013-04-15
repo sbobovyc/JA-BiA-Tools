@@ -426,6 +426,22 @@ def load(operator, context, filepath,
             face_tex.append([ verts_tex0[v1], verts_tex0[v2], verts_tex0[v3] ]) 
 
         # start all optional tasks
+        # add armature and bones
+        # Notes
+        # for bone in bpy.context.active_object.pose.bones: print(bone.name)
+        #   print(bone.matrix)
+        #amt = bpy.data.armatures.new(amtname)
+        #ob = bpy.data.objects.new(obname, amt)
+        #scn = bpy.context.scene
+        #scn.objects.link(ob)
+        #scn.objects.active = ob
+        #ob.select = True
+        #bpy.ops.object.mode_set(mode='EDIT')
+        #bone = amt.edit_bones.new('Bone')
+        #bone.head = (0,0,0)
+        #bone.tail = (0,0,1)        
+        #bpy.ops.object.mode_set(mode='OBJECT')
+        
         # add uv map
         if use_uv_map:
             uvMain = createTextureLayer("UV_Main", me, face_tex)

@@ -88,13 +88,13 @@ def read_bones():
                 uint4, = struct.unpack("<I", f.read(4))
                 
                 print f11, f12, f13
-                print uint1
+                print hex(uint1)
                 print f21, f22, f23
-                print uint2
+                print hex(uint2)
                 print f31, f32, f33
-                print uint3
+                print hex(uint3)
                 print f41, f42, f43
-                print uint4                
+                print hex(uint4)
                 print
                 
             bone_count, = struct.unpack("<I", f.read(4))            
