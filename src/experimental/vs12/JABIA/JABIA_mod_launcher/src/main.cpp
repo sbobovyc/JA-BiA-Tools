@@ -138,9 +138,9 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 				SendDlgItemMessage(hwnd, IDC_CHECKBOX4, BM_SETCHECK, BST_CHECKED, 0);
 			}
 
-			if(params.path_mod) {
-				SendDlgItemMessage(hwnd, IDC_CHECKBOX5, BM_SETCHECK, BST_CHECKED, 0);
-			}
+			//if(params.path_mod) {
+			//	SendDlgItemMessage(hwnd, IDC_CHECKBOX5, BM_SETCHECK, BST_CHECKED, 0);
+			//}
 
 			cancel_handle = GetDlgItem(hwnd,IDCANCEL);
 			dialog_handle = hwnd;

@@ -46,7 +46,7 @@ void setCamera(HWND hwnd);
 void SetCameraGTA(void);
 void SetCameraClose(void);
 void SetCameraLowHigh(void);	
-void SetCameraCustom(void);
+void SetCameraCustom(int);
 void SetCameraDefault(void);
 
 
@@ -150,7 +150,7 @@ DWORD WINAPI MyThread(LPVOID)
 
 	// load custom camera settings from xml and set camera 
 	params = load();
-	SetCameraCustom();
+	SetCameraCustom(params.last_used);
 
 	while(true)
 	{
@@ -163,7 +163,7 @@ DWORD WINAPI MyThread(LPVOID)
 							0,
 							DialogProc);
 
-				fillDialog(hDialog);
+				//fillDialog(hDialog);
 				
 				if (!hDialog)
 				{
@@ -190,6 +190,7 @@ DWORD WINAPI MyThread(LPVOID)
 				break;
 			}
 		Sleep(100);		
+		//print_camera_info();
 	}
 	
 	FreeLibraryAndExitThread(g_hModule, 0);
@@ -223,6 +224,8 @@ BOOL CALLBACK DialogProc (HWND hwnd,
                           LPARAM lParam)
 {
 	HMENU hMenu;
+	int selected_custom = params.last_used;
+	char buf[100];
 
     switch (message)
     {
@@ -232,6 +235,11 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 			// add menu
 			hMenu = LoadMenu(g_hModule, MAKEINTRESOURCE(IDR_MENU1));
 			SetMenu(hwnd,hMenu);
+
+			wsprintf(buf, "Cst%i", selected_custom);
+			SetDlgItemText(hwnd, IDC_SELECTED_STATE, buf);
+			SetCameraCustom(selected_custom);
+			fillDialog(hwnd);
 
 			// add icon
 			//HICON hIcon;
@@ -250,35 +258,75 @@ BOOL CALLBACK DialogProc (HWND hwnd,
             switch(LOWORD(wParam))
             {				
 				case IDM_GTA:
+					wsprintf(buf, "GTA");
+					SetDlgItemText(hwnd, IDC_SELECTED_STATE, buf);
 					SetCameraGTA();
 					fillDialog(hwnd);
 					OutputDebugString("GTA");
 					break;
 				case IDM_CLOSE_UP:
+					wsprintf(buf, "CU");
+					SetDlgItemText(hwnd, IDC_SELECTED_STATE, buf);
 					SetCameraClose();
 					fillDialog(hwnd);
 					OutputDebugString("CU");
 					break;
 				case IDM_LOW_AND_HIGH:
+					wsprintf(buf, "L&H");
+					SetDlgItemText(hwnd, IDC_SELECTED_STATE, buf);
 					SetCameraLowHigh();
-					OutputDebugString("LW");
+					OutputDebugString("L&H");
 					break;
-				case IDM_CUSTOM:
-					SetCameraCustom();
+				case IDM_CUSTOM0:
+					selected_custom = 0;
+					wsprintf(buf, "Cst%i", selected_custom);
+					SetDlgItemText(hwnd, IDC_SELECTED_STATE, buf);					
+					SetCameraCustom(0);
 					fillDialog(hwnd);
-					OutputDebugString("CUSTOM");
+					OutputDebugString("CUSTOM0");
+					break;
+				case IDM_CUSTOM1:
+					selected_custom = 1;
+					wsprintf(buf, "Cst%i", selected_custom);
+					SetDlgItemText(hwnd, IDC_SELECTED_STATE, buf);					
+					SetCameraCustom(1);
+					fillDialog(hwnd);
+					OutputDebugString("CUSTOM1");
+					break;
+				case IDM_CUSTOM2:
+					selected_custom = 2;
+					wsprintf(buf, "Cst%i", selected_custom);
+					SetDlgItemText(hwnd, IDC_SELECTED_STATE, buf);
+					SetCameraCustom(2);
+					fillDialog(hwnd);
+					OutputDebugString("CUSTOM2");
+					break;
+				case IDM_CUSTOM3:
+					selected_custom = 3;
+					wsprintf(buf, "Cst%i", selected_custom);
+					SetDlgItemText(hwnd, IDC_SELECTED_STATE, buf);		
+					SetCameraCustom(3);
+					fillDialog(hwnd);
+					OutputDebugString("CUSTOM3");
 					break;
 				case IDM_DEFAULT:
+					wsprintf(buf, "Def");
+					SetDlgItemText(hwnd, IDC_SELECTED_STATE, buf);
 					SetCameraDefault();
 					fillDialog(hwnd);
 					OutputDebugString("DEFAULT");
 					break;
 				case IDC_SAVE:
-					params.camera_min = camera_ptr->camera_min;
-					params.camera_max = camera_ptr->camera_max;
-					params.min_angle = camera_ptr->min_angle;
-					params.max_angle_delta = camera_ptr->max_angle_delta;
+					wsprintf(buf, "Cst%i", selected_custom);
+					SetDlgItemText(hwnd, IDC_SELECTED_STATE, buf);
+					params.camera_min[selected_custom] = camera_ptr->camera_min;
+					params.camera_max[selected_custom] = camera_ptr->camera_max;
+					params.min_angle[selected_custom] = camera_ptr->min_angle;
+					params.max_angle_delta[selected_custom] = camera_ptr->max_angle_delta;
 					save(&params);
+					SetCameraCustom(selected_custom);
+					fillDialog(hwnd);
+					OutputDebugString("SAVED");
 					break;
                 case IDOK:
 					setCamera(hwnd);
@@ -361,23 +409,26 @@ void SetCameraClose(void) {
 }
 
 void SetCameraLowHigh(void) {
-	camera_ptr->camera_min = 50;
-	camera_ptr->camera_max = 700;
+	camera_ptr->camera_min = 50.0;
+	camera_ptr->camera_max = 700.0;
 	camera_ptr->min_angle = 0.8;
 	camera_ptr->max_angle_delta = 0.6;
 }
 
-void SetCameraCustom(void) {
-	camera_ptr->camera_min = params.camera_min;
-	camera_ptr->camera_max = params.camera_max;
-	camera_ptr->min_angle = params.min_angle;
-	camera_ptr->max_angle_delta = params.max_angle_delta;
+void SetCameraCustom(int i) {
+	params.last_used = i;
+	camera_ptr->camera_min = params.camera_min[i];
+	camera_ptr->camera_max = params.camera_max[i];
+	camera_ptr->min_angle = params.min_angle[i];
+	camera_ptr->max_angle_delta = params.max_angle_delta[i];
 }
 
 void SetCameraDefault(void) {
 	JABIA_camera_parameters default_params;
-	camera_ptr->camera_min = default_params.camera_min;
-	camera_ptr->camera_max = default_params.camera_max;
-	camera_ptr->min_angle = default_params.min_angle;
-	camera_ptr->max_angle_delta = default_params.max_angle_delta;
+	camera_ptr->camera_min = default_params.camera_min[0];
+	camera_ptr->camera_max = default_params.camera_max[0];
+	camera_ptr->min_angle = default_params.min_angle[0];
+	camera_ptr->max_angle_delta = default_params.max_angle_delta[0];
+	camera_ptr->current_angle = camera_ptr->min_angle;
+	camera_ptr->current_height = camera_ptr->camera_max;
 }
