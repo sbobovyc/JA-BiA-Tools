@@ -341,10 +341,12 @@ class CRF_object(object):
         self.header = CRF_header(file)
         self.footer = CRF_footer(file, self.header.footer_offset1, self.header.footer_offset2, self.header.footer_entries)
         self.meshfile = CRF_meshfile(file, self.footer.get_meshfile().file_offset)
+        
         if(self.footer.get_jointmap() != None):
             self.jointmap = CRF_jointmap(file, self.footer.get_jointmap().file_offset)
 
-        #TODO reverse engineer skeleton data structure
+        if(self.footer.get_skeleton() != None):
+            self.skeleton = CRF_skeleton(file, self.footer.get_skeleton().file_offset)
             
     def get_bin(self):
         data = b""
@@ -403,7 +405,13 @@ class CRF_footer(object):
             if entry.magick == CRF_JOINTMAP:
                 return entry
         return None
-                                               
+
+    def get_skeleton(self):
+        for entry in self.entries:
+            if entry.magick == CRF_SKELETON:
+                return entry
+        return None
+    
     def update_meshfile(self, new_size):
         for i in range(0, len(self.entries)):
             entry = self.entries[i]
@@ -883,7 +891,7 @@ class CRF_materials(object):
                 elif current_state == "write_overlay":
                     data += struct.pack("4s", "1tsc")
                     data += struct.pack("<I", len(self.overlay_texture))            
-                    data += struct.pack("%ss" % len(self.overlay_texture), self.overlay)
+                    data += struct.pack("%ss" % len(self.overlay_texture), self.overlay_texture)
                     data += struct.pack("xxxx")
                 elif current_state == "write_specular":
                     data += struct.pack("4s", "lcps")
@@ -1121,22 +1129,23 @@ class CRF_joint(object):
         self.joint_id = 0
         self.matrix = [ (0,0,0), (0,0,0), (0,0,0) ]
         self.parent_id = 0xFFFFFFFF
+        self.skeleton_index = 0
         self.i1 = 0
-        self.i2 = 0
-        self.i3 = 0        
+        self.i2 = 0        
 
     def __str__(self):
         string = ""
         string += "Joint id: %s\n" % self.joint_id
-        string += "Matrix: %s\n" % self.matrix
+        string += "Matrix: \n%s\n%s\n%s\n" % (self.matrix[0],self.matrix[1],self.matrix[2])
         string += "Parent: %s\n" % self.parent_id
-        string += "Unknown: %s, %s, %s\n" % (self.i1, self.i2, self.i3)
+        string += "Skeleton index: %s\n" % self.skeleton_index        
+        string += "Unknown: %s, %s\n" % (self.i1, self.i2)
         return string
     
 class CRF_bone(object):
     def __init__(self):
         self.bone_id = 0
-        self.bone_name = ""
+        self.bone_name = b""
         self.child_list = []
         self.i1 = 0
         self.i2 = 0
@@ -1150,6 +1159,7 @@ class CRF_bone(object):
     
 class CRF_jointmap(object):
     def __init__(self, file=None, file_offset=0):
+        self.magick = 0x1
         self.joint_count = 0
         self.joint_list = []
         self.bone_count = 0
@@ -1161,30 +1171,30 @@ class CRF_jointmap(object):
             self.parse(file)
         
     def parse(self, file):
-        file.read(4) #TODO can there be multiple jointmaps?
+        self.magick = struct.unpack("<I", file.read(4)) #TODO can there be multiple jointmaps?
         self.joint_count, = struct.unpack("<I", file.read(4))
         print("Joint count", self.joint_count)
 
         for i in range(0, self.joint_count):
             joint = CRF_joint()
             joint.joint_id = i
-            
+            print(hex(file.tell()))            
             f11, f12, f13 = struct.unpack("<fff", file.read(12))
             joint.parent_id, = struct.unpack("<I", file.read(4))                
             f21, f22, f23 = struct.unpack("<fff", file.read(12))
-            joint.i1, = struct.unpack("<I", file.read(4))                
+            joint.skeleton_index, = struct.unpack("<I", file.read(4))                
             f31, f32, f33 = struct.unpack("<fff", file.read(12))
-            joint.i2, = struct.unpack("<I", file.read(4))
+            joint.i1, = struct.unpack("<I", file.read(4))
             f41, f42, f43 = struct.unpack("<fff", file.read(12))
-            joint.i3, = struct.unpack("<I", file.read(4))
+            joint.i2, = struct.unpack("<I", file.read(4))
 
             joint.matrix = []
             joint.matrix.append( (f11, f12, f13) )
             joint.matrix.append( (f21, f22, f23) )
             joint.matrix.append( (f31, f32, f33) )
 
-            #print("Bone id:", i)
-            #print(joint)
+            print("Bone id:", i)
+            print(joint)
             self.joint_list.append(joint)
 
         self.bone_count, = struct.unpack("<I", file.read(4))
@@ -1207,19 +1217,28 @@ class CRF_jointmap(object):
             bone.i1, bone.i2, bone.i3, bone.i4 = struct.unpack("BBBB", file.read(4))
     
             self.bone_dict[bone.bone_id] = bone
-            #print(bone)
+            print(bone)
         #TODO followd by 61 bytes of unknown
             
 class CRF_skeleton(object):
     def __init__(self, file=None, file_offset=0):
+        self.skeleton_count = 0
+        self.skeleton_list = [] # [ (bone, bone bone), (bone, bone) ... ]
+        
         if file != None:
             file.seek(file_offset)
             self.parse(file)
 
     def parse(self, file):
-        pass
-    #2
-    #size?
-    #list of shorts defining bones in hands?
-        
+        self.skeleton_count, = struct.unpack("<I", file.read(4))
+        for i in range(0, self.skeleton_count):
+            bone_count, = struct.unpack("<I", file.read(4))
+            bones = struct.unpack("<%sH" % bone_count, file.read(bone_count*2))
+            self.skeleton_list.append(bones)
+
+    def __str__(self):
+        string = ""
+        string += "Skeleton groups: %s, %s" % (self.skeleton_count, self.skeleton_list)
+        return string
+
 

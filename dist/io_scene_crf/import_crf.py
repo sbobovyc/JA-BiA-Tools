@@ -425,23 +425,7 @@ def load(operator, context, filepath,
             v3 = verts_in_face[2]
             face_tex.append([ verts_tex0[v1], verts_tex0[v2], verts_tex0[v3] ]) 
 
-        # start all optional tasks
-        # add armature and bones
-        # Notes
-        # for bone in bpy.context.active_object.pose.bones: print(bone.name)
-        #   print(bone.matrix)
-        #amt = bpy.data.armatures.new(amtname)
-        #ob = bpy.data.objects.new(obname, amt)
-        #scn = bpy.context.scene
-        #scn.objects.link(ob)
-        #scn.objects.active = ob
-        #ob.select = True
-        #bpy.ops.object.mode_set(mode='EDIT')
-        #bone = amt.edit_bones.new('Bone')
-        #bone.head = (0,0,0)
-        #bone.tail = (0,0,1)        
-        #bpy.ops.object.mode_set(mode='OBJECT')
-        
+        # start all optional tasks        
         # add uv map
         if use_uv_map:
             uvMain = createTextureLayer("UV_Main", me, face_tex)
@@ -504,6 +488,55 @@ def load(operator, context, filepath,
         new_objects.append(ob)
 
     # end loop
+
+    # add armature and bones
+    # Notes
+    # for bone in bpy.context.active_object.pose.bones: print(bone.name)
+    #   print(bone.matrix)
+    #amt = bpy.data.armatures.new(amtname)
+    #ob = bpy.data.objects.new(obname, amt)
+    #scn = bpy.context.scene
+    #scn.objects.link(ob)
+    #scn.objects.active = ob
+    #ob.select = True
+    #bpy.ops.object.mode_set(mode='EDIT')
+    #bone = amt.edit_bones.new('Bone')
+    #bone.head = (0,0,0)
+    #bone.tail = (0,0,1)        
+    #bpy.ops.object.mode_set(mode='OBJECT')
+    #bpy.context.object.data.edit_bones["Bone"].tail = mat * mathutils.Vector((0,0,0))
+    #bpy.context.object.data.edit_bones["Bone"].head = mat * mathutils.Vector((0,1,0))
+    #bpy.context.active_object.pose.bones[n].matrix = resting position of the bone
+    #bpy.context.active_object.data.bones[n].matrix = bone position at current key
+    #mathutils.Matrix(((-0.7251140475273132, -0.08301041275262833, -0.6836074590682983), (-0.6793055534362793, -0.07657606899738312, 0.7298495769500732), (-0.11293309181928635, 0.9936023950576782, -0.0008630511583760381)))
+
+    # import bones
+    if CRF.footer.get_jointmap() != None:
+        amt = bpy.data.armatures.new("Armature")
+        amt_ob = bpy.data.objects.new("Armature", amt)
+        scn = bpy.context.scene
+        scn.objects.link(amt_ob)
+        scn.objects.active = amt_ob
+        amt_ob.select = True
+        bpy.ops.object.mode_set(mode='EDIT')
+        for key,value in CRF.jointmap.bone_dict.items():
+            crf_joint = CRF.jointmap.joint_list[key]
+            bone = amt.edit_bones.new(value.bone_name.decode('UTF-8'))
+            bone.head = (0,0,0)
+            bone.tail = (0,0,1)        
+        bpy.ops.object.mode_set(mode='OBJECT')
+        bone_test = 3
+        mat = mathutils.Matrix(( (CRF.jointmap.joint_list[bone_test].matrix[0] + (0,)),
+                                (CRF.jointmap.joint_list[bone_test].matrix[1] + (0,)),
+                                (CRF.jointmap.joint_list[bone_test].matrix[2] + (0,)),
+                                 (0,0,0,1) ))
+        print(amt_ob.matrix_world)
+        print(mat)
+        amt_ob.matrix_world = mat
+        print(amt_ob.matrix_world)        
+        #bpy.context.object.data.bones["Bone01_Pelvis"].matrix = mat
+        #amt_ob.pose.bones[str(crf_bone.bone_name)].matrix = mathutils.Matrix((crf_joint.matrix[0], crf_joint.matrix[1], crf_joint.matrix[2]))
+        
     
     time_new = time.time()
     print("%.4f sec" % (time_new - time_sub))
