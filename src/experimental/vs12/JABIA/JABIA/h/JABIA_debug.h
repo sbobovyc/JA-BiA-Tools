@@ -24,8 +24,8 @@ static char ProcessName[] = "GameJABiA.exe";
 #elif defined(JAC)
 #define CHARACTER_CONST_OFFSET 0x131CD0
 #define CHARACTER_CONST_RETN_OFFSET 0x2D8
-#define CHARACTER_DESTRUCTOR_OFFSET 0x132B60
-#define CHARACTER_DESTRUCTOR_RETN_OFFSET 0x132BB8 // pop edi 
+#define CHARACTER_DESTRUCTOR_OFFSET 0x131FC0
+#define CHARACTER_DESTRUCTOR_RETN_OFFSET 0x132018 // pop edi 
 static char ProcessName[] = "GameJACrossfire.exe";
 #else
 #error Need to define either JABIA or JAC.
