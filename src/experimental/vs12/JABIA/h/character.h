@@ -33,8 +33,11 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #define JABIA_CHARACTER_INV_SLOTS  15
 
 // medical conditions
-#define JABIA_CHARACTER_MED_HEALTHY		0x0000
-#define JABIA_CHARACTER_MED_DEAD		0x0003
+#define JABIA_CHARACTER_MED_HEALTHY								0x0000
+#define JABIA_CHARACTER_MED_WOUNDED								0x0008
+#define JABIA_CHARACTER_MED_BEING_HEALED_BY_SMALL_MEDKIT		0x0080
+#define JABIA_CHARACTER_MED_DEAD								0x0003
+
 
 typedef struct JABIA_Character_weapon {
 	// all equipment, if empty is 0xFFFF and durability 0
