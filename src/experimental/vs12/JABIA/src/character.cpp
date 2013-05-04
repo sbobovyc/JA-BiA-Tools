@@ -28,12 +28,14 @@ void heal_character(JABIA_Character * ptr) {
 	ptr->medical_condition = JABIA_CHARACTER_MED_HEALTHY;
 	ptr->health = 100; // may overflow max health
 	ptr->stamina = 100;
+	ptr->mod_health = 0;
+	ptr->mod_stamina = 0;
 	ptr->mod_strength = 0;
 	ptr->bleed_rate = 0;
 }
 
 void kill_character(JABIA_Character * ptr) {
-	// set medical status to healthy
+	// set medical status to dead
 	ptr->medical_condition |= JABIA_CHARACTER_MED_DEAD;
 	ptr->health = -1;
 }

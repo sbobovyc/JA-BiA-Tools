@@ -227,8 +227,8 @@ typedef struct JABIA_Character {
 	uint32_t stealth;
 	uint32_t mechanical;
 
-	uint32_t unknown25;
-	uint32_t unknown26;
+	uint32_t mod_health;
+	uint32_t mod_stamina;
 
 	// pentalty modifier
 	uint32_t mod_agility;		// agility = base agility - penalty

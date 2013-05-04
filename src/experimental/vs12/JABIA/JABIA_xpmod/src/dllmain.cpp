@@ -33,12 +33,22 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #pragma comment(lib,"detours.lib")
 
 #define WITH_XP_MOD
-static char ProcessName[] = "GameJABiA.exe";
 
+
+#if defined(JABIA)
 // modding exp function
 #define UPDATE_EXP_OFFSET 0x14C470
-typedef void * (_stdcall *UpdateCharacterExpPtr)();
+static char ProcessName[] = "GameJABiA.exe";
+#elif defined(JAC)
+// modding exp function
+#define UPDATE_EXP_OFFSET 0x14B6C0
+static char ProcessName[] = "GameJACrossfire.exe";
+#else
+#error Need to define either JABIA or JAC.
+#endif
 
+
+typedef void * (_stdcall *UpdateCharacterExpPtr)();
 BOOL CALLBACK DialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 DWORD WINAPI MyThread(LPVOID);
 void* myUpdateCharacterExp();

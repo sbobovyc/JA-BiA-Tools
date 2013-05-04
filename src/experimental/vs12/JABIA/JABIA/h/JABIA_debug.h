@@ -10,7 +10,6 @@
 #endif
 
 #define FULL
-#define WITH_XP_MOD
 
 //#define JABIA
 #define JAC

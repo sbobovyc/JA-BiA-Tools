@@ -22,7 +22,14 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #ifndef JABIA_GUI
 #define JABIA_GUI
 
+
+#if defined(JABIA)
 #define PRINT_XP_FUN_OFFSET 0x2AF52E
+#elif defined(JAC)
+#define PRINT_XP_FUN_OFFSET 0x2AEA7E
+#else
+#error Need to define either JABIA or JAC.
+#endif
 
 typedef void * (_cdecl *PrintCharacterXpGainPtr)(wchar_t * xp_increase, int unknown, wchar_t * xp_string);
 
