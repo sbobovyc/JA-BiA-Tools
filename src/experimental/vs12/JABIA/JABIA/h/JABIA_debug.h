@@ -11,9 +11,6 @@
 
 #define FULL
 
-//#define JABIA
-#define JAC
-
 #if defined(JABIA)
 #define CHARACTER_CONST_OFFSET 0x132880
 #define CHARACTER_CONST_RETN_OFFSET 0x2D8

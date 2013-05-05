@@ -7,11 +7,21 @@
 #include <fstream> 
 
 #define PATH_TO_MOD_LAUNCHER_XML "\\mods\\JABIA_mod_launcher.xml"
-#define LAUNCHER_VERSION_STRING "Version 0.3c\r\n"
-#define MOTD "For latest updates, check:\r\n http://www.moddb.com/mods/sbobovycs-jabia-mods-tools/downloads \r\n"
 
+
+#if defined(JABIA)
+#define LAUNCHER_VERSION_STRING "Version 0.3d (BIA)\r\n"
+#define MOTD "For latest updates, check:\r\n http://www.moddb.com/mods/sbobovycs-jabia-mods-tools/downloads \r\n"
 #define LAUNCHER_NAME "JaggedAllianceBIA.exe"
 #define EXE_NAME "GameJABiA.exe"
+#elif defined(JAC)
+#define LAUNCHER_VERSION_STRING "Version 0.3d (CF)\r\n"
+#define MOTD "For latest updates, check:\r\n http://www.moddb.com/mods/sbobovycs-jabia-mods-tools/downloads \r\n"
+#define LAUNCHER_NAME "JaggedAllianceCF.exe"
+#define EXE_NAME "GameJACrossfire.exe"
+#else
+#error Need to define either JABIA or JAC.
+#endif
 
 #define DEBUGGER_DLL_PATH "\\mods\\debugger\\JABIA_debug.dll"
 #define XPMOD_DLL_PATH "\\mods\\xpmod\\JABIA_xpmod.dll"

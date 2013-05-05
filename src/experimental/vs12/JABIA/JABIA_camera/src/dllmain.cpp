@@ -50,11 +50,21 @@ void SetCameraCustom(int);
 void SetCameraDefault(void);
 
 
-
-static char ProcessName[] = "GameJABiA.exe";
-
+#if defined(JABIA)
 // modding camera callback
 #define CAMERA_CALLBACK_OFFSET 0x001A7020 
+static char ProcessName[] = "GameJABiA.exe";
+#elif defined(JAC)
+// modding camera callback
+#define CAMERA_CALLBACK_OFFSET 0x001A6050
+static char ProcessName[] = "GameJACrossfire.exe";
+#else
+#error Need to define either JABIA or JAC.
+#endif
+
+
+
+
 typedef int (_stdcall *CameraCallbackPtr)(float, int);
 
 CameraCallbackPtr CameraCallback;

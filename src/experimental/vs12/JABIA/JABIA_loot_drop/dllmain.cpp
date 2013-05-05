@@ -26,16 +26,30 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #pragma comment(lib,"detours.lib")
 
-static char ProcessName[] = "GameJABiA.exe";
-
+#if defined(JABIA)
 // modding drop loot functionality
 #define CALC_DROP_LOOT_OFFSET 0x0013A3F0
-#define DROP_LOOT_OFFSET 0x00030C40
-
 #define WEAPON_DROP_FLD_OFFSET 0x0053A4C5
 #define ITEM_DROP_FLD_OFFSET 0x0053A519
 #define ONE_FLT 0x0071E02C // 1.0 constant in .rdata segment
 #define INVENTORY_DROP_SWTCH_TABLE 0x0053A540
+static char ProcessName[] = "GameJABiA.exe";
+#elif defined(JAC)
+// modding drop loot functionality
+#define CALC_DROP_LOOT_OFFSET 0x001397F0
+#define WEAPON_DROP_FLD_OFFSET 0x005398C5
+#define ITEM_DROP_FLD_OFFSET 0x00539919
+#define ONE_FLT 0x00817EB8 // 1.0 constant in .data segment
+#define INVENTORY_DROP_SWTCH_TABLE 0x00539940
+static char ProcessName[] = "GameJACrossfire.exe";
+#else
+#error Need to define either JABIA or JAC.
+#endif
+
+
+
+
+
 
 typedef void * (_stdcall *CalcDropLootPtr)();
 
@@ -154,6 +168,4 @@ void CustomCalcDroppedLoot(JABIA_Character_inventory * ptr, void * drop_ptr, int
 	OutputDebugString("In Custom Drop Loot");
 	wsprintf(buf, "0x%X \n0x%X \n0x%x", ptr, drop_ptr, unknown);
 	OutputDebugString(buf);
-	
-
 }
