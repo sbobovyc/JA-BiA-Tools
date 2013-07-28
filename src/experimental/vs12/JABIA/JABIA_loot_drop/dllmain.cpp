@@ -22,34 +22,11 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include <windows.h>
 #include "detours.h"
+
+#include "game_version.h"
 #include "character.h"
 
 #pragma comment(lib,"detours.lib")
-
-#if defined(JABIA)
-// modding drop loot functionality
-#define CALC_DROP_LOOT_OFFSET 0x0013A3F0
-#define WEAPON_DROP_FLD_OFFSET 0x0053A4C5
-#define ITEM_DROP_FLD_OFFSET 0x0053A519
-#define ONE_FLT 0x0071E02C // 1.0 constant in .rdata segment
-#define INVENTORY_DROP_SWTCH_TABLE 0x0053A540
-static char ProcessName[] = "GameJABiA.exe";
-#elif defined(JAC)
-// modding drop loot functionality
-#define CALC_DROP_LOOT_OFFSET 0x001397F0
-#define WEAPON_DROP_FLD_OFFSET 0x005398C5
-#define ITEM_DROP_FLD_OFFSET 0x00539919
-#define ONE_FLT 0x00817EB8 // 1.0 constant in .data segment
-#define INVENTORY_DROP_SWTCH_TABLE 0x00539940
-static char ProcessName[] = "GameJACrossfire.exe";
-#else
-#error Need to define either JABIA or JAC.
-#endif
-
-
-
-
-
 
 typedef void * (_stdcall *CalcDropLootPtr)();
 
@@ -57,7 +34,7 @@ DWORD WINAPI MyThread(LPVOID);
 void myCalcDropedLoot();
 void CustomCalcDroppedLoot(JABIA_Character_inventory * ptr, void * drop_ptr, int unknown);
 
-HMODULE game_handle; // address of GameDemo.exe
+HMODULE game_handle; 
 HMODULE g_hModule;
 DWORD g_threadID;
 
@@ -123,14 +100,18 @@ DWORD WINAPI MyThread(LPVOID) {
 	// read + write
 	VirtualProtect((LPVOID)WEAPON_DROP_FLD_OFFSET, 6, PAGE_EXECUTE_READWRITE, &oldProtection);
 	BYTE FLD[6] = {0xD9, 0x05, 0x2C, 0xE0, 0x71, 0x00};
+
+	// Assembly dump from IDA
 	// fld ds:0x0072FA14 replaced with 
 	// fld ds:0x0071E02C
 	memcpy((void *)WEAPON_DROP_FLD_OFFSET, FLD, 6);
 
+	// Assembly dump from IDA
 	// fld ds:0x00728F48 replaced with 
 	// fld ds:0x0071E02C	
 	memcpy((void *)ITEM_DROP_FLD_OFFSET, FLD, 6);
 
+	// Assembly dump from IDA
 	// db      0,     3,     3,     3  ; indirect table for switch statement
     // db      1,     3,     1,     1 
     // db      2

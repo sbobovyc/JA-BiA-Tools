@@ -3,7 +3,7 @@
 */
 
 /*
-Copyright (C) 2012 Stanislav Bobovych
+Copyright (C) 2013 Stanislav Bobovych
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -22,6 +22,36 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #ifndef _CHARACTER_H_
 #define _CHARACTER_H_
 #include <stdint.h>
+
+#if defined(JABIA)
+#define CHARACTER_CONST_OFFSET 0x132880
+#define CHARACTER_CONST_RETN_OFFSET 0x2D8
+#define CHARACTER_DESTRUCTOR_OFFSET 0x132B60
+#define CHARACTER_DESTRUCTOR_RETN_OFFSET 0x132BB8 // pop edi 
+// modding drop loot functionality
+#define CALC_DROP_LOOT_OFFSET 0x0013A3F0
+#define WEAPON_DROP_FLD_OFFSET 0x0053A4C5
+#define ITEM_DROP_FLD_OFFSET 0x0053A519
+#define ONE_FLT 0x0071E02C // 1.0 constant in .rdata segment
+#define INVENTORY_DROP_SWTCH_TABLE 0x0053A540
+// modding exp gain function
+#define UPDATE_EXP_OFFSET 0x14C470
+#elif defined(JAC)
+#define CHARACTER_CONST_OFFSET 0x131CD0
+#define CHARACTER_CONST_RETN_OFFSET 0x2D8
+#define CHARACTER_DESTRUCTOR_OFFSET 0x131FC0
+#define CHARACTER_DESTRUCTOR_RETN_OFFSET 0x132018 // pop edi 
+// modding drop loot functionality
+#define CALC_DROP_LOOT_OFFSET 0x001397F0
+#define WEAPON_DROP_FLD_OFFSET 0x005398C5
+#define ITEM_DROP_FLD_OFFSET 0x00539919
+#define ONE_FLT 0x00817EB8 // 1.0 constant in .data segment
+#define INVENTORY_DROP_SWTCH_TABLE 0x00539940
+// modding exp gain function
+#define UPDATE_EXP_OFFSET 0x14B6C0
+#else
+#error Need to define either JABIA or JAC.
+#endif
 
 #define Faction_HumanPlayer		0
 #define Faction_HumanMilitia	1      
@@ -111,7 +141,7 @@ typedef struct JABIA_Character_inventory {
 
 	// inventory is divided between weapons and items
 	JABIA_Character_weapon weapons[3];
-	JABIA_Character_inventory_item inventory_items[15];
+	JABIA_Character_inventory_item inventory_items[JABIA_CHARACTER_INV_SLOTS];
 } JABIA_Character_inventory;
 
 

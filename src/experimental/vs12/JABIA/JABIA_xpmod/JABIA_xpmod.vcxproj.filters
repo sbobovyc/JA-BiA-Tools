@@ -32,6 +32,9 @@
     <ClInclude Include="..\h\JABIA_gui.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\h\game_version.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="resource\JABIA_xpmod.rc">

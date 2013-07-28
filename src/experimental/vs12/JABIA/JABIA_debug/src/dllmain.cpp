@@ -3,7 +3,7 @@
 */
 
 /*
-Copyright (C) 2012 Stanislav Bobovych
+Copyright (C) 2013 Stanislav Bobovych
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #include <objbase.h>
 #include <detours.h>
 
+#include "game_version.h"
 #include "JABIA_debug.h"
 #include "resource.h"
 #include "character.h"

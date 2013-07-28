@@ -1,0 +1,9 @@
+﻿Build started 7/27/2013 8:38:11 PM.
+     1>Project "C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\JABIA_debug\JABIA_debug.vcxproj" on node 2 (Build target(s)).
+     1>Link:
+         JABIA_debug.vcxproj -> C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\Release\JABIA_debug.dll
+     1>Done Building Project "C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\JABIA_debug\JABIA_debug.vcxproj" (Build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:00.03

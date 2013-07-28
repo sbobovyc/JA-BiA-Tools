@@ -1,3 +1,24 @@
+/*
+@author: sbobovyc
+*/
+
+/*
+Copyright (C) 2012 Stanislav Bobovych
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #ifndef JABIA_DEBUG
 #define JABIA_DEBUG
 
@@ -10,22 +31,6 @@
 #endif
 
 #define FULL
-
-#if defined(JABIA)
-#define CHARACTER_CONST_OFFSET 0x132880
-#define CHARACTER_CONST_RETN_OFFSET 0x2D8
-#define CHARACTER_DESTRUCTOR_OFFSET 0x132B60
-#define CHARACTER_DESTRUCTOR_RETN_OFFSET 0x132BB8 // pop edi 
-static char ProcessName[] = "GameJABiA.exe";
-#elif defined(JAC)
-#define CHARACTER_CONST_OFFSET 0x131CD0
-#define CHARACTER_CONST_RETN_OFFSET 0x2D8
-#define CHARACTER_DESTRUCTOR_OFFSET 0x131FC0
-#define CHARACTER_DESTRUCTOR_RETN_OFFSET 0x132018 // pop edi 
-static char ProcessName[] = "GameJACrossfire.exe";
-#else
-#error Need to define either JABIA or JAC.
-#endif
 
 typedef void * (_stdcall *CharacterConstReturnPtr)();
 typedef void * (_stdcall *UpdateCharacterExpPtr)();

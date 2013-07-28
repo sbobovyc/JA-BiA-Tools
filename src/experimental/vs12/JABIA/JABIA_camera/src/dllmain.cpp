@@ -28,7 +28,9 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #include <iostream> 
 #include <fstream> 
 
+#include "game_version.h"
 #include "camera.h"
+#include "camera_mod.h"
 #include "detours.h"
 #include "resource.h"
 
@@ -48,21 +50,6 @@ void SetCameraClose(void);
 void SetCameraLowHigh(void);	
 void SetCameraCustom(int);
 void SetCameraDefault(void);
-
-
-#if defined(JABIA)
-// modding camera callback
-#define CAMERA_CALLBACK_OFFSET 0x001A7020 
-static char ProcessName[] = "GameJABiA.exe";
-#elif defined(JAC)
-// modding camera callback
-#define CAMERA_CALLBACK_OFFSET 0x001A6050
-static char ProcessName[] = "GameJACrossfire.exe";
-#else
-#error Need to define either JABIA or JAC.
-#endif
-
-
 
 
 typedef int (_stdcall *CameraCallbackPtr)(float, int);

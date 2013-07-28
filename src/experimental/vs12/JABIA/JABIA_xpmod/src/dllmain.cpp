@@ -25,28 +25,15 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <vector>
 
+#include "game_version.h"
 #include "detours.h"
-#include "../../h/character.h"
-#include "../../h/JABIA_gui.h"
-#include "../h/xpmod.h"
+#include "character.h"
+#include "JABIA_gui.h"
+#include "xpmod.h"
 
 #pragma comment(lib,"detours.lib")
 
 #define WITH_XP_MOD
-
-
-#if defined(JABIA)
-// modding exp function
-#define UPDATE_EXP_OFFSET 0x14C470
-static char ProcessName[] = "GameJABiA.exe";
-#elif defined(JAC)
-// modding exp function
-#define UPDATE_EXP_OFFSET 0x14B6C0
-static char ProcessName[] = "GameJACrossfire.exe";
-#else
-#error Need to define either JABIA or JAC.
-#endif
-
 
 typedef void * (_stdcall *UpdateCharacterExpPtr)();
 BOOL CALLBACK DialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
