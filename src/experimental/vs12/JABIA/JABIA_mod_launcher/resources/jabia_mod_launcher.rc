@@ -36,5 +36,6 @@ FONT 8, "Ms Shell Dlg"
 //
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 //IDI_ICON1          ICON           ".\\explosion.ico"
-//IDI_ICON1          ICON           ".\\explosion_bia.ico"
-IDI_ICON1          ICON           ".\\explosion_cf.ico"
+IDI_ICON1          ICON           ".\\explosion_bia.ico"
+//IDI_ICON1          ICON           ".\\explosion_cf.ico"
+

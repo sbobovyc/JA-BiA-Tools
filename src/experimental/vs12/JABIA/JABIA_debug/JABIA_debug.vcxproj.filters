@@ -7,15 +7,21 @@
     <ClCompile Include="src\dllmain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\debug.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\h\character.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="h\JABIA_debug.h">
+    <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h">
+    <ClInclude Include="..\h\game.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="h\debug.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -3,7 +3,7 @@
 */
 
 /*
-Copyright (C) 2012 Stanislav Bobovych
+Copyright (C) 2013 Stanislav Bobovych
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -19,9 +19,14 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef JABIA_DEBUG
-#define JABIA_DEBUG
-
+#ifndef DEBUG
+#define DEBUG
+#include <windows.h>
+#include <boost/archive/xml_oarchive.hpp> 
+#include <boost/archive/xml_iarchive.hpp> 
+#include <boost/serialization/vector.hpp>
+#include <iostream> 
+#include <fstream> 
 #include "character.h"
 
 #ifdef JABIA_EXPORTS
@@ -51,6 +56,7 @@ DWORD WINAPI MyThread(LPVOID);
 // my hooks
 void* myCharacterConstReturn();
 void* myCharacterDestReturn();
+void* mySaveGameParseReturn();
 void __fastcall recordCharacters(void* instance);
 void __fastcall removeCharacter(JABIA_Character * ptr);
 int myCharacterDestructor(JABIA_Character * ptr);
@@ -60,6 +66,40 @@ void dump_current_character(HWND hwnd, JABIA_Character * ptr);
 BOOL dump_all_characters(HWND hwnd);
 void fillDialog(HWND hwnd, JABIA_Character * ptr);
 void setCharacter(HWND hwnd, JABIA_Character * ptr);
+void setMoney(HWND hwnd);
+
+#define PATH_TO_DEBUGMOD_XML "\\mods\\debugger\\JABIA_debugger.xml"
+
+typedef struct JABIA_DEBUGMOD_parameters { 
+	bool first_run;	
 
 
-#endif /* JABIA_DEBUG */
+	// initializer list to use copy constructor instead of default constructor
+    JABIA_DEBUGMOD_parameters() : 	
+		first_run(true)
+    {
+	}
+	
+	
+	
+	// TODO add pretty print 
+    friend std::ostream& operator << (std::ostream& out, JABIA_DEBUGMOD_parameters& d) 
+    {
+        /*out << "day: " << d.m_day 
+              << " month: " << d.m_month
+	<< " year: " << d.m_year;
+        */return out;
+    }
+
+	// take care of serilization to xml
+    template<class Archive>
+    void serialize(Archive& archive, const unsigned int version)
+    {
+		archive & BOOST_SERIALIZATION_NVP(first_run);
+    }
+} JABIA_DEBUGMOD_parameters;
+
+void save(std::string filepath, JABIA_DEBUGMOD_parameters params);
+void load(JABIA_DEBUGMOD_parameters * dr);
+
+#endif /* DEBUG */

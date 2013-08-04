@@ -6,6 +6,7 @@
 #include <iostream> 
 #include <fstream> 
 
+#include "game_version.h"
 #define PATH_TO_MOD_LAUNCHER_XML "\\mods\\JABIA_mod_launcher.xml"
 
 

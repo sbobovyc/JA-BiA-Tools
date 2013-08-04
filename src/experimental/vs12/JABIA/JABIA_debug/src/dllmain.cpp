@@ -28,9 +28,13 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #include <shlobj.h>
 #include <objbase.h>
 #include <detours.h>
+#include <boost/archive/xml_oarchive.hpp> 
+#include <boost/archive/xml_iarchive.hpp> 
+#include <boost/filesystem.hpp>
 
 #include "game_version.h"
-#include "JABIA_debug.h"
+#include "game.h"
+#include "debug.h"
 #include "resource.h"
 #include "character.h"
 
@@ -41,8 +45,13 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 CharacterConstReturnPtr ParseCharacter;
 CharacterDestReturnPtr RemoveCharacter;
 CharacterDestructorPtr CharacterDestructor;
+ParseGameInfoReturnPtr ParseGameInfo;
+SaveGame * CurrentSaveGamePtr;
+int * money_ptr;
 
-HMODULE game_handle; // address of GameDemo.exe
+JABIA_DEBUGMOD_parameters debugmod_params;
+
+HMODULE game_handle; 
 DWORD g_threadID;
 HMODULE g_hModule;
 HINSTANCE TheInstance = 0;
@@ -53,6 +62,9 @@ std::vector<JABIA_Character *> jabia_characters;
 int last_character_selected_index = 0;
 int last_weaponslot_selected_index = 0;
 int last_inventory_selected_index = 0;
+
+void myAccessGameInfo(int, GameInfo *);
+
 
 INT APIENTRY DllMain(HMODULE hDLL, DWORD Reason, LPVOID Reserved)
 {
@@ -73,6 +85,7 @@ INT APIENTRY DllMain(HMODULE hDLL, DWORD Reason, LPVOID Reserved)
 
 DWORD WINAPI MyThread(LPVOID)
 {
+	load(&debugmod_params);
 	char buf [100];
 	DWORD oldProtection;
 	BYTE Before_JMP[6]; // save retn here
@@ -97,7 +110,12 @@ DWORD WINAPI MyThread(LPVOID)
 		CharacterDestructor = (CharacterDestructorPtr)((uint32_t)game_handle+CHARACTER_DESTRUCTOR_OFFSET);
 		wsprintf (buf, "Address of CharacterDestructor 0x%x", CharacterDestructor);
 		OutputDebugString(buf);
-		
+		ParseGameInfo = (ParseGameInfoReturnPtr)PARSE_GAME_INFO_RETURN;
+		// find address of game info access function
+		//CurrentSaveGamePtr = (SaveGame **)((uint32_t)game_handle+CURRENT_GAME_INFO_POINTER);
+		ParseGameInfo = (ParseGameInfoReturnPtr)PARSE_GAME_INFO_RETURN;
+		wsprintf (buf, "Address of ParseGameInfo 0x%x", ParseGameInfo);
+		OutputDebugString(buf); 
 
 		// If jabia_characters is not empty, clear it. Every time the game loads a level, character pointers change.
 		//TODO this function crashes on exit game
@@ -136,16 +154,38 @@ DWORD WINAPI MyThread(LPVOID)
 		// restore protection
 		VirtualProtect((LPVOID)RemoveCharacter, 6, oldProtection, NULL);
 
-		// give user instructions
-		wsprintf(buf, "DLL successfully loaded. Load a save game and press F7 to bring up editor. Due to some bugs, you need to quit to main menu before you load another savegame.");
-		MessageBox (0, buf, "JABIA character editor", MB_ICONEXCLAMATION | MB_OK | MB_SYSTEMMODAL);
-		wsprintf(buf, "Size of struct %i", sizeof(JABIA_Character));
-		OutputDebugString(buf);
+		
+		// hook parse game info return
+		VirtualProtect(ParseGameInfo, 6, PAGE_EXECUTE_READWRITE, &oldProtection);
+		JMPSize = ((DWORD)mySaveGameParseReturn - (DWORD)ParseGameInfo - 5);		
+		memcpy(&JMP[1], &JMPSize, 4);
+		// overwrite retn with JMP
+		memcpy((void *)ParseGameInfo, (void *)JMP, 6);
+		// restore protection
+		VirtualProtect((LPVOID)ParseGameInfo, 6, oldProtection, NULL);
+		
+
+		if(debugmod_params.first_run) {
+			wsprintf(buf, "DLL successfully loaded. Load a save game and press F7 to bring up editor. Due to some bugs, you need to quit to main menu before you load another savegame. This message will not be shown on next launch.");
+			MessageBox (0, buf, "JABIA character debugger", MB_ICONEXCLAMATION | MB_OK | MB_SYSTEMMODAL);
+			wsprintf(buf, "Size of struct %i", sizeof(JABIA_Character));
+			OutputDebugString(buf);
+			debugmod_params.first_run = false;
+			boost::filesystem::path working_dir = boost::filesystem::current_path();
+			boost::filesystem::path modpath(PATH_TO_DEBUGMOD_XML);
+			boost::filesystem::path fullpath = working_dir / modpath;
+			save(fullpath.string(), debugmod_params);
+		}
 	
 		while(true)
 		{
 			if(GetAsyncKeyState(VK_F7) & 1)
 			{
+				wsprintf (buf, "CurrentSaveGamePtr 0x%x", CurrentSaveGamePtr);
+				OutputDebugString(buf); 
+				wsprintf (buf, "Current money %i", CurrentSaveGamePtr->money);
+				OutputDebugString(buf); 
+
 				if(jabia_characters.at(last_character_selected_index) == NULL) {
 					MessageBox (0, buf, "Memory error", MB_ICONEXCLAMATION | MB_OK | MB_SYSTEMMODAL);
 				} else {
@@ -306,6 +346,7 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 					//wsprintf(buf, "Setting");
 					ptr = jabia_characters.at(last_character_selected_index);
 					setCharacter(hwnd, ptr);
+					setMoney(hwnd);
 					break;
 				case IDM_HEAL_CHARACTER:					
 					ptr = jabia_characters.at(last_character_selected_index);
@@ -412,6 +453,10 @@ BOOL dump_all_characters(HWND hwnd) {
 void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 	char buf[100];
 	JABIA_Character character;
+
+	_itoa_s(CurrentSaveGamePtr->money, buf, 100, 10);
+	SetDlgItemText(hwnd, IDC_MONEY, buf);
+
 	if(ptr != NULL) {
 		memcpy(&character, (void *)ptr, sizeof(JABIA_Character));		
 
@@ -790,6 +835,14 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr) {
 	character_ptr->bleed_rate = bleed_rate;
 }
 
+void setMoney(HWND hwnd) {
+	char buf[100];
+	int money;
+	GetDlgItemText(hwnd, IDC_MONEY, buf, 100);
+	money = atoi(buf);
+	CurrentSaveGamePtr->money = money;	
+}
+
 __declspec(naked) void* myCharacterConstReturn(){	
 	// Character constructor uses thiscall calling convention and as an optimization passes something in EDX. I don't hook the call to the constructor.
 	// Instead, I hook the return of the character constructor. The "this" pointer will be in EAX.
@@ -850,4 +903,23 @@ void __fastcall removeCharacter(JABIA_Character * ptr){
 	std::vector<JABIA_Character *>::iterator position = std::find(jabia_characters.begin(), jabia_characters.end(), ptr);
 	if (position != jabia_characters.end()) // == vector.end() means the element was not found
 		jabia_characters.erase(position);
+}
+
+
+__declspec(naked) void* mySaveGameParseReturn(){	
+	__asm{
+		pushad;
+		// pointer chase to get pointer to game state
+		mov esi, DWORD PTR DS:[ebx + 0xA84];
+		mov eax, [esi + 0x84];
+		mov CurrentSaveGamePtr, eax;
+		popad;
+		pop ecx;
+		pop edi;
+		pop esi;
+		pop ebp;
+		pop ebx;
+		add esp, 0x28;
+		retn 8;
+	}
 }

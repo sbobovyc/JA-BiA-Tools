@@ -26,10 +26,8 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #include <iostream> 
 #include <fstream> 
 
-#include "../../h/character.h"
-#include "../h/xpmod.h"
-
-
+#include "character.h"
+#include "xpmod.h"
 
 void save(std::string filepath) 
 { 	

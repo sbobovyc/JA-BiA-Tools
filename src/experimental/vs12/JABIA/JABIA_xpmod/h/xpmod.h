@@ -134,8 +134,8 @@ typedef struct JABIA_XPMOD_parameters {
     }
 } JABIA_XPMOD_parameters;
 
-void save(void);
-void load(JABIA_XPMOD_parameters * dr) ;
+void save(std::string filepath);
+void load(JABIA_XPMOD_parameters * dr);
 unsigned int calc_medical(JABIA_XPMOD_parameters * params, JABIA_Character * ptr);
 unsigned int calc_explosives(JABIA_XPMOD_parameters * params, JABIA_Character * ptr);
 unsigned int calc_marksmanship(JABIA_XPMOD_parameters * params, JABIA_Character * ptr);

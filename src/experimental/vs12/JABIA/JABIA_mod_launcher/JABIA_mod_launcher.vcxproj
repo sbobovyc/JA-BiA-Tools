@@ -45,8 +45,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\Program Files %28x86%29\boost_1_52_0;C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\JABIA_mod_launcher\resources;C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\JABIA_mod_launcher\h;C:\Users\sbobovyc\workspace\WinHookInject\VS12\WinHookInject\injector;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Program Files %28x86%29\boost_1_52_0\stage\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>..\h;C:\Program Files %28x86%29\boost_1_54_0;C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\JABIA_mod_launcher\resources;C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\JABIA_mod_launcher\h;C:\Users\sbobovyc\workspace\WinHookInject\VS12\WinHookInject\injector;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Program Files %28x86%29\boost_1_54_0\stage\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -73,7 +73,7 @@
       <Optimization>Disabled</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>false</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;JAC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
     </ClCompile>
     <Link>

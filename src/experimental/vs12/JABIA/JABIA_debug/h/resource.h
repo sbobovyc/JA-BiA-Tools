@@ -58,3 +58,4 @@
 #define IDM_STUN_CHARACTER                      50002
 #define IDM_DUMP_CHARACTER                      50003
 #define IDM_DUMP_ALL                            50004
+#define IDC_MONEY                               50005
