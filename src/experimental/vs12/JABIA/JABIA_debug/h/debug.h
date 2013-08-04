@@ -100,6 +100,6 @@ typedef struct JABIA_DEBUGMOD_parameters {
 } JABIA_DEBUGMOD_parameters;
 
 void save(std::string filepath, JABIA_DEBUGMOD_parameters params);
-void load(JABIA_DEBUGMOD_parameters * dr);
+void load(JABIA_DEBUGMOD_parameters & dr);
 
 #endif /* DEBUG */

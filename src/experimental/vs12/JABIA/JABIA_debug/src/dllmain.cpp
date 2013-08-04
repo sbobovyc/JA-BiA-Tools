@@ -85,7 +85,7 @@ INT APIENTRY DllMain(HMODULE hDLL, DWORD Reason, LPVOID Reserved)
 
 DWORD WINAPI MyThread(LPVOID)
 {
-	load(&debugmod_params);
+	load(debugmod_params);
 	char buf [100];
 	DWORD oldProtection;
 	BYTE Before_JMP[6]; // save retn here
@@ -164,7 +164,8 @@ DWORD WINAPI MyThread(LPVOID)
 		// restore protection
 		VirtualProtect((LPVOID)ParseGameInfo, 6, oldProtection, NULL);
 		
-
+		wsprintf(buf, "First run? %i", debugmod_params.first_run);
+		OutputDebugString(buf);
 		if(debugmod_params.first_run) {
 			wsprintf(buf, "DLL successfully loaded. Load a save game and press F7 to bring up editor. Due to some bugs, you need to quit to main menu before you load another savegame. This message will not be shown on next launch.");
 			MessageBox (0, buf, "JABIA character debugger", MB_ICONEXCLAMATION | MB_OK | MB_SYSTEMMODAL);
