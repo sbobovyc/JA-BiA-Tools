@@ -45,7 +45,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 CharacterConstReturnPtr ParseCharacter;
 CharacterDestReturnPtr RemoveCharacter;
 CharacterDestructorPtr CharacterDestructor;
-ParseGameInfoReturnPtr ParseGameInfo;
+ParseGameInfoReturnPtr ParseGameInfoReturn;
 SaveGame * CurrentSaveGamePtr;
 int * money_ptr;
 
@@ -110,11 +110,11 @@ DWORD WINAPI MyThread(LPVOID)
 		CharacterDestructor = (CharacterDestructorPtr)((uint32_t)game_handle+CHARACTER_DESTRUCTOR_OFFSET);
 		wsprintf (buf, "Address of CharacterDestructor 0x%x", CharacterDestructor);
 		OutputDebugString(buf);
-		ParseGameInfo = (ParseGameInfoReturnPtr)PARSE_GAME_INFO_RETURN;
+		ParseGameInfoReturn = (ParseGameInfoReturnPtr)((uint32_t)game_handle+PARSE_GAME_INFO_RETURN);
 		// find address of game info access function
 		//CurrentSaveGamePtr = (SaveGame **)((uint32_t)game_handle+CURRENT_GAME_INFO_POINTER);
-		ParseGameInfo = (ParseGameInfoReturnPtr)PARSE_GAME_INFO_RETURN;
-		wsprintf (buf, "Address of ParseGameInfo 0x%x", ParseGameInfo);
+		ParseGameInfoReturn = (ParseGameInfoReturnPtr)((uint32_t)game_handle+PARSE_GAME_INFO_RETURN);
+		wsprintf (buf, "Address of ParseGameInfoReturn 0x%x", ParseGameInfoReturn);
 		OutputDebugString(buf); 
 
 		// If jabia_characters is not empty, clear it. Every time the game loads a level, character pointers change.
@@ -156,13 +156,13 @@ DWORD WINAPI MyThread(LPVOID)
 
 		
 		// hook parse game info return
-		VirtualProtect(ParseGameInfo, 6, PAGE_EXECUTE_READWRITE, &oldProtection);
-		JMPSize = ((DWORD)mySaveGameParseReturn - (DWORD)ParseGameInfo - 5);		
+		VirtualProtect(ParseGameInfoReturn, 6, PAGE_EXECUTE_READWRITE, &oldProtection);
+		JMPSize = ((DWORD)mySaveGameParseReturn - (DWORD)ParseGameInfoReturn - 5);		
 		memcpy(&JMP[1], &JMPSize, 4);
 		// overwrite retn with JMP
-		memcpy((void *)ParseGameInfo, (void *)JMP, 6);
+		memcpy((void *)ParseGameInfoReturn, (void *)JMP, 6);
 		// restore protection
-		VirtualProtect((LPVOID)ParseGameInfo, 6, oldProtection, NULL);
+		VirtualProtect((LPVOID)ParseGameInfoReturn, 6, oldProtection, NULL);
 		
 		wsprintf(buf, "First run? %i", debugmod_params.first_run);
 		OutputDebugString(buf);

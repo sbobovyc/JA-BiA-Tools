@@ -15,9 +15,6 @@
     <ClInclude Include="..\h\character.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\h\game.h">
       <Filter>Header Files</Filter>
     </ClInclude>

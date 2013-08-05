@@ -23,6 +23,8 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #define _CHARACTER_H_
 #include <stdint.h>
 
+#include "game_version.h"
+
 #if defined(JABIA)
 #define CHARACTER_CONST_OFFSET 0x132880
 #define CHARACTER_CONST_RETN_OFFSET 0x2D8
