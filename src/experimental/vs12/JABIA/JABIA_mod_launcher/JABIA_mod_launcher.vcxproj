@@ -89,6 +89,8 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="resources\explosion.ico" />
+    <Image Include="resources\explosion_bia.ico" />
+    <Image Include="resources\explosion_cf.ico" />
     <Image Include="resources\logo.bmp" />
   </ItemGroup>
   <ItemGroup>

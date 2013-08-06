@@ -28,6 +28,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #include <iostream> 
 #include <fstream> 
 #include "character.h"
+#include "game_version.h"
 
 #ifdef JABIA_EXPORTS
 #define EXPORT __declspec(dllexport)
@@ -70,7 +71,9 @@ void setMoney(HWND hwnd);
 
 #define PATH_TO_DEBUGMOD_XML "\\mods\\debugger\\JABIA_debugger.xml"
 
-typedef struct JABIA_DEBUGMOD_parameters { 
+
+class JABIA_DEBUGMOD_parameters { 
+public:
 	bool first_run;	
 
 
@@ -97,9 +100,7 @@ typedef struct JABIA_DEBUGMOD_parameters {
     {
 		archive & BOOST_SERIALIZATION_NVP(first_run);
     }
-} JABIA_DEBUGMOD_parameters;
+};
 
-void save(std::string filepath, JABIA_DEBUGMOD_parameters params);
-void load(JABIA_DEBUGMOD_parameters & dr);
 
 #endif /* DEBUG */

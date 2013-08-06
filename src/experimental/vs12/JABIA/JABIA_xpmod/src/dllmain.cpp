@@ -84,7 +84,7 @@ DWORD WINAPI MyThread(LPVOID)
 	//free((void*)cwd);
 	
 
-	load(&xpmod_params);
+	load(PATH_TO_XPMOD_XML, xpmod_params);
 	char buf [100];
 	// find base address of GameDemo.exe in memory
 	GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, ProcessName, &game_handle);

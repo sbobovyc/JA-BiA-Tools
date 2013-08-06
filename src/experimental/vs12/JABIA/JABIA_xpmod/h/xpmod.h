@@ -29,7 +29,8 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #define PATH_TO_XPMOD_XML "\\mods\\xpmod\\JABIA_xpmod.xml"
 
-typedef struct JABIA_XPMOD_parameters { 
+class JABIA_XPMOD_parameters { 
+public:
 	// all modifiers have to do with intelligence
 	unsigned int medical_modulo;	// how often do we update medical (default is every 100 heal points)
 	unsigned int medical_norm_modulo;	// sets the bounds of computation (default is 0 to 1000)
@@ -132,10 +133,8 @@ typedef struct JABIA_XPMOD_parameters {
 		archive & BOOST_SERIALIZATION_NVP(mechanical_xoffset);
 		archive & BOOST_SERIALIZATION_NVP(mechanical_modifier); 
     }
-} JABIA_XPMOD_parameters;
+};
 
-void save(std::string filepath);
-void load(JABIA_XPMOD_parameters * dr);
 unsigned int calc_medical(JABIA_XPMOD_parameters * params, JABIA_Character * ptr);
 unsigned int calc_explosives(JABIA_XPMOD_parameters * params, JABIA_Character * ptr);
 unsigned int calc_marksmanship(JABIA_XPMOD_parameters * params, JABIA_Character * ptr);

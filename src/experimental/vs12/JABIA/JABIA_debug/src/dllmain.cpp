@@ -85,7 +85,8 @@ INT APIENTRY DllMain(HMODULE hDLL, DWORD Reason, LPVOID Reserved)
 
 DWORD WINAPI MyThread(LPVOID)
 {
-	load(debugmod_params);
+	//load(debugmod_params);	
+	load(PATH_TO_DEBUGMOD_XML, debugmod_params);
 	char buf [100];
 	DWORD oldProtection;
 	BYTE Before_JMP[6]; // save retn here

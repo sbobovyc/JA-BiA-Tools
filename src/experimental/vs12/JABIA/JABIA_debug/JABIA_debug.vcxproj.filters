@@ -7,7 +7,7 @@
     <ClCompile Include="src\dllmain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\debug.cpp">
+    <ClCompile Include="..\src\game_version.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

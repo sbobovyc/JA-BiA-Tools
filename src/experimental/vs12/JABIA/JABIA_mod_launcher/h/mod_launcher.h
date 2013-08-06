@@ -11,12 +11,12 @@
 
 
 #if defined(JABIA)
-#define LAUNCHER_VERSION_STRING "Version 0.3d (BIA)\r\n"
+#define LAUNCHER_VERSION_STRING "Version 0.3e (BIA)\r\n"
 #define MOTD "For latest updates, check:\r\n http://www.moddb.com/mods/sbobovycs-jabia-mods-tools/downloads \r\n"
 #define LAUNCHER_NAME "JaggedAllianceBIA.exe"
 #define EXE_NAME "GameJABiA.exe"
 #elif defined(JAC)
-#define LAUNCHER_VERSION_STRING "Version 0.3d (CF)\r\n"
+#define LAUNCHER_VERSION_STRING "Version 0.3e (CF)\r\n"
 #define MOTD "For latest updates, check:\r\n http://www.moddb.com/mods/sbobovycs-jabia-mods-tools/downloads \r\n"
 #define LAUNCHER_NAME "JaggedAllianceCF.exe"
 #define EXE_NAME "GameJACrossfire.exe"

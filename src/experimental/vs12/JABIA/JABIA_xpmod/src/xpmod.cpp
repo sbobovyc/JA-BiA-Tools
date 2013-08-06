@@ -29,30 +29,6 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #include "character.h"
 #include "xpmod.h"
 
-void save(std::string filepath) 
-{ 	
-	std::ofstream file(filepath); 
-	boost::archive::xml_oarchive oa(file); 
-	JABIA_XPMOD_parameters d;
-	oa & BOOST_SERIALIZATION_NVP(d); 
-} 
-
-void load(JABIA_XPMOD_parameters * dr) 
-{ 
-	boost::filesystem::path working_dir = boost::filesystem::current_path();
-	boost::filesystem::path modpath(PATH_TO_XPMOD_XML);
-	boost::filesystem::path fullpath = working_dir / modpath;
-	if ( !(boost::filesystem::exists(fullpath) && boost::filesystem::is_regular_file(fullpath)) )    // does p actually exist and is p a regular file?   
-	{
-		save(fullpath.string());
-	}
-
-	std::ifstream file(fullpath.string()); 
-	boost::archive::xml_iarchive ia(file);   
-	//ia >> BOOST_SERIALIZATION_NVP(dr); 
-	OutputDebugString("Done loading xml");
-}
-
 unsigned int calc_medical(JABIA_XPMOD_parameters * params, JABIA_Character * ptr) {
 	// y = (-(medical_a * (heal points % modulo) - medical_xoffset)^2 + medical_b)*medical_modifier
 	double points = 0.0;

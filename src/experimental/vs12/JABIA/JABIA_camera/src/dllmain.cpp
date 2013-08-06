@@ -36,8 +36,8 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #pragma comment(lib,"detours.lib")
 
-void save(JABIA_camera_parameters * dr);
-JABIA_camera_parameters load();
+//void save(JABIA_camera_parameters * dr);
+//JABIA_camera_parameters load();
 DWORD WINAPI MyThread(LPVOID);
 int _stdcall myCameraCallback(float, int);
 void print_camera_info();
@@ -59,8 +59,9 @@ HMODULE game_handle; // address of GameJABiA.exe
 DWORD g_threadID;
 HMODULE g_hModule;
 Camera * camera_ptr;
-JABIA_camera_parameters params;
+JABIA_camera_parameters camera_params;
 
+/*
 void save(JABIA_camera_parameters * dr) 
 { 	
 	boost::filesystem::path working_dir = boost::filesystem::current_path();
@@ -91,7 +92,7 @@ JABIA_camera_parameters load()
 	OutputDebugString("Done loading xml");
 	return param;
 }
-
+*/
 
 INT APIENTRY DllMain(HMODULE hDLL, DWORD Reason, LPVOID Reserved)
 {
@@ -146,8 +147,8 @@ DWORD WINAPI MyThread(LPVOID)
 	print_camera_info();
 
 	// load custom camera settings from xml and set camera 
-	params = load();
-	SetCameraCustom(params.last_used);
+	load(PATH_TO_CAMERA_XML, camera_params);
+	SetCameraCustom(camera_params.last_used);
 
 	while(true)
 	{
@@ -221,7 +222,7 @@ BOOL CALLBACK DialogProc (HWND hwnd,
                           LPARAM lParam)
 {
 	HMENU hMenu;
-	int selected_custom = params.last_used;
+	int selected_custom = camera_params.last_used;
 	char buf[100];
 
     switch (message)
@@ -316,11 +317,11 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 				case IDC_SAVE:
 					wsprintf(buf, "Cst%i", selected_custom);
 					SetDlgItemText(hwnd, IDC_SELECTED_STATE, buf);
-					params.camera_min[selected_custom] = camera_ptr->camera_min;
-					params.camera_max[selected_custom] = camera_ptr->camera_max;
-					params.min_angle[selected_custom] = camera_ptr->min_angle;
-					params.max_angle_delta[selected_custom] = camera_ptr->max_angle_delta;
-					save(&params);
+					camera_params.camera_min[selected_custom] = camera_ptr->camera_min;
+					camera_params.camera_max[selected_custom] = camera_ptr->camera_max;
+					camera_params.min_angle[selected_custom] = camera_ptr->min_angle;
+					camera_params.max_angle_delta[selected_custom] = camera_ptr->max_angle_delta;
+					save(PATH_TO_CAMERA_XML, camera_params);
 					SetCameraCustom(selected_custom);
 					fillDialog(hwnd);
 					OutputDebugString("SAVED");
@@ -413,11 +414,11 @@ void SetCameraLowHigh(void) {
 }
 
 void SetCameraCustom(int i) {
-	params.last_used = i;
-	camera_ptr->camera_min = params.camera_min[i];
-	camera_ptr->camera_max = params.camera_max[i];
-	camera_ptr->min_angle = params.min_angle[i];
-	camera_ptr->max_angle_delta = params.max_angle_delta[i];
+	camera_params.last_used = i;
+	camera_ptr->camera_min = camera_params.camera_min[i];
+	camera_ptr->camera_max = camera_params.camera_max[i];
+	camera_ptr->min_angle = camera_params.min_angle[i];
+	camera_ptr->max_angle_delta = camera_params.max_angle_delta[i];
 }
 
 void SetCameraDefault(void) {

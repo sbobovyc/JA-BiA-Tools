@@ -30,7 +30,8 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #define PATH_TO_CAMERA_XML "\\mods\\camera\\JABIA_camera.xml"
 #define CAMERA_PARAMS_COUNT 4
 
-typedef struct JABIA_camera_parameters { 
+class JABIA_camera_parameters { 
+public:
 	int last_used;
 	float camera_min[CAMERA_PARAMS_COUNT];
 	float camera_max[CAMERA_PARAMS_COUNT];
@@ -49,10 +50,7 @@ typedef struct JABIA_camera_parameters {
 			max_angle_delta[i] = 0.8f;
 		}
 	}
-	
-	
-	
-	// TODO add pretty print 
+		
     friend std::ostream& operator << (std::ostream& out, JABIA_camera_parameters& d) 
     {
 		int last_used = d.last_used;
@@ -74,7 +72,7 @@ typedef struct JABIA_camera_parameters {
 		archive & BOOST_SERIALIZATION_NVP(min_angle);
 		archive & BOOST_SERIALIZATION_NVP(max_angle_delta);
     }
-} JABIA_camera_parameters;
+};
 
 
 
