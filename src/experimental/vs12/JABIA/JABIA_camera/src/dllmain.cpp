@@ -36,8 +36,6 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #pragma comment(lib,"detours.lib")
 
-//void save(JABIA_camera_parameters * dr);
-//JABIA_camera_parameters load();
 DWORD WINAPI MyThread(LPVOID);
 int _stdcall myCameraCallback(float, int);
 void print_camera_info();
@@ -61,38 +59,6 @@ HMODULE g_hModule;
 Camera * camera_ptr;
 JABIA_camera_parameters camera_params;
 
-/*
-void save(JABIA_camera_parameters * dr) 
-{ 	
-	boost::filesystem::path working_dir = boost::filesystem::current_path();
-	boost::filesystem::path modpath(PATH_TO_CAMERA_XML);
-	boost::filesystem::path fullpath = working_dir / modpath;
-	OutputDebugString(fullpath.string().c_str());
-	std::ofstream file(fullpath.string()); 	
-	boost::archive::xml_oarchive oa(file); 
-	OutputDebugString("Done saving xml");
-	oa & BOOST_SERIALIZATION_NVP(dr); 
-} 
-
-JABIA_camera_parameters load() 
-{ 
-	JABIA_camera_parameters param;
-	boost::filesystem::path working_dir = boost::filesystem::current_path();
-	boost::filesystem::path modpath(PATH_TO_CAMERA_XML);
-	boost::filesystem::path fullpath = working_dir / modpath;
-	if ( !(boost::filesystem::exists(fullpath) && boost::filesystem::is_regular_file(fullpath)) )    // does p actually exist and is p a regular file?   
-	{
-		save(&param);
-	}
-	OutputDebugString(fullpath.string().c_str());
-	std::ifstream file(fullpath.string()); 
-	boost::archive::xml_iarchive ia(file);   
-	
-	ia >> BOOST_SERIALIZATION_NVP(param); 
-	OutputDebugString("Done loading xml");
-	return param;
-}
-*/
 
 INT APIENTRY DllMain(HMODULE hDLL, DWORD Reason, LPVOID Reserved)
 {
