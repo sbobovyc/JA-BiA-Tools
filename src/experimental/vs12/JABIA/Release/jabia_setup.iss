@@ -5,7 +5,7 @@
 #define MyAppVersion "0.1a"
 #define MyAppPublisher "JABIA-Tools Project"
 #define MyAppURL "https://github.com/sbobovyc/JA-BiA-Tools"
-#define MyAppExeName "JABIA_mod_launcher.exe"
+#define MyAppExeName "JABIA_mod_launcher_ng.exe"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
@@ -34,11 +34,12 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: checkedonce; OnlyBelowVersion: 0,6.1
 
 [Files]
-Source: "C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\Release\JABIA_mod_launcher.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\Release\JABIA_mod_launcher_ng.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\Release\JABIA_debug.dll"; DestDir: "{app}\mods\debugger"; Flags: ignoreversion 
 Source: "C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\Release\JABIA_xpmod.dll"; DestDir: "{app}\mods\xpmod"; Flags: ignoreversion 
 Source: "C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\Release\JABIA_loot_drop.dll"; DestDir: "{app}\mods\loot_drop"; Flags: ignoreversion 
 Source: "C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\Release\JABIA_camera.dll"; DestDir: "{app}\mods\camera"; Flags: ignoreversion 
+Source: "C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\Release\JABIA_mod_launcher.xml"; DestDir: "{app}\mods"; Flags: ignoreversion 
 ;Source: "C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\Release\JABIA_pathmod.dll"; DestDir: "{app}\mods\pathmod"; Flags: ignoreversion 
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 

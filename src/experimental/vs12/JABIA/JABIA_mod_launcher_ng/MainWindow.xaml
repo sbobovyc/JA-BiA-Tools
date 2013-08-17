@@ -1,0 +1,23 @@
+﻿<Window x:Class="JABIA_mod_launcher_ng.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="JABIA-tools mod launcher (sbobovyc)" Height="350" Width="450" ResizeMode="CanMinimize" Icon="explosion.ico">
+    <Canvas>
+        <Button x:Name="LaunchButton" Click="Button_Click_Launch" Canvas.Left="344" Canvas.Top="280" Width="88" Height="30">Launch</Button>
+        <TextBlock Margin="10" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Visible">
+                        For latest updates visit the <Hyperlink RequestNavigate="Hyperlink_RequestNavigate" NavigateUri="http://www.moddb.com/mods/sbobovycs-jabia-mods-tools/downloads">project page</Hyperlink>.
+        </TextBlock>
+        <TextBox x:Name="LogTexBox" Canvas.Left="10" Canvas.Top="31" ScrollViewer.VerticalScrollBarVisibility="Visible" TextWrapping="Wrap" Width="277" Height="279">
+        </TextBox>
+        <ListBox x:Name="ModListBox" Canvas.Left="292" Canvas.Top="32" RenderTransformOrigin="0.535,0.514" ScrollViewer.VerticalScrollBarVisibility="Visible" Height="220" Width="140">
+            <ListBox.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Add mod" Click="Button_Click_AddMod" />
+                    <MenuItem Header="Remove mod" Click="Button_Click_RemoveMod" />
+                </ContextMenu>
+            </ListBox.ContextMenu>
+
+
+        </ListBox>
+    </Canvas>
+</Window>
