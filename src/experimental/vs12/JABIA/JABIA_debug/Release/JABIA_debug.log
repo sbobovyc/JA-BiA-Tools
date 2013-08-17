@@ -1,17 +1,8 @@
-﻿Build started 8/17/2013 6:45:04 PM.
+﻿Build started 8/17/2013 7:10:02 PM.
      1>Project "C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\JABIA_debug\JABIA_debug.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
-         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\CL.exe /c /Zi /nologo /W3 /WX- /Od /Oy- /D WIN32 /D NDEBUG /D _WINDOWS /D _USRDLL /D JABIA_EXPORTS /D _WINDLL /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Release\\" /Fd"Release\vc110.pdb" /Gd /TP /analyze- /errorReport:prompt ..\src\character.cpp ..\src\game_version.cpp src\dllmain.cpp
-         character.cpp
-         game_version.cpp
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\CL.exe /c /Zi /nologo /W3 /WX- /Od /Oy- /D WIN32 /D NDEBUG /D _WINDOWS /D _USRDLL /D JABIA_EXPORTS /D _WINDLL /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Release\\" /Fd"Release\vc110.pdb" /Gd /TP /analyze- /errorReport:prompt src\dllmain.cpp
          dllmain.cpp
-         Generating Code...
-       ResourceCompile:
-         C:\Program Files (x86)\Windows Kits\8.0\bin\x86\rc.exe /l"0x0409" /nologo /fo"Release\jabia.res" jabia.rc 
-     1>C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\include\string.h(57): warning RC4011: identifier truncated to '_CRT_SECURE_CPP_OVERLOAD_STANDA'
-         
-     1>C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\include\string.h(79): warning RC4011: identifier truncated to '_CRT_SECURE_CPP_OVERLOAD_SECURE'
-         
        Link:
          C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\Release\JABIA_debug.dll" /INCREMENTAL:NO /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\Release\JABIA_debug.pdb" /SUBSYSTEM:WINDOWS /OPT:REF /OPT:ICF /LTCG /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\Release\JABIA_debug.lib" /MACHINE:X86 /SAFESEH /DLL Release\jabia.res
          Release\character.obj
@@ -24,4 +15,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:07.13
+Time Elapsed 00:00:02.36

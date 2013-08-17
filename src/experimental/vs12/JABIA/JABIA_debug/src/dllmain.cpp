@@ -298,7 +298,7 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 			// add inventory slots to their combo box
 			for(int i = 0; i < JABIA_CHARACTER_INV_SLOTS; i++) {
 				char buf[5];
-				//wsprintf(buf, "%i", i);
+				wsprintf(buf, "%i", i);
 				SendMessage(comboControl3,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCTSTR)buf));
 			}
 
