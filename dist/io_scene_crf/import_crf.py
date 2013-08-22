@@ -511,6 +511,7 @@ def load(operator, context, filepath,
     #mathutils.Matrix(((-0.7251140475273132, -0.08301041275262833, -0.6836074590682983), (-0.6793055534362793, -0.07657606899738312, 0.7298495769500732), (-0.11293309181928635, 0.9936023950576782, -0.0008630511583760381)))
 
     # import bones
+    """
     if CRF.footer.get_jointmap() != None:
         amt = bpy.data.armatures.new("Armature")
         amt_ob = bpy.data.objects.new("Armature", amt)
@@ -536,7 +537,7 @@ def load(operator, context, filepath,
         print(amt_ob.matrix_world)        
         #bpy.context.object.data.bones["Bone01_Pelvis"].matrix = mat
         #amt_ob.pose.bones[str(crf_bone.bone_name)].matrix = mathutils.Matrix((crf_joint.matrix[0], crf_joint.matrix[1], crf_joint.matrix[2]))
-        
+    """        
     
     time_new = time.time()
     print("%.4f sec" % (time_new - time_sub))
