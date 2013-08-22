@@ -41,7 +41,7 @@ import struct
 from bpy_extras.io_utils import unpack_list, unpack_face_list
 from bpy_extras.image_utils import load_image
 
-from .crf_objects import CRF_vertex
+from .crf_objects import CRF_object
 
 def find_files(base, pattern):
     '''Return list of files matching pattern in base folder.'''
@@ -100,6 +100,7 @@ def addDiffuseTexture(color_filepath, mat):
     mtex.texture = tex
     mtex.texture_coords = 'UV'
     mtex.use_map_color_diffuse = True
+    mtex.use_map_alpha = True
 
 def addNormalTexture(normals_filepath, mat):
     realpath = os.path.expanduser(normals_filepath)
@@ -307,7 +308,7 @@ def parseMaterialInfo(file, specular_list):
                     print("Int is one", hex(file.tell()))
                     state = 99                            
                 
-        # specular constant        
+        # specular constant          
 ##        if state == 4:
 ##            print("STATE 4", flag)
 ##            if flag == "spcl":
@@ -326,13 +327,17 @@ def parseMaterialInfo(file, specular_list):
         
         if state == -1:
             print("This object's materials format is unsupported. Unknown at", hex(file.tell()))
-            return    
+            return 
         
 
 def load(operator, context, filepath,
          global_clamp_size=0.0,
          use_verbose=False,
-         use_image_search=True,
+         dump_first_only=False,
+         use_uv_map=True,
+         use_diffuse_texture=True,
+         use_normal_texture=True,
+         use_specular_texture=True,         
          use_computed_normals=False,
          use_shadeless=True,
          viz_normals=True,
@@ -358,24 +363,12 @@ def load(operator, context, filepath,
     time_main = time.time()
     print("\tparsing crf file...")
     time_sub = time.time()
-#     time_sub= sys.time()
 
     file = open(filepath, "rb")
-    crf_magick, = struct.unpack("<Q", file.read(8))    
-    if crf_magick != 0x1636E6B66:
-        print("Not a CRF file!")
-        return 
-
-    footer_offset1,footer_offset2 = struct.unpack("<II", file.read(8))
-    # so far found model type 0x2 and 0x4
-    object_type, magick4, num_meshes_in_file = struct.unpack("<III", file.read(12))
-    LoX, LoY, LoZ = struct.unpack("<fff", file.read(12))        
-    HiX, HiY, HiZ = struct.unpack("<fff", file.read(12)) #bounding box?
-    print("(%f, %f, %f) (%f, %f, %f)" % (LoX, LoY, LoZ, HiX, HiY, HiZ))
-    print("Object type", hex(object_type))
-
-    # start unpacking loop here
-    for model_number in range(0, num_meshes_in_file):
+    CRF = CRF_object(file)    
+    meshfile = CRF.meshfile
+    
+    for i in range(0, meshfile.num_meshes):
         verts_loc = []
         verts_tex0 = []
         verts_tex1 = []
@@ -384,101 +377,28 @@ def load(operator, context, filepath,
         vertex_normals = []
         vertex_specular = []
         vertex_blendweights1 = []
-
-        number_of_verteces, = struct.unpack("<I", file.read(4))
-        number_of_faces, = struct.unpack("<I", file.read(4))
-        print("Model: %i, verteces: %i, faces: %i" % (model_number, number_of_verteces, number_of_faces))
-        # read in face/vertex index list
-        for i in range(0, number_of_faces):
-                v1, v2, v3 = struct.unpack("<HHH", file.read(6))
-                face_vert_loc_indices = [v1, v2, v3]
-                face_vert_tex_indices = [v1, v2, v3]
-                faces.append((v1, v2, v3))
-                if use_verbose:
-                    print("face index %s, verts (%s, %s, %s)" % (i, v1, v2, v3))
-
-
-        #read start token     #0x0000200c01802102, 0x00
-        start_token, = struct.unpack("<Qx", file.read(9)) 
-
-
-        if use_verbose:
-            print("Loading file, printing raw vertex information.")
-        # read in verteces, vertex normals, ks, and UVs
-        for i in range(0, number_of_verteces):
-            vertex = CRF_vertex()
-            vertex.index = i
-            vertex.x, vertex.y, vertex.z, \
-                vertex.normal_x, vertex.normal_y, vertex.normal_z, vertex.normal_w, \
-                vertex.specular_blue, vertex.specular_green, vertex.specular_red, vertex.specular_alpha, \
-                vertex.u0, vertex.v0, vertex.u1, vertex.v1, \
-                vertex.blendweights1_x, vertex.blendweights1_y, \
-                vertex.blendweights1_z, vertex.blendweights1_w = struct.unpack("<fffBBBBBBBBhhhhBBBB", file.read(32))
-            
-            vertex.raw2blend()
-            
-            if use_verbose:                
-                print(vertex)            
-            
+        
+        mesh = meshfile.meshes[i]
+        faces = mesh.face_list
+        for vertex in mesh.verteces1:
             verts_loc.append( (vertex.x_blend, vertex.y_blend, vertex.z_blend) )            
             verts_tex0.append( (vertex.u0_blend, vertex.v0_blend) )        
 
             vertex_normals.append( (vertex.normal_x_blend, vertex.normal_y_blend, vertex.normal_z_blend, vertex.normal_w_blend) )
             vertex_specular.append( (vertex.specular_red_blend, vertex.specular_green_blend, vertex.specular_blue_blend, vertex.specular_alpha_blend) )
             vertex_blendweights1.append( (vertex.blendweights1_x_blend, vertex.blendweights1_y_blend, vertex.blendweights1_z_blend, vertex.blendweights1_w_blend) )
-
-        #read in separator 0x000000080008000000
-        #TODO not all files have this separator
-        print("Separator at", hex(file.tell()))
-        separator = struct.unpack("<8B", file.read(8))
-
-        if use_verbose:
-            print("Second vertex data stream at", hex(file.tell()))
-        #read in second vertex stream, but don't use it for anything
-        #TODO figure out why this is here
-        for i in range(0, number_of_verteces):
-            unknown0, unknown1 = struct.unpack("<ff", file.read(8))
-            if use_verbose:
-                print("vert index=%s, x?=%s, y?=%s" % (i, unknown0, unknown1))
-
-        #if object type is 0x4, read in second set of blendweights
-        #TODO not sure how this data is used
-        if object_type == 0x4:
-            if use_verbose:
-                print("Second blendweight? list at", hex(file.tell()))
-            unknown1, unknown2 = struct.unpack("<II", file.read(8))
-            for i in range(0, number_of_verteces):
-                blendweights2, = struct.unpack("<I", file.read(4))
-                if use_verbose:
-                    print(i, blendweights2)
-            # read in one more int
-            #file.read(8)
-        print(hex(file.tell()))
-            
-        #read in bounding box?
-        bounding_box = struct.unpack("<6f", file.read(24))
-        if use_verbose:
-            print("Bounding box? ", bounding_box)
-            
-        #read in material information
-        texture_name = b''
-        normal_name = b''
-        specular_name = b''
-        specular_list = []
-        texture_name, normal_name, specular_name = parseMaterialInfo(file, specular_list)        
-        print(texture_name, normal_name, specular_name, specular_list)    
-        #next is object bone information, not parsed
         
         # deselect all
         if bpy.ops.object.select_all.poll():
             bpy.ops.object.select_all(action='DESELECT')
 
         scene = context.scene
-    #     scn.objects.selected = []
+        #scn.objects.selected = []
 
+        # create blender mesh
         me = bpy.data.meshes.new("Dumped_Mesh")   # create a new mesh
         object_name = os.path.splitext(os.path.basename(filepath))[0]
-        ob = bpy.data.objects.new(os.fsdecode(object_name) + "_%i" % model_number, me)
+        ob = bpy.data.objects.new(os.fsdecode(object_name) + "_%i" % mesh.mesh_number, me)
         # Fill the mesh with verts, edges, faces
         from bpy_extras.io_utils import unpack_list
         me.vertices.add(len(verts_loc))
@@ -503,58 +423,121 @@ def load(operator, context, filepath,
             v1 = verts_in_face[0]
             v2 = verts_in_face[1]
             v3 = verts_in_face[2]
-            face_tex.append([ verts_tex0[v1], verts_tex0[v2], verts_tex0[v3] ] )
+            face_tex.append([ verts_tex0[v1], verts_tex0[v2], verts_tex0[v3] ]) 
 
-        if use_image_search:
+        # start all optional tasks        
+        # add uv map
+        if use_uv_map:
             uvMain = createTextureLayer("UV_Main", me, face_tex)
-            texture_filepath = findTextureFile(os.fsdecode(filepath),  texture_name.decode(sys.stdout.encoding))
-            normals_filepath = findTextureFile(os.fsdecode(filepath),  normal_name.decode(sys.stdout.encoding))
-            specular_filepath = findTextureFile(os.fsdecode(filepath),  specular_name.decode(sys.stdout.encoding))            
-            print(texture_filepath, normals_filepath, specular_filepath)            
+
+        # add texture
+        if use_diffuse_texture or use_normal_texture or use_specular_texture:
+            # create a material to which textures can be added
             mat = createMaterial('TexMat', use_shadeless, viz_normals)
-            if texture_filepath != None and texture_filepath != "":
-                addDiffuseTexture(texture_filepath, mat)
-            if normals_filepath != None and normals_filepath != "":
-                addNormalTexture(normals_filepath, mat)
-            if use_specular and specular_filepath != None and specular_filepath != "":
-                addSpecularTexture(specular_filepath, mat)                
+            if use_diffuse_texture:
+                diffuse_texture = mesh.materials.diffuse_texture            
+                diffuse_texture_filepath = findTextureFile(os.fsdecode(filepath),  diffuse_texture.decode(sys.stdout.encoding))
+                print("Adding diffuse texture ", diffuse_texture_filepath)        
+                if diffuse_texture_filepath != None and diffuse_texture_filepath != "":
+                    addDiffuseTexture(diffuse_texture_filepath, mat)
+                    mat.use_transparency = True
+                    mat.alpha = 0 #TODO check model data for this param
+            if use_normal_texture:
+                normal_texture = mesh.materials.normal_texture            
+                normal_texture_filepath = findTextureFile(os.fsdecode(filepath),  normal_texture.decode(sys.stdout.encoding))
+                print("Adding normals texture ", normal_texture_filepath)        
+                if normal_texture_filepath != None and normal_texture_filepath != "":
+                    addNormalTexture(normal_texture_filepath, mat)
+            if use_specular_texture:
+                specular_texture = mesh.materials.specular_texture            
+                specular_texture_filepath = findTextureFile(os.fsdecode(filepath),  specular_texture.decode(sys.stdout.encoding))
+                print("Adding normals texture ", specular_texture_filepath)        
+                if specular_texture_filepath != None and specular_texture_filepath != "":
+                    addSpecularTexture(specular_texture_filepath, mat)                            
             ob.data.materials.append(mat)
 
-        if viz_normals:
-            setVertexNormalsColors(me, ob.data.tessfaces, vertex_normals)
-            # if no materials exist, create one+
-            if len(ob.data.materials) == 0 and not use_image_search:
-                mat = createMaterial('SimpleMat', use_shadeless, viz_normals)
-                ob.data.materials.append(mat)
-        
-        if use_computed_normals:
-            for vertex, vertex_normal in zip(me.vertices, vertex_normals):
-                print("vertex index", vertex.index, vertex_normal)
-                vertex.normal = vertex_normal[0:3]
-                
+        # viz normals
+
+        # use computed normals
+
+        # add specular constant
         if use_specular:
+            vertex_specular = []
+            for vertex in mesh.verteces1:
+                vertex_specular.append((vertex.specular_red_blend, vertex.specular_green_blend, vertex.specular_blue_blend, vertex.specular_alpha_blend))
+                
             setVertexSpecularColors(me, ob.data.tessfaces, vertex_specular)
             # if no materials exist, create one+
-            if len(ob.data.materials) == 0 and not use_image_search:
+            if len(ob.data.materials) == 0:
                 mat = createMaterial('Specular', use_shadeless, viz_normals)
-                mat.specular_color = specular_list[0]
+                mat.specular_color = mesh.materials.specular_constant
                 ob.data.materials.append(mat)
             else:
-                #ob.data.materials[0] = specular_list[0]
-                ob.data.materials[0].specular_color = specular_list[0]
+                if mesh.materials.specular_constant != None:
+                    ob.data.materials[0].specular_color = mesh.materials.specular_constant
+                else:
+                    ob.data.materials[0].specular_color = (1, 0, 0)
+                    print("Failed to find specular constnat! FIXME")
                 print(ob.data.materials[0].specular_color)
-
-        if viz_blendweights:
-            setVertexBlendweightColors(me, ob.data.tessfaces, vertex_blendweights1)
-            # if no materials exist, create one+
-            if len(ob.data.materials) == 0 and not use_image_search:
-                mat = createMaterial('BlendweightMat', use_shadeless, True)
-                ob.data.materials.append(mat)
-
+                      
+        # viz blendweights
+        
+        # end all optional tasks
+        
         me.update(calc_tessface=True, calc_edges=True)
         new_objects.append(ob)
 
     # end loop
+
+    # add armature and bones
+    # Notes
+    # for bone in bpy.context.active_object.pose.bones: print(bone.name)
+    #   print(bone.matrix)
+    #amt = bpy.data.armatures.new(amtname)
+    #ob = bpy.data.objects.new(obname, amt)
+    #scn = bpy.context.scene
+    #scn.objects.link(ob)
+    #scn.objects.active = ob
+    #ob.select = True
+    #bpy.ops.object.mode_set(mode='EDIT')
+    #bone = amt.edit_bones.new('Bone')
+    #bone.head = (0,0,0)
+    #bone.tail = (0,0,1)        
+    #bpy.ops.object.mode_set(mode='OBJECT')
+    #bpy.context.object.data.edit_bones["Bone"].tail = mat * mathutils.Vector((0,0,0))
+    #bpy.context.object.data.edit_bones["Bone"].head = mat * mathutils.Vector((0,1,0))
+    #bpy.context.active_object.pose.bones[n].matrix = resting position of the bone
+    #bpy.context.active_object.data.bones[n].matrix = bone position at current key
+    #mathutils.Matrix(((-0.7251140475273132, -0.08301041275262833, -0.6836074590682983), (-0.6793055534362793, -0.07657606899738312, 0.7298495769500732), (-0.11293309181928635, 0.9936023950576782, -0.0008630511583760381)))
+
+    # import bones
+    """
+    if CRF.footer.get_jointmap() != None:
+        amt = bpy.data.armatures.new("Armature")
+        amt_ob = bpy.data.objects.new("Armature", amt)
+        scn = bpy.context.scene
+        scn.objects.link(amt_ob)
+        scn.objects.active = amt_ob
+        amt_ob.select = True
+        bpy.ops.object.mode_set(mode='EDIT')
+        for key,value in CRF.jointmap.bone_dict.items():
+            crf_joint = CRF.jointmap.joint_list[key]
+            bone = amt.edit_bones.new(value.bone_name.decode('UTF-8'))
+            bone.head = (0,0,0)
+            bone.tail = (0,0,1)        
+        bpy.ops.object.mode_set(mode='OBJECT')
+        bone_test = 3
+        mat = mathutils.Matrix(( (CRF.jointmap.joint_list[bone_test].matrix[0] + (0,)),
+                                (CRF.jointmap.joint_list[bone_test].matrix[1] + (0,)),
+                                (CRF.jointmap.joint_list[bone_test].matrix[2] + (0,)),
+                                 (0,0,0,1) ))
+        print(amt_ob.matrix_world)
+        print(mat)
+        amt_ob.matrix_world = mat
+        print(amt_ob.matrix_world)        
+        #bpy.context.object.data.bones["Bone01_Pelvis"].matrix = mat
+        #amt_ob.pose.bones[str(crf_bone.bone_name)].matrix = mathutils.Matrix((crf_joint.matrix[0], crf_joint.matrix[1], crf_joint.matrix[2]))
+    """        
     
     time_new = time.time()
     print("%.4f sec" % (time_new - time_sub))

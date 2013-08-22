@@ -21,8 +21,8 @@
 bl_info = {
     "name": "JABIA CRF format",
     "author": "Stanislav Bobovych",
-    "version": (0, 5),
-    "blender": (2, 6, 3),
+    "version": (0, 7),
+    "blender": (2, 6, 8),
     "location": "File > Import-Export",
     "description": "Import-Export CRF, Import CRF mesh, UV's, "
                    "materials and textures",
@@ -69,7 +69,7 @@ class ImportCRF(bpy.types.Operator, ImportHelper):
             name="Verbose",
             description="Verbose output to console",
             default=False,
-            )
+            )   
     use_shadeless = BoolProperty(
             name="Shadeless Materials",
             description="Use shadeless materials",
@@ -93,12 +93,31 @@ class ImportCRF(bpy.types.Operator, ImportHelper):
         description="Use vertex colors to visualize what may be specular colors",
         default=True,
         )
-    use_image_search = BoolProperty(
-        name="Image Search",
-        description="Search subdirs for any assosiated images " \
+
+    use_uv_map = BoolProperty(
+        name="Import UV map",
+        description="Import UV map",
+        default=True,
+        )
+    
+    use_diffuse_texture = BoolProperty(
+        name="Use diffuse texture",
+        description="Search subdirs for any assosiated diffuse texture " \
                     "(Warning, may be slow)",
         default=True,
         )
+    use_normal_texture = BoolProperty(
+        name="Use normal texture",
+        description="Search subdirs for any assosiated normals texture " \
+                    "(Warning, may be slow)",
+        default=True,
+        )
+    use_specular_texture = BoolProperty(
+        name="Use specular texture",
+        description="Search subdirs for any assosiated specular texture " \
+                    "(Warning, may be slow)",
+        default=True,
+        )        
     use_computed_normals = BoolProperty(
         name="Precomputed Normals",
         description="Use vertex normals stored in CRF",
@@ -167,7 +186,10 @@ class ImportCRF(bpy.types.Operator, ImportHelper):
         row.prop(self, "viz_blendweights")
         row = layout.split(percentage=0.67)
         row.prop(self, "use_specular")
-        layout.prop(self, "use_image_search")
+        layout.prop(self, "use_uv_map")        
+        layout.prop(self, "use_diffuse_texture")
+        layout.prop(self, "use_normal_texture")
+        layout.prop(self, "use_specular_texture")        
         layout.prop(self, "use_computed_normals")
 
         row = layout.split(percentage=0.67)
