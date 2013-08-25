@@ -13,6 +13,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "JABIA_camera", "JABIA_camer
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JABIA_mod_launcher_ng", "JABIA_mod_launcher_ng\JABIA_mod_launcher_ng.csproj", "{C4668DF6-00DE-4AFE-A01B-F926BB5FAAAC}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "JABIA_durable_weapons", "JABIA_durable_weapons\JABIA_durable_weapons.vcxproj", "{DD064EFA-9C51-468C-ACBE-45CDED608DAD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -83,6 +85,16 @@ Global
 		{C4668DF6-00DE-4AFE-A01B-F926BB5FAAAC}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{C4668DF6-00DE-4AFE-A01B-F926BB5FAAAC}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{C4668DF6-00DE-4AFE-A01B-F926BB5FAAAC}.Release|Win32.ActiveCfg = Release|Any CPU
+		{DD064EFA-9C51-468C-ACBE-45CDED608DAD}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{DD064EFA-9C51-468C-ACBE-45CDED608DAD}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{DD064EFA-9C51-468C-ACBE-45CDED608DAD}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{DD064EFA-9C51-468C-ACBE-45CDED608DAD}.Debug|Win32.ActiveCfg = Debug|Win32
+		{DD064EFA-9C51-468C-ACBE-45CDED608DAD}.Debug|Win32.Build.0 = Debug|Win32
+		{DD064EFA-9C51-468C-ACBE-45CDED608DAD}.Release|Any CPU.ActiveCfg = Release|Win32
+		{DD064EFA-9C51-468C-ACBE-45CDED608DAD}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{DD064EFA-9C51-468C-ACBE-45CDED608DAD}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{DD064EFA-9C51-468C-ACBE-45CDED608DAD}.Release|Win32.ActiveCfg = Release|Win32
+		{DD064EFA-9C51-468C-ACBE-45CDED608DAD}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

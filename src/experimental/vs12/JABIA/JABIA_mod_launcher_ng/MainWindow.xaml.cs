@@ -214,11 +214,14 @@ namespace JABIA_mod_launcher_ng
                 DllInjector inj = DllInjector.GetInstance;
                 foreach (Mod mod in settings.mods)
                 {
-                    LaunchButton.Dispatcher.Invoke((Action)delegate
+                    if (mod.enabled)
                     {
-                        LogTexBox.AppendText("\nInjecting " + mod.modPath);
-                    });
-                    DllInjectionResult result = inj.Inject(ProcName, mod.modPath);    
+                        LaunchButton.Dispatcher.Invoke((Action)delegate
+                        {
+                            LogTexBox.AppendText("\nInjecting " + mod.modPath);
+                        });
+                        DllInjectionResult result = inj.Inject(ProcName, mod.modPath);
+                    }
                 }
                 
             }

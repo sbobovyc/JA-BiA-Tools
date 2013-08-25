@@ -58,7 +58,7 @@ void load(std::string filepath, parameters & dr)
 	boost::filesystem::path fullpath = working_dir / modpath;
 	if ( !(boost::filesystem::exists(fullpath) && boost::filesystem::is_regular_file(fullpath)) )    // does p actually exist and is p a regular file?   
 	{
-		OutputDebugString("templated, Creating xml on load");
+		//OutputDebugString("templated, Creating xml on load");
 		parameters d;
 		save(fullpath.string(), d);
 	}
@@ -66,7 +66,7 @@ void load(std::string filepath, parameters & dr)
 	std::ifstream file(fullpath.string()); 
 	boost::archive::xml_iarchive ia(file);   
 	ia >> BOOST_SERIALIZATION_NVP(dr); 
-	OutputDebugString("templated, Done loading xml");
+	//OutputDebugString("templated, Done loading xml");
 }
 
 
