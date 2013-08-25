@@ -27,7 +27,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #if defined(JABIA)
 #define WEAPON_MINUMUM_FUNCTIONAL_DURABILITY_CALCULATION_OFFSET 0x1420CD
 #elif defined(JAC)
-#error Not implemented yet
+#define WEAPON_MINUMUM_FUNCTIONAL_DURABILITY_CALCULATION_OFFSET 0x1412FD
 #else
 #error Need to define either JABIA or JAC.
 #endif
