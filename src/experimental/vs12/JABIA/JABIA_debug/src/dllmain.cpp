@@ -24,6 +24,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #include <stdint.h>
 #include <stdio.h>
 #include <vector>
+#include <map>
 #include <algorithm>
 #include <shlobj.h>
 #include <objbase.h>
@@ -37,6 +38,8 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #include "debug.h"
 #include "resource.h"
 #include "character.h"
+#include "weapons.h"
+#include "assembly_opcodes.h"
 
 #pragma comment(lib, "detours.lib")
 
@@ -47,6 +50,7 @@ CharacterDestReturnPtr RemoveCharacter;
 CharacterDestructorPtr CharacterDestructor;
 ParseGameInfoReturnPtr ParseGameInfoReturn;
 SaveGame * CurrentSaveGamePtr;
+WeaponReturnPtr WeaponReturn;
 int * money_ptr;
 
 JABIA_DEBUGMOD_parameters debugmod_params;
@@ -61,8 +65,14 @@ HINSTANCE TheInstance = 0;
 std::vector<JABIA_Character *> jabia_characters;
 int last_character_selected_index = 0;
 int last_weaponslot_selected_index = 0;
+int last_weapon_inhand_selected_index = 0;
 int last_inventory_selected_index = 0;
 
+// weapon vector
+std::vector<JABIA_Weapon *> jabia_weapons;
+std::map<int, JABIA_Weapon *> jabia_weapons_map;
+
+// game info
 void myAccessGameInfo(int, GameInfo *);
 
 
@@ -110,11 +120,13 @@ DWORD WINAPI MyThread(LPVOID)
 		CharacterDestructor = (CharacterDestructorPtr)((uint32_t)game_handle+CHARACTER_DESTRUCTOR_OFFSET);
 		wsprintf (buf, "Address of CharacterDestructor 0x%x", CharacterDestructor);
 		OutputDebugString(buf);
-		ParseGameInfoReturn = (ParseGameInfoReturnPtr)((uint32_t)game_handle+PARSE_GAME_INFO_RETURN);
 		// find address of game info access function
-		//CurrentSaveGamePtr = (SaveGame **)((uint32_t)game_handle+CURRENT_GAME_INFO_POINTER);
 		ParseGameInfoReturn = (ParseGameInfoReturnPtr)((uint32_t)game_handle+PARSE_GAME_INFO_RETURN);
 		wsprintf (buf, "Address of ParseGameInfoReturn 0x%x", ParseGameInfoReturn);
+		OutputDebugString(buf); 
+		// find address of weapon constructor return
+		WeaponReturn = (WeaponReturnPtr)((uint32_t)game_handle+WEAPON_CONST_RETURN_OFFSET);
+		wsprintf (buf, "Address of WeaponReturn 0x%x", WeaponReturn);
 		OutputDebugString(buf); 
 
 		// If jabia_characters is not empty, clear it. Every time the game loads a level, character pointers change.
@@ -132,25 +144,25 @@ DWORD WINAPI MyThread(LPVOID)
 
 		jabia_characters.clear();
 		
-		// read + write
+		// hook character constructor return
 		VirtualProtect(ParseCharacter, 6, PAGE_EXECUTE_READWRITE, &oldProtection);
 		DWORD JMPSize = ((DWORD)myCharacterConstReturn - (DWORD)ParseCharacter - 5);		
-		BYTE JMP[6] = {0xE9, 0x90, 0x90, 0x90, 0x90, 0x90}; // JMP NOP NOP ...
+		BYTE JMP_hook[6] = {JMP, NOP, NOP, NOP, NOP, NOP}; 
 		memcpy((void *)Before_JMP, (void *)ParseCharacter, 6); // save retn
-		memcpy(&JMP[1], &JMPSize, 4);
+		memcpy(&JMP_hook[1], &JMPSize, 4);
 		//wsprintf(buf, "JMP: %x%x%x%x%x", JMP[0], JMP[1], JMP[2], JMP[3], JMP[4], JMP[5]);
 		//OutputDebugString(buf);
-		// overwrite retn with JMP
-		memcpy((void *)ParseCharacter, (void *)JMP, 6);
+		// overwrite retn with JMP_hook
+		memcpy((void *)ParseCharacter, (void *)JMP_hook, 6);
 		// restore protection
 		VirtualProtect((LPVOID)ParseCharacter, 6, oldProtection, NULL);
 
-		// hook destructor return
+		// hook character destructor return
 		VirtualProtect(RemoveCharacter, 6, PAGE_EXECUTE_READWRITE, &oldProtection);
 		JMPSize = ((DWORD)myCharacterDestReturn - (DWORD)RemoveCharacter - 5);		
-		memcpy(&JMP[1], &JMPSize, 4);
+		memcpy(&JMP_hook[1], &JMPSize, 4);
 		// overwrite retn with JMP
-		memcpy((void *)RemoveCharacter, (void *)JMP, 6);
+		memcpy((void *)RemoveCharacter, (void *)JMP_hook, 6);
 		// restore protection
 		VirtualProtect((LPVOID)RemoveCharacter, 6, oldProtection, NULL);
 
@@ -158,19 +170,31 @@ DWORD WINAPI MyThread(LPVOID)
 		// hook parse game info return
 		VirtualProtect(ParseGameInfoReturn, 6, PAGE_EXECUTE_READWRITE, &oldProtection);
 		JMPSize = ((DWORD)mySaveGameParseReturn - (DWORD)ParseGameInfoReturn - 5);		
-		memcpy(&JMP[1], &JMPSize, 4);
-		// overwrite retn with JMP
-		memcpy((void *)ParseGameInfoReturn, (void *)JMP, 6);
+		memcpy(&JMP_hook[1], &JMPSize, 4);
+		// overwrite retn with JMP_hook
+		memcpy((void *)ParseGameInfoReturn, (void *)JMP_hook, 6);
 		// restore protection
 		VirtualProtect((LPVOID)ParseGameInfoReturn, 6, oldProtection, NULL);
-		
+
+		// hook weapon constructor return
+		VirtualProtect(WeaponReturn, 6, PAGE_EXECUTE_READWRITE, &oldProtection);
+		JMPSize = ((DWORD)myWeaponConstReturn - (DWORD)WeaponReturn - 5);		
+		memcpy(&JMP_hook[1], &JMPSize, 4);
+		// overwrite retn with JMP_hook
+		memcpy((void *)WeaponReturn, (void *)JMP_hook, 6);
+		// restore protection
+		VirtualProtect((LPVOID)WeaponReturn, 6, oldProtection, NULL);
+
+		wsprintf(buf, "Size of JABIA_Character struct %i", sizeof(JABIA_Character));
+		OutputDebugString(buf);
+		wsprintf(buf, "Size of JABIA_weapon struct %i", sizeof(JABIA_weapon));
+		OutputDebugString(buf);
 		wsprintf(buf, "First run? %i", debugmod_params.first_run);
 		OutputDebugString(buf);
+
 		if(debugmod_params.first_run) {
 			wsprintf(buf, "DLL successfully loaded. Load a save game and press F7 to bring up editor. Due to some bugs, you need to quit to main menu before you load another savegame. This message will not be shown on next launch.");
 			MessageBox (0, buf, "JABIA character debugger", MB_ICONEXCLAMATION | MB_OK | MB_SYSTEMMODAL);
-			wsprintf(buf, "Size of struct %i", sizeof(JABIA_Character));
-			OutputDebugString(buf);
 			debugmod_params.first_run = false;
 			boost::filesystem::path working_dir = boost::filesystem::current_path();
 			boost::filesystem::path modpath(PATH_TO_DEBUGMOD_XML);
@@ -247,9 +271,13 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 	HWND comboControl1;
 	HWND comboControl2;
 	HWND comboControl3;
+	HWND comboControl4;
+	HWND comboControl5;
 	comboControl1=GetDlgItem(hwnd,IDC_COMBO1);	
 	comboControl2=GetDlgItem(hwnd,IDC_COMBO2);	
 	comboControl3=GetDlgItem(hwnd,IDC_COMBO3);	
+	comboControl4=GetDlgItem(hwnd,IDC_COMBO4);	
+	comboControl5=GetDlgItem(hwnd,IDC_COMBO5);	
 	BOOL status = FALSE;
 	JABIA_Character * ptr = 0; // character address
 
@@ -276,7 +304,7 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 			}
 
 			// add characters to drop down list
-			for(unsigned long i = 0; i < jabia_characters.size(); i++) {							
+			for(size_t i = 0; i < jabia_characters.size(); i++) {							
 				SendMessage(comboControl1,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCTSTR)jabia_characters.at(i)->merc_name));
 				char buf[255];
 				wsprintf(buf, "In init, Character at 0x%X", jabia_characters.at(i));	
@@ -304,6 +332,24 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 
 			// select fist item in list
 			SendMessage(comboControl3, CB_SETCURSEL, 0, 0);
+
+			// add weapons to inventory weapons combo box
+			for( std::map<int, JABIA_Weapon *>::iterator ii=jabia_weapons_map.begin(); ii!=jabia_weapons_map.end(); ++ii) {
+				char buf[7];
+				uint32_t id = (*ii).second->ID;
+				wsprintf(buf, "%i", id);
+				SendMessage(comboControl4,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCTSTR)buf));					
+			}
+			SendMessage(comboControl4,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCTSTR)"None"));					
+
+			// add weapons to active weapon combo box
+			for( std::map<int, JABIA_Weapon *>::iterator ii=jabia_weapons_map.begin(); ii!=jabia_weapons_map.end(); ++ii) {
+				char buf[7];
+				uint32_t id = (*ii).second->ID;
+				wsprintf(buf, "%i", id);
+				SendMessage(comboControl5,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCTSTR)buf));					
+			}
+			SendMessage(comboControl5,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCTSTR)"None"));	
 
 			break;
         case WM_COMMAND:
@@ -342,11 +388,38 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 							break;
 					}
 					break;
+				case IDC_COMBO4:
+					switch(HIWORD(wParam))
+					{
+						case CBN_CLOSEUP:
+							// use combo box selected index to get weapon id
+							ptr = jabia_characters.at(last_character_selected_index);
+							setCharacter(hwnd, ptr, true, false);
+							fillDialog(hwnd, ptr);
+							break;
+					}
+					break;
+				case IDC_COMBO5:
+					switch(HIWORD(wParam))
+					{
+						case CBN_CLOSEUP:
+							char buf[50];
+							wsprintf(buf, "Combo5");
+							OutputDebugString(buf);
+							// use combo box selected index to get weapon id
+							ptr = jabia_characters.at(last_character_selected_index);
+							setCharacter(hwnd, ptr, false, true);
+							wsprintf(buf, "set done");
+							OutputDebugString(buf);
+							fillDialog(hwnd, ptr);
+							wsprintf(buf, "fill done");
+							OutputDebugString(buf);
+							break;
+					}
+					break;
                 case IDSET:
-					//char buf[50];
-					//wsprintf(buf, "Setting");
 					ptr = jabia_characters.at(last_character_selected_index);
-					setCharacter(hwnd, ptr);
+					setCharacter(hwnd, ptr, false, false);
 					setMoney(hwnd);
 					break;
 				case IDM_HEAL_CHARACTER:					
@@ -460,6 +533,41 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 
 	if(ptr != NULL) {
 		memcpy(&character, (void *)ptr, sizeof(JABIA_Character));		
+		
+		// add weapons to combo boxes
+		HWND comboControl4;
+		comboControl4=GetDlgItem(hwnd,IDC_COMBO4);			
+		uint32_t selected_weapon_id = character.inventory.weapons[last_weaponslot_selected_index].weapon;		
+		int weapon_id = 0;		
+		if(selected_weapon_id != 0xFFFF) {
+			for( std::map<int, JABIA_Weapon *>::iterator ii=jabia_weapons_map.begin(); ii!=jabia_weapons_map.end(); ++ii) {
+				uint32_t id = (*ii).second->ID;
+				if(selected_weapon_id == id) {
+					SendMessage(comboControl4, CB_SETCURSEL, weapon_id, 0);
+					break;
+				}
+				weapon_id++;
+			}		
+		} else {
+			SendMessage(comboControl4, CB_SETCURSEL, jabia_weapons_map.size(), 0);
+		}
+		
+		HWND comboControl5;
+		comboControl5=GetDlgItem(hwnd,IDC_COMBO5);			
+		uint32_t equiped_weapon_id = character.inventory.weapon_in_hand;		
+		weapon_id = 0;		
+		if(equiped_weapon_id != 0xFFFF) {
+			for( std::map<int, JABIA_Weapon *>::iterator ii=jabia_weapons_map.begin(); ii!=jabia_weapons_map.end(); ++ii) {
+				uint32_t id = (*ii).second->ID;
+				if(equiped_weapon_id == id) {
+					SendMessage(comboControl5, CB_SETCURSEL, weapon_id, 0);
+					break;
+				}
+				weapon_id++;
+			}		
+		} else {
+			SendMessage(comboControl5, CB_SETCURSEL, jabia_weapons_map.size(), 0);
+		}		
 
 		// address of character
 		_itoa_s((uint32_t)ptr, buf, 100, 16);
@@ -474,8 +582,8 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 		_itoa_s(character.training_points, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_TP, buf);
 
-		_itoa_s(character.inventory.weapon_in_hand, buf, 100, 10);
-		SetDlgItemText(hwnd, IDC_WPN_EQ, buf);
+		//_itoa_s(character.inventory.weapon_in_hand, buf, 100, 10);
+		//SetDlgItemText(hwnd, IDC_WPN_EQ, buf);
 
 		_itoa_s(character.inventory.weapon_in_hand_durability, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_WPN_EQ_DUR, buf);
@@ -554,8 +662,8 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 		SetDlgItemText(hwnd, IDC_MED_COND, buf);
 
 		// inventory
-		_itoa_s(character.inventory.weapons[last_weaponslot_selected_index].weapon, buf, 100, 10);
-		SetDlgItemText(hwnd, IDC_WPN_INV, buf);
+		//_itoa_s(character.inventory.weapons[last_weaponslot_selected_index].weapon, buf, 100, 10);
+		//SetDlgItemText(hwnd, IDC_WPN_INV, buf);
 
 		_itoa_s(character.inventory.weapons[last_weaponslot_selected_index].weapon_durability, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_WPN_INV_DUR, buf);
@@ -604,7 +712,7 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 	}	
 }
 
-void setCharacter(HWND hwnd, JABIA_Character * ptr) {
+void setCharacter(HWND hwnd, JABIA_Character * ptr, bool inventory_weapon_changed, bool equiped_weapon_changed) {
 	char buf [100];
 	JABIA_Character * character_ptr = ptr;
 	uint32_t level = 0;
@@ -667,15 +775,41 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr) {
 	training_points = atoi(buf);
 	character_ptr->training_points = training_points;
 
-	GetDlgItemText(hwnd, IDC_WPN_EQ, buf, 100);
-	weapon_in_hand = atoi(buf);
-	character_ptr->inventory.weapon_in_hand = weapon_in_hand;
+	if(equiped_weapon_changed) {		
+		GetDlgItemText(hwnd, IDC_COMBO5, buf, 100);
+		weapon_in_hand = atoi(buf);
+		if(weapon_in_hand != 0)
+		{								
+			character_ptr->inventory.weapon_in_hand = weapon_in_hand;
+			character_ptr->inventory.weapon_in_hand_durability = jabia_weapons_map[weapon_in_hand]->Quality;
+			character_ptr->inventory.ammo_equiped = jabia_weapons_map[weapon_in_hand]->AmmunitionType - 1 + AMMO_START_ID;
+			character_ptr->inventory.ammo_equiped_count = jabia_weapons_map[weapon_in_hand]->ClipSize;
+		} else {
+			character_ptr->inventory.weapon_in_hand = 0xFFFF;
+			character_ptr->inventory.weapon_in_hand_durability = 0;
+			character_ptr->inventory.ammo_equiped = 0xFFFF;
+			character_ptr->inventory.ammo_equiped_count = 0;
+		}
+	} else {
+		//GetDlgItemText(hwnd, IDC_WPN_EQ, buf, 100);
+		//weapon_in_hand = atoi(buf);
+		//character_ptr->inventory.weapon_in_hand = weapon_in_hand;
+
+		GetDlgItemText(hwnd, IDC_WPN_EQ_DUR, buf, 100);
+		weapon_in_hand_durability = atoi(buf);
+		character_ptr->inventory.weapon_in_hand_durability = weapon_in_hand_durability;
+
+		GetDlgItemText(hwnd, IDC_AMMO_EQ, buf, 100);
+		ammo_equiped = atoi(buf);
+		character_ptr->inventory.ammo_equiped = ammo_equiped;
+
+		GetDlgItemText(hwnd, IDC_AMMO_EQ_CNT, buf, 100);
+		ammo_equiped_count = atoi(buf);
+		character_ptr->inventory.ammo_equiped_count = ammo_equiped_count;
+
+	}
 
 	character_ptr->inventory.weapon_in_hand_removable = 1;
-
-	GetDlgItemText(hwnd, IDC_WPN_EQ_DUR, buf, 100);
-	weapon_in_hand_durability = atoi(buf);
-	character_ptr->inventory.weapon_in_hand_durability = weapon_in_hand_durability;
 
 	GetDlgItemText(hwnd, IDC_HELM_EQ, buf, 100);
 	helmet_equiped = atoi(buf);
@@ -737,14 +871,6 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr) {
 	pants_equiped_durability = atoi(buf);
 	character_ptr->inventory.pants_equiped_durability = pants_equiped_durability;
 
-	GetDlgItemText(hwnd, IDC_AMMO_EQ, buf, 100);
-	ammo_equiped = atoi(buf);
-	character_ptr->inventory.ammo_equiped = ammo_equiped;
-
-	GetDlgItemText(hwnd, IDC_AMMO_EQ_CNT, buf, 100);
-	ammo_equiped_count = atoi(buf);
-	character_ptr->inventory.ammo_equiped_count = ammo_equiped_count;
-
 	GetDlgItemText(hwnd, IDC_WPN_MOD, buf, 100);
 	weapon_attachment_removable = atoi(buf);
 	character_ptr->inventory.weapon_attachment_removable = weapon_attachment_removable;	
@@ -758,18 +884,32 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr) {
 	character_ptr->name_length = (uint32_t)strlen(character_ptr->merc_name);
 
 	// inventory
-	GetDlgItemText(hwnd, IDC_WPN_INV, buf, 100);
-	weapon = atoi(buf);
-	character_ptr->inventory.weapons[last_weaponslot_selected_index].weapon = weapon;
+	//GetDlgItemText(hwnd, IDC_WPN_INV, buf, 100);
+	//weapon = atoi(buf);
+	//character_ptr->inventory.weapons[last_weaponslot_selected_index].weapon = weapon;
+	//TODO put this in a separate function
+	if(inventory_weapon_changed) {
+		GetDlgItemText(hwnd, IDC_COMBO4, buf, 100);
+		weapon = atoi(buf);
+		if(weapon != 0)
+		{								
+			character_ptr->inventory.weapons[last_weaponslot_selected_index].weapon = weapon;
+			character_ptr->inventory.weapons[last_weaponslot_selected_index].weapon_durability = jabia_weapons_map[weapon]->Quality;
+			character_ptr->inventory.weapons[last_weaponslot_selected_index].ammo_count = jabia_weapons_map[weapon]->ClipSize;
+		} else {
+			character_ptr->inventory.weapons[last_weaponslot_selected_index].weapon = 0xFFFF;
+			character_ptr->inventory.weapons[last_weaponslot_selected_index].weapon_durability = 0;
+			character_ptr->inventory.weapons[last_weaponslot_selected_index].ammo_count = 0;
+		}
+	} else {
+		GetDlgItemText(hwnd, IDC_WPN_INV_DUR, buf, 100);
+		weapon_durability = atoi(buf);
+		character_ptr->inventory.weapons[last_weaponslot_selected_index].weapon_durability = weapon_durability;
 
-	GetDlgItemText(hwnd, IDC_WPN_INV_DUR, buf, 100);
-	weapon_durability = atoi(buf);
-	character_ptr->inventory.weapons[last_weaponslot_selected_index].weapon_durability = weapon_durability;
-
-	GetDlgItemText(hwnd, IDC_AMMO_INV_CNT, buf, 100);
-	ammo_count = atoi(buf);
-	character_ptr->inventory.weapons[last_weaponslot_selected_index].ammo_count = ammo_count;
-
+		GetDlgItemText(hwnd, IDC_AMMO_INV_CNT, buf, 100);
+		ammo_count = atoi(buf);
+		character_ptr->inventory.weapons[last_weaponslot_selected_index].ammo_count = ammo_count;	
+	}
 	character_ptr->inventory.weapons[last_weaponslot_selected_index].removable = 1;
 
 	// health and stamina
@@ -923,4 +1063,28 @@ __declspec(naked) void* mySaveGameParseReturn(){
 		add esp, 0x28;
 		retn 8;
 	}
+}
+
+__declspec(naked) void* myWeaponConstReturn(){	
+	__asm{
+		push eax;
+		mov ecx, eax;
+		call recordWeapons;
+		pop eax;
+		retn 8;
+	}
+}
+
+
+void __fastcall recordWeapons(void* instance){
+	char buf [100];
+	JABIA_Weapon * weapon_ptr;
+	OutputDebugString("Parsing weapon!");
+
+	weapon_ptr = (JABIA_Weapon *)instance;
+
+	wsprintf(buf, "Weapon at 0x%X, ID: %i", weapon_ptr, weapon_ptr->ID);
+	OutputDebugString(buf);
+	jabia_weapons.push_back(weapon_ptr);	
+	jabia_weapons_map[weapon_ptr->ID] = weapon_ptr;
 }

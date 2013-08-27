@@ -22,8 +22,6 @@
 #define IDC_BLEED_RATE                          1014
 #define IDC_INV_ITEM_ID                         1015
 #define IDC_HELM_EQ                             1016
-#define IDC_WPN_INV                             1018
-#define IDC_WPN_EQ                              1024
 #define IDC_HELM_EQ_DUR                         1026
 #define IDC_WPN_EQ_DUR                          1028
 #define IDC_DEX                                 1030
@@ -59,3 +57,5 @@
 #define IDM_DUMP_CHARACTER                      50003
 #define IDM_DUMP_ALL                            50004
 #define IDC_MONEY                               50005
+#define IDC_COMBO4                              50006
+#define IDC_COMBO5                              50007

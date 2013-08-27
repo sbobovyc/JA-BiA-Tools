@@ -21,6 +21,12 @@
     <ClInclude Include="h\debug.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\h\assembly_opcodes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="h\resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source Files">

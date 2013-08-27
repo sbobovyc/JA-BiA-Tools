@@ -53,7 +53,7 @@ namespace JABIA_mod_launcher_ng
 
     public class Settings
     {
-        public String version = "1.0";
+        public String version = "1.01";
         public List<Mod> mods = new List<Mod>();
         public List<string> modPaths;       
     }

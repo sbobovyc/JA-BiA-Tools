@@ -23,5 +23,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #define _ASSEMBLY_OPCODES_H_
 
 #define MULLS_XMM0 0xF30F5905
+#define JMP 0xE9
+#define NOP 0x90
 
 #endif /* _ASSEMBLY_OPCODES_H_ */
