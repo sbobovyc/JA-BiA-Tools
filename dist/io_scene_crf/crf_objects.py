@@ -365,12 +365,16 @@ class CRF_object(object):
     
 class CRF_header(object):
     def __init__(self, file):
+        print("===Parsing header===")
         crf_magick, = struct.unpack("<Q", file.read(8))    
         if crf_magick != 0x1636E6B66:
             print("Not a CRF file!")
             return 
         self.footer_offset1,self.footer_offset2 = struct.unpack("<II", file.read(8))
         self.footer_entries, = struct.unpack("<I", file.read(4))
+        print("Footer offset 1: %s, footer offset 2: %s" % (hex(self.footer_offset1).strip('L'), hex(self.footer_offset2).strip('L')))
+        print("Footer entries", self.footer_entries)
+        print("===End of parsing header===")
         
     def get_bin(self):
         data = b""
@@ -387,12 +391,14 @@ class CRF_footer(object):
         self.entries = []
         self.entry_descriptors = []
 
+        print("===Parsing footer===")
         file.seek(footer_offset1)
         for i in range(0, footer_entries):
             self.entries.append(CRF_entry(file))
                 
         for entry in self.entries:
             self.entry_descriptors.append(CRF_entry_descriptor(file, entry.magick))
+        print("===End of parsing footer===")
 
     def get_meshfile(self):
         for entry in self.entries:
@@ -436,7 +442,7 @@ class CRF_entry(object):
         self.magick, self.entry_id, self.file_offset, self.size = struct.unpack("<IIII", file.read(16))
         print("Magick: %s \n Entry: %s \n File offset: %s \n Size: %s" % (hex(self.magick), self.entry_id, hex(self.file_offset), self.size) )
         self.const = struct.unpack("<IIII", file.read(16))
-        print(self.const)
+        print("Unknown constants:", self.const)
 
     def get_bin(self):
         data = b""
@@ -476,16 +482,19 @@ class CRF_meshfile(object):
         self.model_bounding_box = None # ((LoX, LoY, LoZ), (HiX, HiY, HZ))
         self.meshes = []
 
+        print("===Parsing meshfile===")
         file.seek(file_offset)
         magick, self.num_meshes = struct.unpack("<II", file.read(8))
         LoX, LoY, LoZ = struct.unpack("<fff", file.read(12)) #bounding box       
         HiX, HiY, HiZ = struct.unpack("<fff", file.read(12)) #bounding box
         self.model_bounding_box = ((LoX, LoY, LoZ), (HiX, HiY, HiZ))
-        print("Number of meshes", self.num_meshes)        
+        print("Number of meshes:", self.num_meshes)        
         print("Bounding box of entire model: ", self.model_bounding_box)
 
         for i in range(0, self.num_meshes):
             self.meshes.append(CRF_mesh(file, file.tell(), i, verbose))
+
+        print("===End of parsing meshfile===")
 
     def scale(self, scale_factor):
         #TODO need to scale the bounding box
@@ -548,7 +557,7 @@ class CRF_mesh(object):
         self.materials = None
 
         # parse
-        print("Mesh %i, face/vertex list at %s" % (self.mesh_number, hex(file.tell())))
+        print("Mesh %i, face/vertex list at %s" % (self.mesh_number, hex(file.tell()).strip('L')))
         self.number_of_verteces, = struct.unpack("<I", file.read(4))
         self.number_of_faces, = struct.unpack("<I", file.read(4))
         print("Model verteces: %i, faces: %i" % (self.number_of_verteces, self.number_of_faces))
@@ -562,15 +571,16 @@ class CRF_mesh(object):
                 if verbose:
                     print("face index %s, verts (%s, %s, %s)" % (i, v1, v2, v3))
 
-        print("Vertex information starts at ", hex(file.tell()))                
+        print("Vertex information starts at", hex(file.tell()).strip('L'))                
         self.stream_count, = struct.unpack("<B", file.read(1))
-        print("Number of streams", self.stream_count)
+        print("Number of streams:", self.stream_count)
         # then the vertex declaration
         #TODO should probably parse this, but all meshes that I've seen tend to use the same layout
         layout, stride = struct.unpack("<II", file.read(8))
         self.vertex_stream1_layout = [layout, stride]
-        print("Stream0 declaration", hex(self.vertex_stream1_layout[0]), self.vertex_stream1_layout[1])
+        print("Stream0 declaration: %s, stride: %i bytes" % (hex(self.vertex_stream1_layout[0]).strip('L'), self.vertex_stream1_layout[1]))
 
+        print("Vertex stream at", hex(file.tell()).strip('L'))
         # read in verteces, vertex normals, ks, and UVs
         for i in range(0, self.number_of_verteces):
             vertex = CRF_vertex()
@@ -584,8 +594,8 @@ class CRF_mesh(object):
         if self.stream_count > 1:
             layout, stride = struct.unpack("<II", file.read(8))
             self.vertex_stream2_layout = [layout, stride]
-            print("Stream1 declaration", hex(self.vertex_stream2_layout[0]), self.vertex_stream2_layout[1])        
-            print("First blendweight and blendindex stream at", hex(file.tell()))
+            print("Stream1 declaration: %s, stride: %i bytes" % (hex(self.vertex_stream2_layout[0]).strip('L'), self.vertex_stream2_layout[1]))
+            print("First blendweight and blendindex stream at", hex(file.tell()).strip('L'))
             for i in range(0, self.number_of_verteces):
                 vertex_blend = CRF_vertex_blend()
                 vertex_blend.bin2raw(file, file.tell(), i, verbose)
@@ -594,7 +604,7 @@ class CRF_mesh(object):
         if self.stream_count > 2:
             layout, stride = struct.unpack("<II", file.read(8))
             self.vertex_stream3_layout = [layout, stride]
-            print("Stream2 declaration", hex(self.vertex_stream3_layout[0]), self.vertex_stream3_layout[1])
+            print("Stream2 declaration", hex(self.vertex_stream3_layout[0]).strip('L'), self.vertex_stream3_layout[1])
             
             for i in range(0, self.number_of_verteces):
                 if stride == 4:
@@ -603,7 +613,7 @@ class CRF_mesh(object):
                     vertex_blend = CRF_vertex_blend()
                 vertex_blend.bin2raw(file, file.tell(), i, verbose)
                 self.verteces3.append(vertex_blend)            
-        print("End of vertex data", hex(file.tell()))
+        print("End of vertex data at", hex(file.tell()).strip('L'))
 
         #read in mesh bounding box
         LoX, LoY, LoZ = struct.unpack("<fff", file.read(12)) #bounding box       
@@ -612,7 +622,9 @@ class CRF_mesh(object):
         print("Bounding box of model %i: %s" % (self.mesh_number, self.bounding_box))
 
         #material info comes next
+        print("==Parsing meshfile materials==")
         self.materials = CRF_materials(file, file.tell(), verbose)
+        print("==End of parsing meshfile materials==")
 
     def __str__(self):
         string = ""
@@ -674,7 +686,7 @@ class CRF_materials(object):
         self.custom1_2 = 0
         self.custom_array = [(0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0)] #TODO change into a map or an object
         
-        print("Materials at:", hex(file.tell()))
+        print("Materials at:", hex(file.tell()).strip('L'))
         self.material_type, = struct.unpack("2s", file.read(2))
         print("Material type:", self.material_type)
         self.material_subtype, = struct.unpack(">Q", file.read(8))
@@ -843,7 +855,7 @@ class CRF_materials(object):
                         print(self.custom1_2)                        
         else:
             print("Material type is not supported")
-        print("Materials end at: ", hex(file.tell()))
+        print("Materials end at:", hex(file.tell()).strip('L'))
 
     def get_bin(self):
         data = b""
