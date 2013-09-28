@@ -40,6 +40,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #include "character.h"
 #include "weapons.h"
 #include "assembly_opcodes.h"
+#include "ctx_file.h"
 
 #pragma comment(lib, "detours.lib")
 
@@ -49,7 +50,7 @@ CharacterConstReturnPtr ParseCharacter;
 CharacterDestReturnPtr RemoveCharacter;
 CharacterDestructorPtr CharacterDestructor;
 ParseGameInfoReturnPtr ParseGameInfoReturn;
-SaveGame * CurrentSaveGamePtr;
+SaveGame * CurrentSaveGamePtr = NULL;
 WeaponReturnPtr WeaponReturn;
 int * money_ptr;
 
@@ -75,6 +76,7 @@ std::map<int, JABIA_Weapon *> jabia_weapons_map;
 // game info
 void myAccessGameInfo(int, GameInfo *);
 
+CTX_file ctx;
 
 INT APIENTRY DllMain(HMODULE hDLL, DWORD Reason, LPVOID Reserved)
 {
@@ -204,8 +206,68 @@ DWORD WINAPI MyThread(LPVOID)
 	
 		while(true)
 		{
+			//TODO add size checking to all data structures and give a warning and exit thread if something is size 0
+			uint32_t address;
 			if(GetAsyncKeyState(VK_F7) & 1)
 			{
+				
+				/*
+				// TODO put memory scanner in its own function
+				int MIN_MEM = 0x00BF0000;
+				int MAX_MEM = 0x7FFFFFFF;
+				unsigned char BYTE_PATTER[] = {0xDC, 0x00, 0x10, 0x00, 0x00, 0x00, 0x63, 0x6F, 
+									0x75, 0x72, 0x69, 0x65, 0x72, 0x5F, 0x64, 0x63,
+									0x5F, 0x64, 0x6D, 0x5F, 0x30, 0x30};
+				MEMORY_BASIC_INFORMATION mbi = {0};
+				SYSTEM_INFO sInfo;
+				GetSystemInfo(&sInfo);	
+				unsigned char * pAddress   = NULL,*pEndRegion = NULL;
+				DWORD dwProtectionMask=  PAGE_READONLY | PAGE_EXECUTE_WRITECOPY 
+                              | PAGE_READWRITE | PAGE_WRITECOMBINE;
+				pEndRegion = (unsigned char *)(sInfo.lpMinimumApplicationAddress);
+				while( sizeof(mbi) == VirtualQuery(pEndRegion, &mbi, sizeof(mbi)) ){
+					pAddress = pEndRegion;
+					pEndRegion += mbi.RegionSize;
+					(PAGE_GUARD | PAGE_NOCACHE | PAGE_NOACCESS);
+					if ((mbi.AllocationProtect & dwProtectionMask) && (mbi.State & MEM_COMMIT) && !(mbi.Protect & (PAGE_GUARD | PAGE_NOCACHE | PAGE_NOACCESS))) {
+						wsprintf (buf, "Scanning page 0x%x", pAddress);
+						OutputDebugString(buf); 
+						 for (pAddress; pAddress < pEndRegion ; pAddress++){
+							 int diff = 0;
+							for(int j = 0; j < 22; j++) {
+								diff = BYTE_PATTER[j] - *((unsigned char *)pAddress+j);
+								if(diff != 0) break;
+							}
+							if(diff == 0) {
+								wsprintf (buf, "Found pattern at 0x%x", pAddress);
+								OutputDebugString(buf); 
+								address = (uint32_t)pAddress;
+								goto DONE_MEM_SCAN;
+							}
+						 }
+					}
+				}
+				DONE_MEM_SCAN:
+				wsprintf (buf, "CTX at 0x%x", address+22);
+				OutputDebugString(buf); 
+				ctx = CTX_file((void *)(address+22));
+				for( std::map<int, wchar_t *>::iterator ii=ctx.string_map.begin(); ii!=ctx.string_map.end(); ++ii) {
+					wchar_t wbuf[255];
+					int id = (*ii).first;
+					wsprintfW(wbuf, L"%i %s", id, ctx.string_map[id]);		
+					OutputDebugStringW(wbuf);
+				}
+				FreeLibraryAndExitThread(g_hModule, 0);
+				return 0;
+				*/
+				
+
+				if(jabia_characters.size() == 0) {
+					wsprintf(buf, "You need to load a save or start a new game.");
+					MessageBox (0, buf, "JABIA character debugger", MB_ICONEXCLAMATION | MB_OK | MB_SYSTEMMODAL);
+					continue;
+				}
+
 				wsprintf (buf, "CurrentSaveGamePtr 0x%x", CurrentSaveGamePtr);
 				OutputDebugString(buf); 
 				wsprintf (buf, "Current money %i", CurrentSaveGamePtr->money);
@@ -347,7 +409,10 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 				char buf[7];
 				uint32_t id = (*ii).second->ID;
 				wsprintf(buf, "%i", id);
-				SendMessage(comboControl5,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCTSTR)buf));					
+				SendMessage(comboControl5,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCTSTR)buf));	
+				//wchar_t wbuf[255];
+				//wsprintfW(wbuf, L"%i %s", id, ctx.string_map[id]);	
+				//SendMessage(comboControl5,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPWSTR)wbuf));	
 			}
 			SendMessage(comboControl5,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCTSTR)"None"));	
 

@@ -16,8 +16,6 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-# <pep8-80 compliant>
-
 bl_info = {
     "name": "JABIA CRF format",
     "author": "Stanislav Bobovych",
@@ -199,7 +197,7 @@ class ImportCRF(bpy.types.Operator, ImportHelper):
 
 
 
-class ExportOBJ(bpy.types.Operator, ExportHelper):
+class ExportCRF(bpy.types.Operator, ExportHelper):
     '''Save a JABIA CRF File'''
 
     bl_idname = "export_scene.crf"
@@ -364,7 +362,7 @@ def menu_func_import(self, context):
 
 
 def menu_func_export(self, context):
-    self.layout.operator(ExportOBJ.bl_idname, text="Compiled Resource File (.crf)")
+    self.layout.operator(ExportCRF.bl_idname, text="Compiled Resource File (.crf)")
 
 
 def register():

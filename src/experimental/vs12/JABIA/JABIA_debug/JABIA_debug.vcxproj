@@ -13,6 +13,7 @@
   <ItemGroup>
     <ClInclude Include="..\h\assembly_opcodes.h" />
     <ClInclude Include="..\h\character.h" />
+    <ClInclude Include="..\h\ctx_file.h" />
     <ClInclude Include="..\h\game.h" />
     <ClInclude Include="h\debug.h" />
     <ClInclude Include="h\resource.h" />
