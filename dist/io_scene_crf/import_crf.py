@@ -38,7 +38,7 @@ import time
 import bpy
 import mathutils
 import struct
-from bpy_extras.io_utils import unpack_list, unpack_face_list
+from bpy_extras.io_utils import unpack_list, unpack_face_list, axis_conversion
 from bpy_extras.image_utils import load_image
 
 from .crf_objects import CRF_object
@@ -538,7 +538,35 @@ def load(operator, context, filepath,
         #bpy.context.object.data.bones["Bone01_Pelvis"].matrix = mat
         #amt_ob.pose.bones[str(crf_bone.bone_name)].matrix = mathutils.Matrix((crf_joint.matrix[0], crf_joint.matrix[1], crf_joint.matrix[2]))
     """        
+
+    #TODO just debugging importing joints
+    """
+    if CRF.footer.get_jointmap() != None:
+        for key,value in CRF.jointmap.bone_dict.items():
+            crf_joint = CRF.jointmap.joint_list[key]
+            print(crf_joint)
+            joint_location = [0,0,0]
+            joint_location[0] = crf_joint.matrix[3][2]
+            joint_location[1] = crf_joint.matrix[3][1] * -1
+            joint_location[2] = crf_joint.matrix[3][0]
+            if joint_location[2] < 0:
+                joint_location[2] *= -1
+            bpy.ops.mesh.primitive_uv_sphere_add(size=0.25, location=(tuple(joint_location)))
+            bpy.context.object.name = "joint_%s" % crf_joint.joint_id
+    """
     
+    if CRF.footer.get_jointmap() != None:
+        for key,value in CRF.jointmap.bone_dict.items():
+            crf_joint = CRF.jointmap.joint_list[key]            
+            m = mathutils.Matrix(crf_joint.matrix)
+            m = m.inverted().transposed()
+            print("Bone %i\n" % key, m)
+            rot = axis_conversion(from_forward='-Z', from_up='Y').to_4x4()
+            m = rot * m
+            bpy.ops.mesh.primitive_uv_sphere_add(size=0.1, location=(0,0,0))
+            bpy.context.object.matrix_world = m
+            bpy.context.object.name = "joint_%s" % crf_joint.joint_id            
+            
     time_new = time.time()
     print("%.4f sec" % (time_new - time_sub))
     time_sub = time_new

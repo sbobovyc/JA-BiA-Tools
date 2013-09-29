@@ -1139,7 +1139,7 @@ class CRF_vertex(object):
 class CRF_joint(object):
     def __init__(self):
         self.joint_id = 0
-        self.matrix = [ (0,0,0), (0,0,0), (0,0,0) ]
+        self.matrix = [ (0,0,0,0), (0,0,0,0), (0,0,0,0), (0,0,0,1) ]
         self.parent_id = 0xFFFFFFFF
         self.skeleton_index = 0
         self.i1 = 0
@@ -1148,7 +1148,7 @@ class CRF_joint(object):
     def __str__(self):
         string = ""
         string += "Joint id: %s\n" % self.joint_id
-        string += "Matrix: \n%s\n%s\n%s\n" % (self.matrix[0],self.matrix[1],self.matrix[2])
+        string += "Matrix: \n%s\n%s\n%s\n%s\n" % (self.matrix[0],self.matrix[1],self.matrix[2],self.matrix[3])
         string += "Parent: %s\n" % self.parent_id
         string += "Skeleton index: %s\n" % self.skeleton_index        
         string += "Unknown: %s, %s\n" % (self.i1, self.i2)
@@ -1201,9 +1201,10 @@ class CRF_jointmap(object):
             joint.i2, = struct.unpack("<I", file.read(4))
 
             joint.matrix = []
-            joint.matrix.append( (f11, f12, f13) )
-            joint.matrix.append( (f21, f22, f23) )
-            joint.matrix.append( (f31, f32, f33) )
+            joint.matrix.append( (f11, f12, f13, 0) )
+            joint.matrix.append( (f21, f22, f23, 0) )
+            joint.matrix.append( (f31, f32, f33, 0) )
+            joint.matrix.append( (f41, f42, f43, 1) )
 
             print("Bone id:", i)
             print(joint)
