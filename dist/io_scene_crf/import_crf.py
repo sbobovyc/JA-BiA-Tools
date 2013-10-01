@@ -328,8 +328,50 @@ def parseMaterialInfo(file, specular_list):
         if state == -1:
             print("This object's materials format is unsupported. Unknown at", hex(file.tell()))
             return 
-        
 
+def bone_transform(joint_matrix):
+    m = mathutils.Matrix(joint_matrix)
+    m = m.inverted().transposed()
+    rot = axis_conversion(from_forward='-Z', from_up='Y').to_4x4()
+    m = rot * m
+    return m
+
+def make_skel(amt, crf_jointmap, parent_id):
+    crf_joint = crf_jointmap.joint_list[parent_id]
+    crf_bone = crf_jointmap.bone_dict[parent_id]
+    m = bone_transform(crf_joint.matrix)
+    
+    if len(crf_bone.child_list) == 0:
+        return
+    if parent_id == 0: #if root bone
+        bone = amt.edit_bones.new(crf_bone.bone_name.decode('UTF-8'))            
+        bone.head = (0,0,0)
+        bone.tail = (0,-1,0)
+        bone.transform(m)
+        head = bone.head.copy()
+        tail = bone.tail.copy() 
+        bone.tail = (0,0,0)
+        bone.tail = head
+        bone.head = tail
+
+    for child_id in crf_bone.child_list:
+        crf_joint = crf_jointmap.joint_list[child_id]
+        m = bone_transform(crf_joint.matrix)
+        parent_name = crf_jointmap.bone_dict[parent_id].bone_name.decode('UTF-8')
+        child_name = crf_jointmap.bone_dict[child_id].bone_name.decode('UTF-8')
+        bone = amt.edit_bones.new(child_name)
+        bone.head = (0,0,0)
+        bone.tail = (0,0,0.2)
+        bone.transform(m)
+        bone.parent = amt.edit_bones[parent_name]        
+        head = bone.head.copy()
+        tail = bone.tail.copy() 
+        bone.tail = (0,0,0)                
+        amt.edit_bones[child_name].head = amt.edit_bones[parent_name].tail
+        amt.edit_bones[child_name].tail = head
+        bone.use_connect = True
+        make_skel(amt, crf_jointmap, child_id)
+              
 def load(operator, context, filepath,
          global_clamp_size=0.0,
          use_verbose=False,
@@ -488,30 +530,10 @@ def load(operator, context, filepath,
         new_objects.append(ob)
 
     # end loop
-
-    # add armature and bones
-    # Notes
-    # for bone in bpy.context.active_object.pose.bones: print(bone.name)
-    #   print(bone.matrix)
-    #amt = bpy.data.armatures.new(amtname)
-    #ob = bpy.data.objects.new(obname, amt)
-    #scn = bpy.context.scene
-    #scn.objects.link(ob)
-    #scn.objects.active = ob
-    #ob.select = True
-    #bpy.ops.object.mode_set(mode='EDIT')
-    #bone = amt.edit_bones.new('Bone')
-    #bone.head = (0,0,0)
-    #bone.tail = (0,0,1)        
-    #bpy.ops.object.mode_set(mode='OBJECT')
-    #bpy.context.object.data.edit_bones["Bone"].tail = mat * mathutils.Vector((0,0,0))
-    #bpy.context.object.data.edit_bones["Bone"].head = mat * mathutils.Vector((0,1,0))
-    #bpy.context.active_object.pose.bones[n].matrix = resting position of the bone
-    #bpy.context.active_object.data.bones[n].matrix = bone position at current key
-    #mathutils.Matrix(((-0.7251140475273132, -0.08301041275262833, -0.6836074590682983), (-0.6793055534362793, -0.07657606899738312, 0.7298495769500732), (-0.11293309181928635, 0.9936023950576782, -0.0008630511583760381)))
-
+    
     # import bones
-    """
+    #TODO add bone weights
+    #TODO attach armature to all meshes
     if CRF.footer.get_jointmap() != None:
         amt = bpy.data.armatures.new("Armature")
         amt_ob = bpy.data.objects.new("Armature", amt)
@@ -519,53 +541,24 @@ def load(operator, context, filepath,
         scn.objects.link(amt_ob)
         scn.objects.active = amt_ob
         amt_ob.select = True
-        bpy.ops.object.mode_set(mode='EDIT')
-        for key,value in CRF.jointmap.bone_dict.items():
-            crf_joint = CRF.jointmap.joint_list[key]
-            bone = amt.edit_bones.new(value.bone_name.decode('UTF-8'))
-            bone.head = (0,0,0)
-            bone.tail = (0,0,1)        
-        bpy.ops.object.mode_set(mode='OBJECT')
-        bone_test = 3
-        mat = mathutils.Matrix(( (CRF.jointmap.joint_list[bone_test].matrix[0] + (0,)),
-                                (CRF.jointmap.joint_list[bone_test].matrix[1] + (0,)),
-                                (CRF.jointmap.joint_list[bone_test].matrix[2] + (0,)),
-                                 (0,0,0,1) ))
-        print(amt_ob.matrix_world)
-        print(mat)
-        amt_ob.matrix_world = mat
-        print(amt_ob.matrix_world)        
-        #bpy.context.object.data.bones["Bone01_Pelvis"].matrix = mat
-        #amt_ob.pose.bones[str(crf_bone.bone_name)].matrix = mathutils.Matrix((crf_joint.matrix[0], crf_joint.matrix[1], crf_joint.matrix[2]))
-    """        
-
-    #TODO just debugging importing joints
-    """
-    if CRF.footer.get_jointmap() != None:
-        for key,value in CRF.jointmap.bone_dict.items():
-            crf_joint = CRF.jointmap.joint_list[key]
-            print(crf_joint)
-            joint_location = [0,0,0]
-            joint_location[0] = crf_joint.matrix[3][2]
-            joint_location[1] = crf_joint.matrix[3][1] * -1
-            joint_location[2] = crf_joint.matrix[3][0]
-            if joint_location[2] < 0:
-                joint_location[2] *= -1
-            bpy.ops.mesh.primitive_uv_sphere_add(size=0.25, location=(tuple(joint_location)))
-            bpy.context.object.name = "joint_%s" % crf_joint.joint_id
-    """
-    
-    if CRF.footer.get_jointmap() != None:
+        
+        bpy.ops.object.mode_set(mode='EDIT')        
+        make_skel(amt, CRF.jointmap, 0)
+        """
         for key,value in CRF.jointmap.bone_dict.items():
             crf_joint = CRF.jointmap.joint_list[key]            
             m = mathutils.Matrix(crf_joint.matrix)
             m = m.inverted().transposed()
-            print("Bone %i\n" % key, m)
+            print("Bone %i\n" % key, m, "parent", crf_joint.parent_id)
             rot = axis_conversion(from_forward='-Z', from_up='Y').to_4x4()
             m = rot * m
+            crf_joint = CRF.jointmap.joint_list[key]
             bpy.ops.mesh.primitive_uv_sphere_add(size=0.1, location=(0,0,0))
             bpy.context.object.matrix_world = m
-            bpy.context.object.name = "joint_%s" % crf_joint.joint_id            
+            bpy.context.object.name = "joint_%s" % key
+        """            
+        bpy.ops.object.mode_set(mode='OBJECT')        
+        
             
     time_new = time.time()
     print("%.4f sec" % (time_new - time_sub))
