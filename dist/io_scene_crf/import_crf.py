@@ -422,6 +422,12 @@ def load(operator, context, filepath,
         
         mesh = meshfile.meshes[i]
         faces = mesh.face_list
+        
+        #convert from DirectX to Blender face vertex ordering
+        for i in range(0, len(faces)):
+            v1,v2,v3 = faces[i]
+            faces[i] = (v3,v2,v1)
+        
         for vertex in mesh.verteces1:
             verts_loc.append( (vertex.x_blend, vertex.y_blend, vertex.z_blend) )            
             verts_tex0.append( (vertex.u0_blend, vertex.v0_blend) )        
@@ -442,13 +448,18 @@ def load(operator, context, filepath,
         object_name = os.path.splitext(os.path.basename(filepath))[0]
         ob = bpy.data.objects.new(os.fsdecode(object_name) + "_%i" % mesh.mesh_number, me)
         # Fill the mesh with verts, edges, faces
-        from bpy_extras.io_utils import unpack_list
         me.vertices.add(len(verts_loc))
         me.vertices.foreach_set("co", unpack_list(verts_loc))
         me.tessfaces.add(len(faces))
         me.tessfaces.foreach_set("vertices_raw", unpack_face_list(faces))
-        #me.update(calc_edges=True)    # Update mesh with new data and in 2.63 convert tessfaces to poly
-
+        
+        
+        # use computed normals
+        if use_computed_normals:
+            for vertex, vertex_normal in zip(me.vertices, vertex_normals):
+                print("vertex index", vertex.index, vertex_normal)
+                vertex.normal = vertex_normal[0:3]
+                
         # fill face uv texture array
         for face in ob.data.tessfaces:
             verts_in_face = face.vertices[:]
@@ -466,7 +477,7 @@ def load(operator, context, filepath,
             v2 = verts_in_face[1]
             v3 = verts_in_face[2]
             face_tex.append([ verts_tex0[v1], verts_tex0[v2], verts_tex0[v3] ]) 
-
+        
         # start all optional tasks        
         # add uv map
         if use_uv_map:
@@ -499,9 +510,7 @@ def load(operator, context, filepath,
             ob.data.materials.append(mat)
 
         # viz normals
-
-        # use computed normals
-
+                
         # add specular constant
         if use_specular:
             vertex_specular = []
