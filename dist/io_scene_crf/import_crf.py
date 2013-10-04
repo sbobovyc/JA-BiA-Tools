@@ -409,7 +409,10 @@ def load(operator, context, filepath,
     file = open(filepath, "rb")
     CRF = CRF_object(file)    
     meshfile = CRF.meshfile
+
+    bad_vertex_list = []
     
+    # start importing meshes
     for i in range(0, meshfile.num_meshes):
         verts_loc = []
         verts_tex0 = []
@@ -418,15 +421,25 @@ def load(operator, context, filepath,
         face_tex = [] # tuples of uv coordinates for faces
         vertex_normals = []
         vertex_specular = []
-        vertex_blendweights1 = []
+        vertex_blendweights1 = []        
         
         mesh = meshfile.meshes[i]
         faces = mesh.face_list
         
         #convert from DirectX to Blender face vertex ordering
+        bad_mesh_vertex_list = []
         for i in range(0, len(faces)):
             v1,v2,v3 = faces[i]
-            faces[i] = (v3,v2,v1)
+            # if there are duplicated vertices in triangle, delete that face by making all vertices the same
+            if v1 == v2 or v1 == v3 or v2 == v3:
+                print("Found a bad face %i, eliminating %i,%i,%i" % (i,v1,v2,v3))
+                faces[i] = (v3,v3,v3)
+                bad_mesh_vertex_list.append(v1)
+                bad_mesh_vertex_list.append(v2)
+                bad_mesh_vertex_list.append(v3)
+            else:
+                faces[i] = (v3,v2,v1)
+        bad_vertex_list.append(bad_mesh_vertex_list)
         
         for vertex in mesh.verteces1:
             verts_loc.append( (vertex.x_blend, vertex.y_blend, vertex.z_blend) )            
@@ -439,9 +452,6 @@ def load(operator, context, filepath,
         # deselect all
         if bpy.ops.object.select_all.poll():
             bpy.ops.object.select_all(action='DESELECT')
-
-        scene = context.scene
-        #scn.objects.selected = []
 
         # create blender mesh
         me = bpy.data.meshes.new("Dumped_Mesh")   # create a new mesh
@@ -537,8 +547,7 @@ def load(operator, context, filepath,
         
         me.update(calc_tessface=True, calc_edges=True)
         new_objects.append(ob)
-
-    # end loop
+    # end loop for importing meshes
     
     # import bones
     #TODO add bone weights
@@ -581,12 +590,27 @@ def load(operator, context, filepath,
     time_sub = time_new
     
     # Create new obj
-    for obj in new_objects:
-        base = scene.objects.link(obj)
+    scene = context.scene    
+    for ob,bad_vertices in zip(new_objects,bad_vertex_list):
+        base = scene.objects.link(ob)
         base.select = True
 
         # we could apply this anywhere before scaling.
-        obj.matrix_world = global_matrix
+        ob.matrix_world = global_matrix
+        
+        #delete bad vertices
+        bpy.context.scene.objects.active = ob 
+        ob.select = True
+        bpy.ops.object.mode_set(mode='EDIT')
+        bpy.ops.mesh.select_all(action='DESELECT')
+        bpy.ops.object.mode_set(mode='OBJECT')
+        for v in bad_vertices:
+            print("Deleting vertex %i in %s" % (v, ob.name))
+            ob.data.vertices[v].select = True        
+        bpy.ops.object.mode_set(mode='EDIT')        
+        bpy.ops.mesh.delete(type='VERT')
+        bpy.ops.object.mode_set(mode='OBJECT')
+        
 
     scene.update()
 
@@ -613,9 +637,7 @@ def load(operator, context, filepath,
         for obj in new_objects:
             obj.scale = scale, scale, scale
 
-    
-    time_new = time.time()
-
+    time_new = time.time()    
     print("finished importing: %r in %.4f sec." % (filepath, (time_new - time_main)))
     return {'FINISHED'}
 
