@@ -9,6 +9,8 @@ CRF_MESHFILE = 0x1b4f7cc7
 CRF_JOINTMAP = 0xb8fa7643
 CRF_SKELETON = 0xbd9d53a3
 
+CRF_FOOTER_ENTRY_CONSTANTS = {CRF_ROOT_NODE:"CRF_ROOT_NODE", CRF_MESHFILE:"CRF_MESHFILE", CRF_JOINTMAP:"CRF_JOINTMAP", CRF_SKELETON:"CRF_SKELETON"}
+
 # unsupported constants
 CRF_SKININFO = None
 CRF_GEOMESH = None
@@ -336,10 +338,20 @@ CRF_SkinLayeredMP = "6tsc5tsc" #MP+ SkinLayered
 def float2uint32(number):
     return int(number * 4294967295)    
 
+def uint2float(uint_number):
+    if uint_number > 128:
+        return float(uint_number / 127.0)
+    elif uint_number < 128:
+        return float(-uint_number / 128.0)
+    else:
+        return 0.0
+    
 class CRF_object(object):
     def __init__(self, file):
-        self.header = CRF_header(file)
-        self.footer = CRF_footer(file, self.header.footer_offset1, self.header.footer_offset2, self.header.footer_entries)
+        self.header = CRF_header()
+        self.header.parse_bin(file)
+        self.footer = CRF_footer()
+        self.footer.parse_bin(file, self.header.footer_offset1, self.header.footer_offset2, self.header.footer_entries)
         self.meshfile = CRF_meshfile(file, self.footer.get_meshfile().file_offset)
         
         if(self.footer.get_jointmap() != None):
@@ -364,10 +376,17 @@ class CRF_object(object):
         return data
     
 class CRF_header(object):
-    def __init__(self, file):
+    def __init__(self):
+        self.crf_magick = b"fknc"
+        self.version = 1
+        self.footer_offset1 = 0
+        self.footer_offset2 = 0
+        self.footer_entries = 2 #TODO This only supports static objects. For animated objects, more complex footer has to be supported.
+		
+    def parse_bin(self,file):
         print("===Parsing header===")
-        crf_magick, = struct.unpack("<Q", file.read(8))    
-        if crf_magick != 0x1636E6B66:
+        self.crf_magick, self.version = struct.unpack("<4sI", file.read(8))    
+        if self.crf_magick != b"fknc":
             print("Not a CRF file!")
             return 
         self.footer_offset1,self.footer_offset2 = struct.unpack("<II", file.read(8))
@@ -378,8 +397,8 @@ class CRF_header(object):
         
     def get_bin(self):
         data = b""
-        data += b"fknc"
-        data += struct.pack("<I", 0x1)
+        data += self.crf_magick
+        data += struct.pack("<I", self.version)
         # footer offsets are blank and will get filled in later
         data += struct.pack("<I", self.footer_offset1)
         data += struct.pack("<I", self.footer_offset2)
@@ -387,41 +406,46 @@ class CRF_header(object):
         return data
         
 class CRF_footer(object):
-    def __init__(self, file, footer_offset1, footer_offset2, footer_entries):
+    def __init__(self):
         self.entries = []
         self.entry_descriptors = []
 
+    def parse_bin(self, file, footer_offset1, footer_offset2, footer_entries): 
         print("===Parsing footer===")
         file.seek(footer_offset1)
         for i in range(0, footer_entries):
-            self.entries.append(CRF_entry(file))
+            entry = CRF_entry()            
+            entry.parse_bin(file)
+            self.entries.append(entry)
                 
         for entry in self.entries:
-            self.entry_descriptors.append(CRF_entry_descriptor(file, entry.magick))
+            entry_description = CRF_entry_descriptor()
+            entry_description.parse_bin(file, entry.type)
+            self.entry_descriptors.append(entry_description)
         print("===End of parsing footer===")
 
     def get_meshfile(self):
         for entry in self.entries:
-            if entry.magick == CRF_MESHFILE:
+            if entry.type == CRF_MESHFILE:
                 return entry
         return None
 
     def get_jointmap(self):
         for entry in self.entries:
-            if entry.magick == CRF_JOINTMAP:
+            if entry.type == CRF_JOINTMAP:
                 return entry
         return None
 
     def get_skeleton(self):
         for entry in self.entries:
-            if entry.magick == CRF_SKELETON:
+            if entry.type == CRF_SKELETON:
                 return entry
         return None
     
     def update_meshfile(self, new_size):
         for i in range(0, len(self.entries)):
             entry = self.entries[i]
-            if entry.magick == CRF_MESHFILE:
+            if entry.type == CRF_MESHFILE:
                 self.entries[i].size = new_size 
 
     def get_bin(self):
@@ -433,29 +457,59 @@ class CRF_footer(object):
         return data
         
 class CRF_entry(object):
-    def __init__(self, file):
-        self.magick = None
+    def __init__(self):
+        self.type = None
         self.entry_id = None
         self.file_offset = None
         self.size = None
         self.const = None #(a, b, c, d) unknown
-        self.magick, self.entry_id, self.file_offset, self.size = struct.unpack("<IIII", file.read(16))
-        print("Magick: %s \n Entry: %s \n File offset: %s \n Size: %s" % (hex(self.magick), self.entry_id, hex(self.file_offset), self.size) )
+        
+    def parse_bin(self, file):
+        self.type, self.entry_id, self.file_offset, self.size = struct.unpack("<IIII", file.read(16))
+        print("Type: %s (%s) \n Entry: %s \n File offset: %s \n Size: %s" % (CRF_FOOTER_ENTRY_CONSTANTS[self.type], hex(self.type), self.entry_id, hex(self.file_offset), self.size) )
         self.const = struct.unpack("<IIII", file.read(16))
-        print("Unknown constants:", self.const)
+        print(" Unknown constants:", self.const)
+        
+    def create_rootnode(self):        
+        self.type = CRF_ROOT_NODE
+        self.entry_id = 0
+        self.file_offset = 0
+        self.size = 0
+        self.const = (0xFFFFFFFF, 1, 1, 0)
 
+    def create_meshfile(self, size):        
+        self.type = CRF_MESHFILE
+        self.entry_id = 1
+        self.file_offset = 0x14
+        self.size = size
+        self.const = (0, 0, 0, 0)
+        
     def get_bin(self):
         data = b""
-        data = struct.pack("<IIIIIIII", self.magick, self.entry_id, self.file_offset, self.size, *self.const)
+        data = struct.pack("<IIIIIIII", self.type, self.entry_id, self.file_offset, self.size, *self.const)
         return data
         
 class CRF_entry_descriptor(object):        
-    def __init__(self, file, CRF_TYPE):
-        self.type = CRF_TYPE
+    def __init__(self):
+        self.type = None
         self.entry_id = None
         self.name_length = None
         self.name = None
 
+    def create_rootnode(self):
+        self.type = CRF_ROOT_NODE
+        self.entry_id = 0
+        self.name_length = 9
+        self.name = b"root node"
+        
+    def create_meshfile(self):
+        self.type = CRF_MESHFILE
+        self.entry_id = 1
+        self.name_length = 8
+        self.name = b"meshfile"
+        
+    def parse_bin(self, file, CRF_TYPE):
+        self.type = CRF_TYPE
         if(self.type == CRF_ROOT_NODE):
             file.read(4)
             self.entry_id, = struct.unpack("<I", file.read(4))            
@@ -466,8 +520,7 @@ class CRF_entry_descriptor(object):
             self.name_length, = struct.unpack("<I", file.read(4))
             self.name, = struct.unpack("%ss" % self.name_length, file.read(self.name_length))
             file.read(4)
-        print(self.entry_id, self.name)
-
+        print("Entry id: %i, entry name: %s, entry type: %s" %(self.entry_id, self.name, CRF_FOOTER_ENTRY_CONSTANTS[self.type]))
 
     def get_bin(self):
         if(self.type == CRF_ROOT_NODE):
@@ -604,7 +657,7 @@ class CRF_mesh(object):
         if self.stream_count > 2:
             layout, stride = struct.unpack("<II", file.read(8))
             self.vertex_stream3_layout = [layout, stride]
-            print("Stream2 declaration", hex(self.vertex_stream3_layout[0]).strip('L'), self.vertex_stream3_layout[1])
+            print("Stream2 declaration: %s, stride: %i bytes" % (hex(self.vertex_stream3_layout[0]).strip('L'), self.vertex_stream3_layout[1]))
             
             for i in range(0, self.number_of_verteces):
                 if stride == 4:
@@ -929,6 +982,9 @@ class CRF_materials(object):
         return data
         
 class CRF_vertex_blend(object):
+    def raw2blend(self):
+        self.blendweight_blend = (uint2float(self.blendweight[0]), uint2float(self.blendweight[1]), uint2float(self.blendweight[2]), uint2float(self.blendweight[3]))
+        
     def bin2raw(self, file, file_offset, index, verbose=False):
         self.index = index
         self.blendweight = None

@@ -23,7 +23,7 @@ import bpy
 import mathutils
 import bpy_extras.io_utils
 
-from .crf_objects import CRF_vertex
+from .crf_objects import CRF_header,CRF_vertex,CRF_entry,CRF_entry_descriptor
 
 
 def _write(context, filepath,
@@ -72,9 +72,12 @@ def _write(context, filepath,
     matrix_world = ob_primary.matrix_basis # world matrix so we can transform from local to global coordinates
 
     # write header
+    #header = CRF_header()
+    #file.write(header.get_bin())
     file.write(b"fknc")
     file.write(struct.pack("<I", 1))
     file.write(struct.pack("<II", *(0xFFFF, 0xFFFF))) #these values are set after mesh data is written out
+    
     file.write(struct.pack("<IHH", *(2, 6, 0xFFFF)))# object type 2, magick 6, magick 0xFFFF
     file.write(struct.pack("<I", num_meshes))    #number of meshes in file, for now just one
     LoX = ob_primary.bound_box[0][0]    #TODO, put bbox into a function
@@ -331,13 +334,16 @@ def _write(context, filepath,
         # end of materials
     # end of all meshes
     
-    # trailer 1
-    #TODO this info should be represented by a data structure
+    # entries describing what's in the file
     trailer_1 = file.tell() 
     meshfile_size = trailer_1 - 0x14 # calculate size of meshfile 
-    file.write(struct.pack("<IIIIIIII", *(0, 0, 0, 0, 0xFFFFFFFF, 1, 1, 0)))
-    file.write(struct.pack("IIII", *(0x1b4f7cc7, 1, 0x14, meshfile_size)))
-    file.write(struct.pack("IIII", *(0,0,0, 0)))
+    root_node_entry = CRF_entry()
+    root_node_entry.create_rootnode()
+    file.write(root_node_entry.get_bin())
+    meshfile_entry = CRF_entry()
+    meshfile_entry.create_meshfile(meshfile_size)
+    file.write(meshfile_entry.get_bin())
+    
     trailer_1_end = file.tell()
 
     # put trailer1 and trailer2 offsets into the file header
@@ -345,14 +351,14 @@ def _write(context, filepath,
     file.write(struct.pack("<I", trailer_1)) # trailer1 file offset
     file.write(struct.pack("<I", trailer_1_end)) # trailer2 file offset
 
-    # trailer 2
+    # entry descriptions    
     file.seek(trailer_1_end)
-    file.write(struct.pack("<III", *(0,0,9)))
-    file.write(b"root node")
-    file.write(struct.pack("<II", *(1, 8)))
-    file.write(b"meshfile")
-    file.write(struct.pack("<I", 0))
-    
+    root_node_entry_description = CRF_entry_descriptor()
+    root_node_entry_description.create_rootnode()
+    file.write(root_node_entry_description.get_bin())
+    meshfile_entry_description = CRF_entry_descriptor()
+    meshfile_entry_description.create_meshfile()
+    file.write(meshfile_entry_description.get_bin())
 
     file.close()
     print("CRF Export time: %.2f" % (time.time() - time1))

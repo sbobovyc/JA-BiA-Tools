@@ -575,7 +575,17 @@ def load(operator, context, filepath,
             bpy.context.object.matrix_world = m
             bpy.context.object.name = "joint_%s" % key
         """            
-        bpy.ops.object.mode_set(mode='OBJECT')        
+        bpy.ops.object.mode_set(mode='OBJECT')
+    #TODO add skinning
+    """
+    bpy.context.selected_objects
+    bpy.ops.object.parent_set(type='ARMATURE_NAME')
+    SELECT object
+    SWITCH to edit mode
+    assign vertex to vertex group
+    bpy.ops.object.vertex_group_assign()
+    Name vertex group after bone.
+    """
         
             
     time_new = time.time()
