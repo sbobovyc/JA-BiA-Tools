@@ -203,65 +203,73 @@ DWORD WINAPI MyThread(LPVOID)
 			boost::filesystem::path fullpath = working_dir / modpath;
 			save(fullpath.string(), debugmod_params);
 		}
-	
+
+		uint32_t address;
+		// TODO put memory scanner in its own function
+		// begin mem scan function
+		int MIN_MEM = 0x00BF0000;
+		int MAX_MEM = 0x7FFFFFFF;
+		unsigned char BYTE_PATTER[] = {0xDC, 0x00, 0x10, 0x00, 0x00, 0x00, 0x63, 0x6F, 
+							0x75, 0x72, 0x69, 0x65, 0x72, 0x5F, 0x64, 0x63,
+							0x5F, 0x64, 0x6D, 0x5F, 0x30, 0x30};
+		MEMORY_BASIC_INFORMATION mbi = {0};
+		SYSTEM_INFO sInfo;
+		GetSystemInfo(&sInfo);	
+		unsigned char * pAddress   = NULL,*pEndRegion = NULL;
+		DWORD dwProtectionMask=  PAGE_READONLY | PAGE_EXECUTE_WRITECOPY 
+                        | PAGE_READWRITE | PAGE_WRITECOMBINE;
+		pEndRegion = (unsigned char *)(sInfo.lpMinimumApplicationAddress);
+		while( sizeof(mbi) == VirtualQuery(pEndRegion, &mbi, sizeof(mbi)) ){
+			pAddress = pEndRegion;
+			pEndRegion += mbi.RegionSize;
+			(PAGE_GUARD | PAGE_NOCACHE | PAGE_NOACCESS);
+			if ((mbi.AllocationProtect & dwProtectionMask) && (mbi.State & MEM_COMMIT) && !(mbi.Protect & (PAGE_GUARD | PAGE_NOCACHE | PAGE_NOACCESS))) {
+				wsprintf (buf, "Scanning page 0x%x", pAddress);
+				OutputDebugString(buf); 						
+					for (pAddress; pAddress < pEndRegion ; pAddress++){
+					// make sure to skip the page that has BYTE_PATTER so not to have a false positive
+						if(pAddress == BYTE_PATTER)
+							continue;
+					int diff = 0;
+					for(int j = 0; j < 22; j++) {
+						diff = BYTE_PATTER[j] - *((unsigned char *)pAddress+j);
+						if(diff != 0) break;
+					}
+					if(diff == 0) {
+						wsprintf (buf, "Found pattern at 0x%x", pAddress);
+						OutputDebugString(buf); 
+						address = (uint32_t)pAddress;
+						goto DONE_MEM_SCAN;
+					}
+					}
+			}
+		}
+		// end mem scan function
+		DONE_MEM_SCAN:
+		wsprintf (buf, "CTX at 0x%x", address+22);
+		OutputDebugString(buf); 
+		ctx = CTX_file((void *)(address+22));
+		for( std::map<int, wchar_t *>::iterator ii=ctx.string_map.begin(); ii!=ctx.string_map.end(); ++ii) {
+			wchar_t wbuf[255];
+			int id = (*ii).first;
+			wsprintfW(wbuf, L"%i %s", id, ctx.string_map[id]);		
+			OutputDebugStringW(wbuf);
+		}
+		for( std::map<wchar_t *, int>::iterator ii=ctx.id_map.begin(); ii!=ctx.id_map.end(); ++ii) {
+			wchar_t wbuf[255];
+			wchar_t * txt = (*ii).first;
+			wsprintfW(wbuf, L"%s %i", txt, ctx.id_map[txt]);		
+			OutputDebugStringW(wbuf);
+		}
+		wchar_t wbuf[255];
+		wsprintfW(wbuf, L"String: %s is id: %i", L"NF SCAR-H CQB", ctx.id_map[L"NF SCAR-H CQB\0\0"]);
+		OutputDebugStringW(wbuf);
+
 		while(true)
 		{
 			//TODO add size checking to all data structures and give a warning and exit thread if something is size 0
-			uint32_t address;
 			if(GetAsyncKeyState(VK_F7) & 1)
-			{
-				
-				/*
-				// TODO put memory scanner in its own function
-				int MIN_MEM = 0x00BF0000;
-				int MAX_MEM = 0x7FFFFFFF;
-				unsigned char BYTE_PATTER[] = {0xDC, 0x00, 0x10, 0x00, 0x00, 0x00, 0x63, 0x6F, 
-									0x75, 0x72, 0x69, 0x65, 0x72, 0x5F, 0x64, 0x63,
-									0x5F, 0x64, 0x6D, 0x5F, 0x30, 0x30};
-				MEMORY_BASIC_INFORMATION mbi = {0};
-				SYSTEM_INFO sInfo;
-				GetSystemInfo(&sInfo);	
-				unsigned char * pAddress   = NULL,*pEndRegion = NULL;
-				DWORD dwProtectionMask=  PAGE_READONLY | PAGE_EXECUTE_WRITECOPY 
-                              | PAGE_READWRITE | PAGE_WRITECOMBINE;
-				pEndRegion = (unsigned char *)(sInfo.lpMinimumApplicationAddress);
-				while( sizeof(mbi) == VirtualQuery(pEndRegion, &mbi, sizeof(mbi)) ){
-					pAddress = pEndRegion;
-					pEndRegion += mbi.RegionSize;
-					(PAGE_GUARD | PAGE_NOCACHE | PAGE_NOACCESS);
-					if ((mbi.AllocationProtect & dwProtectionMask) && (mbi.State & MEM_COMMIT) && !(mbi.Protect & (PAGE_GUARD | PAGE_NOCACHE | PAGE_NOACCESS))) {
-						wsprintf (buf, "Scanning page 0x%x", pAddress);
-						OutputDebugString(buf); 
-						 for (pAddress; pAddress < pEndRegion ; pAddress++){
-							 int diff = 0;
-							for(int j = 0; j < 22; j++) {
-								diff = BYTE_PATTER[j] - *((unsigned char *)pAddress+j);
-								if(diff != 0) break;
-							}
-							if(diff == 0) {
-								wsprintf (buf, "Found pattern at 0x%x", pAddress);
-								OutputDebugString(buf); 
-								address = (uint32_t)pAddress;
-								goto DONE_MEM_SCAN;
-							}
-						 }
-					}
-				}
-				DONE_MEM_SCAN:
-				wsprintf (buf, "CTX at 0x%x", address+22);
-				OutputDebugString(buf); 
-				ctx = CTX_file((void *)(address+22));
-				for( std::map<int, wchar_t *>::iterator ii=ctx.string_map.begin(); ii!=ctx.string_map.end(); ++ii) {
-					wchar_t wbuf[255];
-					int id = (*ii).first;
-					wsprintfW(wbuf, L"%i %s", id, ctx.string_map[id]);		
-					OutputDebugStringW(wbuf);
-				}
-				FreeLibraryAndExitThread(g_hModule, 0);
-				return 0;
-				*/
-				
-
+			{								
 				if(jabia_characters.size() == 0) {
 					wsprintf(buf, "You need to load a save or start a new game.");
 					MessageBox (0, buf, "JABIA character debugger", MB_ICONEXCLAMATION | MB_OK | MB_SYSTEMMODAL);
@@ -395,15 +403,24 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 			// select fist item in list
 			SendMessage(comboControl3, CB_SETCURSEL, 0, 0);
 
-			// add weapons to inventory weapons combo box
+			// add weapons to inventory weapons combo box			
 			for( std::map<int, JABIA_Weapon *>::iterator ii=jabia_weapons_map.begin(); ii!=jabia_weapons_map.end(); ++ii) {
 				char buf[7];
 				uint32_t id = (*ii).second->ID;
 				wsprintf(buf, "%i", id);
 				SendMessage(comboControl4,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCTSTR)buf));					
 			}
-			SendMessage(comboControl4,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCTSTR)"None"));					
-
+			SendMessage(comboControl4,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCTSTR)"None"));
+			//TODO figure out how to put weapon names into list
+			/*
+			for( std::map<wchar_t *, int>::iterator ii=ctx.id_map.begin(); ii!=ctx.id_map.end(); ++ii) {
+				wchar_t wbuf[255];
+				wchar_t * txt = (*ii).first;
+				wsprintfW(wbuf, L"%s", txt);
+				SendMessage(comboControl4,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)wbuf));					
+			}
+			SendMessage(comboControl4,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)"None"));
+			*/
 			// add weapons to active weapon combo box
 			for( std::map<int, JABIA_Weapon *>::iterator ii=jabia_weapons_map.begin(); ii!=jabia_weapons_map.end(); ++ii) {
 				char buf[7];
