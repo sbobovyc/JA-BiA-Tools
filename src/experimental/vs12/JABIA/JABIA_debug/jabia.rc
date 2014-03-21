@@ -8,6 +8,43 @@
 #include "resource.h"
 
 
+//
+// Version Information resources
+//
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+1 VERSIONINFO
+    FILEVERSION     0,1,0,0
+    PRODUCTVERSION  0,1,0,0
+    FILEOS          VOS_NT
+    FILETYPE        VFT_DLL
+    FILESUBTYPE     VFT2_UNKNOWN
+    FILEFLAGSMASK   0x00000000
+    FILEFLAGS       0x00000000
+{
+    BLOCK "StringFileInfo"
+    {
+        BLOCK "04090025"
+        {
+            VALUE "Comments", ""
+            VALUE "CompanyName", "JABIA-Tools Project"
+            VALUE "FileDescription", "A DLL based mod for JABIA"
+            VALUE "FileVersion", "0.1 alpha"
+            VALUE "InternalName", ""
+            VALUE "LegalCopyright", "@2014 Stanislav Bobovych"
+            VALUE "LegalTrademarks", ""
+            VALUE "OriginalFilename", "JABIA_debugger.dll"
+            VALUE "PrivateBuild", ""
+            VALUE "ProductName", "JABIA_debugger"
+            VALUE "ProductVersion", ""
+            VALUE "SpecialBuild", ""
+        }
+    }
+    BLOCK "VarFileInfo"
+    {
+        VALUE "Translation", 0x0409, 0x0025
+    }
+}
+
 
 
 //

@@ -280,7 +280,7 @@ void heal_character(JABIA_Character * ptr);
 void kill_character(JABIA_Character * ptr);
 void stun_character(JABIA_Character * ptr);
 void give_equipment1(JABIA_Character * ptr);
-void dump_character(JABIA_Character * ptr, char * filepath);
+void dump_character(JABIA_Character * ptr, TCHAR * filepath);
 
 #endif /* _CHARACTER_H_ */
 

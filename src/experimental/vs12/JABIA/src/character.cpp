@@ -78,16 +78,16 @@ void give_equipment1(JABIA_Character * ptr) {
 	ptr->inventory.weapon_attachment_status = 1; 
 }
 
-void dump_character(JABIA_Character * ptr, char * filepath) {
+void dump_character(JABIA_Character * ptr, TCHAR * filepath) {
 	FILE *fp;
-	fp=fopen(filepath, "wb");
+	fp=_wfopen(filepath, _T("wb"));
 	fwrite(ptr, sizeof(JABIA_Character), 1, fp);
 	fclose(fp);
 }
 
-void load_character(JABIA_Character * ptr, char * filepath) {
+void load_character(JABIA_Character * ptr, TCHAR * filepath) {
 	FILE *fp;
-	fp=fopen(filepath, "wb");
+	fp=_wfopen(filepath, _T("wb"));
 	fread(ptr, sizeof(JABIA_Character), 1, fp);
 	fclose(fp);
 }

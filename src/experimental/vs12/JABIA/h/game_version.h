@@ -23,6 +23,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #define GAME_VERSION
 
 #include <windows.h>
+#include <tchar.h>
 #include <boost/archive/xml_oarchive.hpp> 
 #include <boost/archive/xml_iarchive.hpp> 
 #include <boost/serialization/vector.hpp>
@@ -35,9 +36,9 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 //#define JAC
 
 #if defined(JABIA)
-static char ProcessName[] = "GameJABiA.exe";
+static TCHAR ProcessName[] = _T("GameJABiA.exe");
 #elif defined(JAC)
-static char ProcessName[] = "GameJACrossfire.exe";
+static TCHAR ProcessName[] = _T("GameJACrossfire.exe");
 #else
 #error Need to define either JABIA or JAC in game_version.h.
 #endif

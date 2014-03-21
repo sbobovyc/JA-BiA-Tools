@@ -45,6 +45,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #pragma comment(lib, "detours.lib")
 
 
+#define DEBUG_STR_SIZE 1024
 
 CharacterConstReturnPtr ParseCharacter;
 CharacterDestReturnPtr RemoveCharacter;
@@ -98,38 +99,38 @@ INT APIENTRY DllMain(HMODULE hDLL, DWORD Reason, LPVOID Reserved)
 DWORD WINAPI MyThread(LPVOID)
 {
 	load(PATH_TO_DEBUGMOD_XML, debugmod_params);
-	char buf [100];
+	TCHAR debugStrBuf [DEBUG_STR_SIZE];
 	DWORD oldProtection;
 	BYTE Before_JMP[6]; // save retn here
 	// find base address of GameDemo.exe in memory
 	if(GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, ProcessName, &game_handle) == NULL) {
-		wsprintf(buf, "Failed to get module handle");
-		OutputDebugString(buf);
+		wsprintf(debugStrBuf, _T("Failed to get module handle"));
+		OutputDebugString(debugStrBuf);
 	} else {
 		// find address of character constructor
 		ParseCharacter = (CharacterConstReturnPtr)((uint32_t)game_handle+CHARACTER_CONST_OFFSET);
-		wsprintf (buf, "Address of CharacterConstructor 0x%x", ParseCharacter);
-		OutputDebugString(buf);
+		wsprintf (debugStrBuf, _T("Address of CharacterConstructor 0x%x"), ParseCharacter);
+		OutputDebugString(debugStrBuf);
 		// find address of character constructor return
 		ParseCharacter = (CharacterConstReturnPtr)((uint32_t)game_handle+CHARACTER_CONST_OFFSET+CHARACTER_CONST_RETN_OFFSET);
-		wsprintf (buf, "Address of retn in CharacterConstructor 0x%x", ParseCharacter);
-		OutputDebugString(buf);
+		wsprintf (debugStrBuf, _T("Address of retn in CharacterConstructor 0x%x"), ParseCharacter);
+		OutputDebugString(debugStrBuf);
 		// find addres of character destructor return
 		RemoveCharacter = (CharacterDestReturnPtr)((uint32_t)game_handle+CHARACTER_DESTRUCTOR_RETN_OFFSET);
-		wsprintf (buf, "Address of retn in CharacterDestReturnPtr 0x%x", RemoveCharacter);
-		OutputDebugString(buf);
+		wsprintf (debugStrBuf, _T("Address of retn in CharacterDestReturnPtr 0x%x"), RemoveCharacter);
+		OutputDebugString(debugStrBuf);
 		// find address of character destructor
 		CharacterDestructor = (CharacterDestructorPtr)((uint32_t)game_handle+CHARACTER_DESTRUCTOR_OFFSET);
-		wsprintf (buf, "Address of CharacterDestructor 0x%x", CharacterDestructor);
-		OutputDebugString(buf);
+		wsprintf (debugStrBuf, _T("Address of CharacterDestructor 0x%x"), CharacterDestructor);
+		OutputDebugString(debugStrBuf);
 		// find address of game info access function
 		ParseGameInfoReturn = (ParseGameInfoReturnPtr)((uint32_t)game_handle+PARSE_GAME_INFO_RETURN);
-		wsprintf (buf, "Address of ParseGameInfoReturn 0x%x", ParseGameInfoReturn);
-		OutputDebugString(buf); 
+		wsprintf (debugStrBuf, _T("Address of ParseGameInfoReturn 0x%x"), ParseGameInfoReturn);
+		OutputDebugString(debugStrBuf); 
 		// find address of weapon constructor return
 		WeaponReturn = (WeaponReturnPtr)((uint32_t)game_handle+WEAPON_CONST_RETURN_OFFSET);
-		wsprintf (buf, "Address of WeaponReturn 0x%x", WeaponReturn);
-		OutputDebugString(buf); 
+		wsprintf (debugStrBuf, _T("Address of WeaponReturn 0x%x"), WeaponReturn);
+		OutputDebugString(debugStrBuf); 
 
 		// If jabia_characters is not empty, clear it. Every time the game loads a level, character pointers change.
 		//TODO this function crashes on exit game
@@ -153,7 +154,7 @@ DWORD WINAPI MyThread(LPVOID)
 		memcpy((void *)Before_JMP, (void *)ParseCharacter, 6); // save retn
 		memcpy(&JMP_hook[1], &JMPSize, 4);
 		//wsprintf(buf, "JMP: %x%x%x%x%x", JMP[0], JMP[1], JMP[2], JMP[3], JMP[4], JMP[5]);
-		//OutputDebugString(buf);
+		//OutputDebugString(debugStrBuf);
 		// overwrite retn with JMP_hook
 		memcpy((void *)ParseCharacter, (void *)JMP_hook, 6);
 		// restore protection
@@ -187,16 +188,16 @@ DWORD WINAPI MyThread(LPVOID)
 		// restore protection
 		VirtualProtect((LPVOID)WeaponReturn, 6, oldProtection, NULL);
 
-		wsprintf(buf, "Size of JABIA_Character struct %i", sizeof(JABIA_Character));
-		OutputDebugString(buf);
-		wsprintf(buf, "Size of JABIA_weapon struct %i", sizeof(JABIA_weapon));
-		OutputDebugString(buf);
-		wsprintf(buf, "First run? %i", debugmod_params.first_run);
-		OutputDebugString(buf);
+		wsprintf(debugStrBuf, _T("Size of JABIA_Character struct %i"), sizeof(JABIA_Character));
+		OutputDebugString(debugStrBuf);
+		wsprintf(debugStrBuf, _T("Size of JABIA_weapon struct %i"), sizeof(JABIA_weapon));
+		OutputDebugString(debugStrBuf);
+		wsprintf(debugStrBuf, _T("First run? %i"), debugmod_params.first_run);
+		OutputDebugString(debugStrBuf);
 
 		if(debugmod_params.first_run) {
-			wsprintf(buf, "DLL successfully loaded. Load a save game and press F7 to bring up editor. Due to some bugs, you need to quit to main menu before you load another savegame. This message will not be shown on next launch.");
-			MessageBox (0, buf, "JABIA character debugger", MB_ICONEXCLAMATION | MB_OK | MB_SYSTEMMODAL);
+			wsprintf(debugStrBuf, _T("DLL successfully loaded. Load a save game and press F7 to bring up editor. Due to some bugs, you need to quit to main menu before you load another savegame. This message will not be shown on next launch."));
+			MessageBox (0, debugStrBuf, _T("JABIA character debugger"), MB_ICONEXCLAMATION | MB_OK | MB_SYSTEMMODAL);
 			debugmod_params.first_run = false;
 			boost::filesystem::path working_dir = boost::filesystem::current_path();
 			boost::filesystem::path modpath(PATH_TO_DEBUGMOD_XML);
@@ -224,8 +225,8 @@ DWORD WINAPI MyThread(LPVOID)
 			pEndRegion += mbi.RegionSize;
 			(PAGE_GUARD | PAGE_NOCACHE | PAGE_NOACCESS);
 			if ((mbi.AllocationProtect & dwProtectionMask) && (mbi.State & MEM_COMMIT) && !(mbi.Protect & (PAGE_GUARD | PAGE_NOCACHE | PAGE_NOACCESS))) {
-				wsprintf (buf, "Scanning page 0x%x", pAddress);
-				OutputDebugString(buf); 						
+				wsprintf (debugStrBuf, _T("Scanning page 0x%x"), pAddress);
+				OutputDebugString(debugStrBuf); 						
 					for (pAddress; pAddress < pEndRegion ; pAddress++){
 					// make sure to skip the page that has BYTE_PATTER so not to have a false positive
 						if(pAddress == BYTE_PATTER)
@@ -236,8 +237,8 @@ DWORD WINAPI MyThread(LPVOID)
 						if(diff != 0) break;
 					}
 					if(diff == 0) {
-						wsprintf (buf, "Found pattern at 0x%x", pAddress);
-						OutputDebugString(buf); 
+						wsprintf (debugStrBuf, _T("Found pattern at 0x%x"), pAddress);
+						OutputDebugString(debugStrBuf); 
 						address = (uint32_t)pAddress;
 						goto DONE_MEM_SCAN;
 					}
@@ -246,24 +247,21 @@ DWORD WINAPI MyThread(LPVOID)
 		}
 		// end mem scan function
 		DONE_MEM_SCAN:
-		wsprintf (buf, "CTX at 0x%x", address+22);
-		OutputDebugString(buf); 
+		_stprintf_s (debugStrBuf, DEBUG_STR_SIZE, _T("CTX at 0x%x"), address+22);
+		OutputDebugString(debugStrBuf); 
 		ctx = CTX_file((void *)(address+22));
 		for( std::map<int, wchar_t *>::iterator ii=ctx.string_map.begin(); ii!=ctx.string_map.end(); ++ii) {
-			wchar_t wbuf[255];
 			int id = (*ii).first;
-			wsprintfW(wbuf, L"%i %s", id, ctx.string_map[id]);		
-			OutputDebugStringW(wbuf);
+			_stprintf_s(debugStrBuf, DEBUG_STR_SIZE, _T("%i %s"), id, ctx.string_map[id]);		
+			OutputDebugString(debugStrBuf);
 		}
 		for( std::map<wchar_t *, int>::iterator ii=ctx.id_map.begin(); ii!=ctx.id_map.end(); ++ii) {
-			wchar_t wbuf[255];
 			wchar_t * txt = (*ii).first;
-			wsprintfW(wbuf, L"%s %i", txt, ctx.id_map[txt]);		
-			OutputDebugStringW(wbuf);
+			_stprintf_s(debugStrBuf, DEBUG_STR_SIZE, _T("%s %i"), txt, ctx.id_map[txt]);		
+			OutputDebugStringW(debugStrBuf);
 		}
-		wchar_t wbuf[255];
-		wsprintfW(wbuf, L"String: %s is id: %i", L"NF SCAR-H CQB", ctx.id_map[L"NF SCAR-H CQB\0\0"]);
-		OutputDebugStringW(wbuf);
+		_stprintf_s(debugStrBuf, DEBUG_STR_SIZE, _T("String: %s is id: %i"), _T("NF SCAR-H CQB"), ctx.id_map[_T("NF SCAR-H CQB\0\0")]);
+		OutputDebugStringW(debugStrBuf);
 
 		while(true)
 		{
@@ -271,18 +269,18 @@ DWORD WINAPI MyThread(LPVOID)
 			if(GetAsyncKeyState(VK_F7) & 1)
 			{								
 				if(jabia_characters.size() == 0) {
-					wsprintf(buf, "You need to load a save or start a new game.");
-					MessageBox (0, buf, "JABIA character debugger", MB_ICONEXCLAMATION | MB_OK | MB_SYSTEMMODAL);
+					wsprintf(debugStrBuf, _T("You need to load a save or start a new game."));
+					MessageBox (0, debugStrBuf, _T("JABIA character debugger"), MB_ICONEXCLAMATION | MB_OK | MB_SYSTEMMODAL);
 					continue;
 				}
 
-				wsprintf (buf, "CurrentSaveGamePtr 0x%x", CurrentSaveGamePtr);
-				OutputDebugString(buf); 
-				wsprintf (buf, "Current money %i", CurrentSaveGamePtr->money);
-				OutputDebugString(buf); 
+				wsprintf (debugStrBuf, _T("CurrentSaveGamePtr 0x%x"), CurrentSaveGamePtr);
+				OutputDebugString(debugStrBuf); 
+				wsprintf (debugStrBuf, _T("Current money %i"), CurrentSaveGamePtr->money);
+				OutputDebugString(debugStrBuf); 
 
 				if(jabia_characters.at(last_character_selected_index) == NULL) {
-					MessageBox (0, buf, "Memory error", MB_ICONEXCLAMATION | MB_OK | MB_SYSTEMMODAL);
+					MessageBox (0, debugStrBuf, _T("Memory error"), MB_ICONEXCLAMATION | MB_OK | MB_SYSTEMMODAL);
 				} else {
 					HWND hDialog = 0;
 				
@@ -295,9 +293,8 @@ DWORD WINAPI MyThread(LPVOID)
 				
 					if (!hDialog)
 					{
-						char buf [100];
-						wsprintf (buf, "Error x%x", GetLastError ());
-						MessageBox (0, buf, "CreateDialog", MB_ICONEXCLAMATION | MB_OK | MB_SYSTEMMODAL);
+						wsprintf (debugStrBuf, _T("Error x%x"), GetLastError ());
+						MessageBox (0, debugStrBuf, _T("CreateDialog"), MB_ICONEXCLAMATION | MB_OK | MB_SYSTEMMODAL);
 						return 1;
 					 }
 				
@@ -315,7 +312,7 @@ DWORD WINAPI MyThread(LPVOID)
 					}
 				}
 			} else if(GetAsyncKeyState(VK_F8) &1) {
-				OutputDebugString("Unloading JABIA_debug DLL");
+				OutputDebugString(_T("Unloading JABIA_debug DLL"));
 				break;
 			}
 		Sleep(100);
@@ -350,6 +347,7 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 	comboControl5=GetDlgItem(hwnd,IDC_COMBO5);	
 	BOOL status = FALSE;
 	JABIA_Character * ptr = 0; // character address
+	TCHAR debugStrBuf[255];
 
     switch (message)
     {
@@ -375,10 +373,9 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 
 			// add characters to drop down list
 			for(size_t i = 0; i < jabia_characters.size(); i++) {							
-				SendMessage(comboControl1,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCTSTR)jabia_characters.at(i)->merc_name));
-				char buf[255];
-				wsprintf(buf, "In init, Character at 0x%X", jabia_characters.at(i));	
-				OutputDebugString(buf);
+				SendMessageA(comboControl1,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCTSTR)jabia_characters.at(i)->merc_name)); // merc names in structure are ASCII		
+				wsprintf(debugStrBuf, _T("In init, Character at 0x%X"), jabia_characters.at(i));	
+				OutputDebugString(debugStrBuf);
 			}
 				// select fist item in list
 			SendMessage(comboControl1, CB_SETCURSEL, last_character_selected_index, 0);
@@ -395,9 +392,8 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 
 			// add inventory slots to their combo box
 			for(int i = 0; i < JABIA_CHARACTER_INV_SLOTS; i++) {
-				char buf[5];
-				wsprintf(buf, "%i", i);
-				SendMessage(comboControl3,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCTSTR)buf));
+				wsprintf(debugStrBuf, _T("%i"), i);
+				SendMessage(comboControl3,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCTSTR)debugStrBuf));
 			}
 
 			// select fist item in list
@@ -405,12 +401,11 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 
 			// add weapons to inventory weapons combo box			
 			for( std::map<int, JABIA_Weapon *>::iterator ii=jabia_weapons_map.begin(); ii!=jabia_weapons_map.end(); ++ii) {
-				char buf[7];
 				uint32_t id = (*ii).second->ID;
-				wsprintf(buf, "%i", id);
-				SendMessage(comboControl4,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCTSTR)buf));					
+				wsprintf(debugStrBuf, _T("%i"), id);
+				SendMessage(comboControl4,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCTSTR)debugStrBuf));					
 			}
-			SendMessage(comboControl4,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCTSTR)"None"));
+			SendMessageA(comboControl4,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCTSTR)"None"));
 			//TODO figure out how to put weapon names into list
 			/*
 			for( std::map<wchar_t *, int>::iterator ii=ctx.id_map.begin(); ii!=ctx.id_map.end(); ++ii) {
@@ -423,10 +418,9 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 			*/
 			// add weapons to active weapon combo box
 			for( std::map<int, JABIA_Weapon *>::iterator ii=jabia_weapons_map.begin(); ii!=jabia_weapons_map.end(); ++ii) {
-				char buf[7];
 				uint32_t id = (*ii).second->ID;
-				wsprintf(buf, "%i", id);
-				SendMessage(comboControl5,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCTSTR)buf));	
+				wsprintf(debugStrBuf, _T("%i"), id);
+				SendMessage(comboControl5,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCTSTR)debugStrBuf));	
 				//wchar_t wbuf[255];
 				//wsprintfW(wbuf, L"%i %s", id, ctx.string_map[id]);	
 				//SendMessage(comboControl5,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPWSTR)wbuf));	
@@ -485,17 +479,16 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 					switch(HIWORD(wParam))
 					{
 						case CBN_CLOSEUP:
-							char buf[50];
-							wsprintf(buf, "Combo5");
-							OutputDebugString(buf);
+							wsprintf(debugStrBuf, _T("Combo5"));
+							OutputDebugString(debugStrBuf);
 							// use combo box selected index to get weapon id
 							ptr = jabia_characters.at(last_character_selected_index);
 							setCharacter(hwnd, ptr, false, true);
-							wsprintf(buf, "set done");
-							OutputDebugString(buf);
+							wsprintf(debugStrBuf, _T("set done"));
+							OutputDebugString(debugStrBuf);
 							fillDialog(hwnd, ptr);
-							wsprintf(buf, "fill done");
-							OutputDebugString(buf);
+							wsprintf(debugStrBuf, _T("fill done"));
+							OutputDebugString(debugStrBuf);
 							break;
 					}
 					break;
@@ -545,25 +538,25 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 
 
 void dump_current_character(HWND hwnd, JABIA_Character * ptr) {
-	char buf[100];
+	TCHAR debugStrBuf[100];
 	JABIA_Character character;
-	wsprintf(buf, "Character address 0x%X | ptr address 0x%x", &character, ptr);
-	OutputDebugString(buf);
+	wsprintf(debugStrBuf, _T("Character address 0x%X | ptr address 0x%x"), &character, ptr);
+	OutputDebugString(debugStrBuf);
 	memcpy(&character, (void *)ptr, sizeof(JABIA_Character));		
-	OutputDebugString("Dump character");
+	OutputDebugString(_T("Dump character"));
 	
 	OPENFILENAME ofn;
-    char szFileName[MAX_PATH] = "";
+    TCHAR szFileName[MAX_PATH] = _T("");
 
     ZeroMemory(&ofn, sizeof(ofn));
 
     ofn.lStructSize = sizeof(ofn); // SEE NOTE BELOW
     ofn.hwndOwner = hwnd;
-    ofn.lpstrFilter = "JABIA Character Dump (*.jcd)\0*.jcd\0All Files (*.*)\0*.*\0";
+    ofn.lpstrFilter = _T("JABIA Character Dump (*.jcd)\0*.jcd\0All Files (*.*)\0*.*\0");
     ofn.lpstrFile = szFileName;
     ofn.nMaxFile = MAX_PATH;
     ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;
-    ofn.lpstrDefExt = "jcd";
+    ofn.lpstrDefExt = _T("jcd");
 	
     if(GetSaveFileName(&ofn))
     {
@@ -575,7 +568,7 @@ void dump_current_character(HWND hwnd, JABIA_Character * ptr) {
 }
 
 BOOL dump_all_characters(HWND hwnd) {
-	char buf[100];
+	TCHAR buf[100];
 	
 	LPITEMIDLIST pidl     = NULL;
 	BROWSEINFO   bi       = { 0 };
@@ -584,7 +577,7 @@ BOOL dump_all_characters(HWND hwnd) {
 	bi.hwndOwner      = hwnd;
 	bi.pszDisplayName = buf;
 	bi.pidlRoot       = NULL;
-	bi.lpszTitle      = "Select directory";
+	bi.lpszTitle      = _T("Select directory");
 	bi.ulFlags        = BIF_RETURNONLYFSDIRS | BIF_USENEWUI;
 
 	if ((pidl = SHBrowseForFolder(&bi)) != NULL)
@@ -595,8 +588,8 @@ BOOL dump_all_characters(HWND hwnd) {
 
 	if(bResult) {
 		for(unsigned int i = 0; i < jabia_characters.size(); i++) {
-			char full_path[100];
-			wsprintf(full_path, "%s/%s", buf, jabia_characters.at(i)->merc_name);
+			TCHAR full_path[100];
+			wsprintf(full_path, _T("%s/%s"), buf, jabia_characters.at(i)->merc_name);
 			dump_character(jabia_characters.at(i), full_path);
 		}
 	} else {
@@ -607,10 +600,11 @@ BOOL dump_all_characters(HWND hwnd) {
 }
 
 void fillDialog(HWND hwnd, JABIA_Character * ptr) {
-	char buf[100];
+	TCHAR buf[100];
+	char nameBuf[100];
 	JABIA_Character character;
 
-	_itoa_s(CurrentSaveGamePtr->money, buf, 100, 10);
+	_itot_s(CurrentSaveGamePtr->money, buf, 100, 10);
 	SetDlgItemText(hwnd, IDC_MONEY, buf);
 
 	if(ptr != NULL) {
@@ -652,150 +646,151 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 		}		
 
 		// address of character
-		_itoa_s((uint32_t)ptr, buf, 100, 16);
+		_itot_s((uint32_t)ptr, buf, 100, 16);
 		SetDlgItemText(hwnd, IDC_ADDRESS, buf);	
 
-		_itoa_s(character.level, buf, 100, 10);
+		_itot_s(character.level, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_LEV, buf);
 
-		_itoa_s(character.experience, buf, 100, 10);
+		_itot_s(character.experience, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_EX, buf);
 
-		_itoa_s(character.training_points, buf, 100, 10);
+		_itot_s(character.training_points, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_TP, buf);
 
 		//_itoa_s(character.inventory.weapon_in_hand, buf, 100, 10);
 		//SetDlgItemText(hwnd, IDC_WPN_EQ, buf);
 
-		_itoa_s(character.inventory.weapon_in_hand_durability, buf, 100, 10);
+		_itot_s(character.inventory.weapon_in_hand_durability, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_WPN_EQ_DUR, buf);
 
-		_itoa_s(character.inventory.helmet_equiped, buf, 100, 10);
+		_itot_s(character.inventory.helmet_equiped, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_HELM_EQ, buf);
 
-		_itoa_s(character.inventory.helmet_equiped_durability, buf, 100, 10);
+		_itot_s(character.inventory.helmet_equiped_durability, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_HELM_EQ_DUR, buf);
 
-		_itoa_s(character.inventory.eyewear_equiped, buf, 100, 10);
+		_itot_s(character.inventory.eyewear_equiped, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_EYE_EQ, buf);
 
-		_itoa_s(character.inventory.eyewear_equiped_durability, buf, 100, 10);
+		_itot_s(character.inventory.eyewear_equiped_durability, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_EYE_EQ_DUR, buf);
 
-		_itoa_s(character.inventory.special_equiped, buf, 100, 10);
+		_itot_s(character.inventory.special_equiped, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_SPC_EQ, buf);
 
-		_itoa_s(character.inventory.special_equiped_charges, buf, 100, 10);
+		_itot_s(character.inventory.special_equiped_charges, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_SPC_EQ_LEFT, buf);
 
-		_itoa_s(character.inventory.shirt_equiped, buf, 100, 10);
+		_itot_s(character.inventory.shirt_equiped, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_SHRT_EQ, buf);
 
-		_itoa_s(character.inventory.shirt_equiped_durability, buf, 100, 10);
+		_itot_s(character.inventory.shirt_equiped_durability, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_SHRT_EQ_DUR, buf);
 
-		_itoa_s(character.inventory.vest_equiped, buf, 100, 10);
+		_itot_s(character.inventory.vest_equiped, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_VEST_EQ, buf);
 
-		_itoa_s(character.inventory.vest_equiped_durability, buf, 100, 10);
+		_itot_s(character.inventory.vest_equiped_durability, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_VEST_DUR, buf);
 
-		_itoa_s(character.inventory.shoes_equiped, buf, 100, 10);
+		_itot_s(character.inventory.shoes_equiped, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_SHOES_EQ, buf);
 
-		_itoa_s(character.inventory.shoes_equiped_durability, buf, 100, 10);
+		_itot_s(character.inventory.shoes_equiped_durability, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_SHOES_DUR, buf);
 
-		_itoa_s(character.inventory.pants_equiped, buf, 100, 10);
+		_itot_s(character.inventory.pants_equiped, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_PANTS_EQ, buf);
 
-		_itoa_s(character.inventory.pants_equiped_durability, buf, 100, 10);
+		_itot_s(character.inventory.pants_equiped_durability, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_PANTS_DUR, buf);
 
-		_itoa_s(character.inventory.ammo_equiped, buf, 100, 10);
+		_itot_s(character.inventory.ammo_equiped, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_AMMO_EQ, buf);
 
-		_itoa_s(character.inventory.ammo_equiped_count, buf, 100, 10);
+		_itot_s(character.inventory.ammo_equiped_count, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_AMMO_EQ_CNT, buf);
 
-		_itoa_s(character.inventory.ammo_equiped_count, buf, 100, 10);
+		_itot_s(character.inventory.ammo_equiped_count, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_AMMO_EQ_CNT, buf);
 
-		_itoa_s(character.inventory.weapon_attachment_removable, buf, 100, 10);
+		_itot_s(character.inventory.weapon_attachment_removable, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_WPN_MOD, buf);
 
 		// health and stamina 	
-		sprintf_s(buf, "%.1f", character.health, 4);
+		_stprintf_s(buf, _T("%.1f"), character.health, 4);
 		//OutputDebugString(buf);
 		SetDlgItemText(hwnd, IDC_HLTH, buf);
 
-		sprintf_s(buf, "%.1f", character.stamina, 4);
+		_stprintf_s(buf, _T("%.1f"), character.stamina, 4);
 		SetDlgItemText(hwnd, IDC_STAMINA, buf);
 
 		// name
-		memset(buf, 0x00, 16);
-		memcpy(buf, character.merc_name, character.name_length);
-		SetDlgItemText(hwnd, IDC_MERC_NAME, buf);
+		memset(nameBuf, 0x00, 16);
+		memcpy(nameBuf, character.merc_name, character.name_length);
+		SetDlgItemTextA(hwnd, IDC_MERC_NAME, nameBuf);
 
-		_itoa_s(character.faction, buf, 100, 10);
+		_itot_s(character.faction, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_MERC_FAC, buf);
 
-		_itoa_s(character.medical_condition, buf, 100, 10);
+		_itot_s(character.medical_condition, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_MED_COND, buf);
 
 		// inventory
 		//_itoa_s(character.inventory.weapons[last_weaponslot_selected_index].weapon, buf, 100, 10);
 		//SetDlgItemText(hwnd, IDC_WPN_INV, buf);
 
-		_itoa_s(character.inventory.weapons[last_weaponslot_selected_index].weapon_durability, buf, 100, 10);
+		_itot_s(character.inventory.weapons[last_weaponslot_selected_index].weapon_durability, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_WPN_INV_DUR, buf);
 
-		_itoa_s(character.inventory.weapons[last_weaponslot_selected_index].ammo_count, buf, 100, 10);
+		_itot_s(character.inventory.weapons[last_weaponslot_selected_index].ammo_count, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_AMMO_INV_CNT, buf);
 
-		_itoa_s(character.inventory.inventory_items[last_inventory_selected_index].item_id, buf, 100, 10);
+		_itot_s(character.inventory.inventory_items[last_inventory_selected_index].item_id, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_INV_ITEM_ID, buf);
 
 		// attributes
-		_itoa_s(character.agility, buf, 100, 10);
+		_itot_s(character.agility, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_AG, buf);
 
-		_itoa_s(character.dexterity, buf, 100, 10);
+		_itot_s(character.dexterity, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_DEX, buf);
 
-		_itoa_s(character.strength, buf, 100, 10);
+		_itot_s(character.strength, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_STR, buf);
 
-		_itoa_s(character.intelligence, buf, 100, 10);
+		_itot_s(character.intelligence, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_INT, buf);
 
-		_itoa_s(character.perception, buf, 100, 10);
+		_itot_s(character.perception, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_PER, buf);
 
 		// skills
 
-		_itoa_s(character.medical, buf, 100, 10);
+		_itot_s(character.medical, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_MED, buf);
 
-		_itoa_s(character.explosives, buf, 100, 10);
+		_itot_s(character.explosives, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_EXPL, buf);
 
-		_itoa_s(character.marksmanship, buf, 100, 10);
+		_itot_s(character.marksmanship, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_MARK, buf);
 
-		_itoa_s(character.stealth, buf, 100, 10);
+		_itot_s(character.stealth, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_STEALTH, buf);
 
-		_itoa_s(character.mechanical, buf, 100, 10);
+		_itot_s(character.mechanical, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_MECH, buf);
 
-		_itoa_s(character.bleed_rate, buf, 100, 10);
+		_itot_s(character.bleed_rate, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_BLEED_RATE, buf);
 	}	
 }
 
 void setCharacter(HWND hwnd, JABIA_Character * ptr, bool inventory_weapon_changed, bool equiped_weapon_changed) {
-	char buf [100];
+	TCHAR buf [100];
+	char nameBuf[100];
 	JABIA_Character * character_ptr = ptr;
 	uint32_t level = 0;
 	uint32_t experience;
@@ -846,20 +841,20 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr, bool inventory_weapon_change
 	uint32_t bleed_rate;
 
 	GetDlgItemText(hwnd, IDC_LEV, buf, 100);
-	level = atoi(buf);
+	level = _ttoi(buf);
 	character_ptr->level = level;
 
 	GetDlgItemText(hwnd, IDC_EX, buf, 100);
-	experience = atoi(buf);
+	experience = _ttoi(buf);
 	character_ptr->experience = experience;
 
 	GetDlgItemText(hwnd, IDC_TP, buf, 100);
-	training_points = atoi(buf);
+	training_points = _ttoi(buf);
 	character_ptr->training_points = training_points;
 
 	if(equiped_weapon_changed) {		
 		GetDlgItemText(hwnd, IDC_COMBO5, buf, 100);
-		weapon_in_hand = atoi(buf);
+		weapon_in_hand = _ttoi(buf);
 		if(weapon_in_hand != 0)
 		{								
 			character_ptr->inventory.weapon_in_hand = weapon_in_hand;
@@ -878,15 +873,15 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr, bool inventory_weapon_change
 		//character_ptr->inventory.weapon_in_hand = weapon_in_hand;
 
 		GetDlgItemText(hwnd, IDC_WPN_EQ_DUR, buf, 100);
-		weapon_in_hand_durability = atoi(buf);
+		weapon_in_hand_durability = _ttoi(buf);
 		character_ptr->inventory.weapon_in_hand_durability = weapon_in_hand_durability;
 
 		GetDlgItemText(hwnd, IDC_AMMO_EQ, buf, 100);
-		ammo_equiped = atoi(buf);
+		ammo_equiped = _ttoi(buf);
 		character_ptr->inventory.ammo_equiped = ammo_equiped;
 
 		GetDlgItemText(hwnd, IDC_AMMO_EQ_CNT, buf, 100);
-		ammo_equiped_count = atoi(buf);
+		ammo_equiped_count = _ttoi(buf);
 		character_ptr->inventory.ammo_equiped_count = ammo_equiped_count;
 
 	}
@@ -894,75 +889,75 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr, bool inventory_weapon_change
 	character_ptr->inventory.weapon_in_hand_removable = 1;
 
 	GetDlgItemText(hwnd, IDC_HELM_EQ, buf, 100);
-	helmet_equiped = atoi(buf);
+	helmet_equiped = _ttoi(buf);
 	character_ptr->inventory.helmet_equiped = helmet_equiped;
 
 	character_ptr->inventory.helmet_equiped_removable = 1;
 
 	GetDlgItemText(hwnd, IDC_HELM_EQ_DUR, buf, 100);
-	helmet_equiped_durability = atoi(buf);
+	helmet_equiped_durability = _ttoi(buf);
 	character_ptr->inventory.helmet_equiped_durability = helmet_equiped_durability;
 
 	GetDlgItemText(hwnd, IDC_EYE_EQ, buf, 100);
-	eyewear_equiped = atoi(buf);
+	eyewear_equiped = _ttoi(buf);
 	character_ptr->inventory.eyewear_equiped = eyewear_equiped;
 
 	GetDlgItemText(hwnd, IDC_EYE_EQ_DUR, buf, 100);
-	eyewear_equiped_durability = atoi(buf);
+	eyewear_equiped_durability = _ttoi(buf);
 	character_ptr->inventory.eyewear_equiped_durability = eyewear_equiped_durability;
 
 	character_ptr->inventory.eyewear_equiped_status = 1;
 
 	GetDlgItemText(hwnd, IDC_SPC_EQ, buf, 100);
-	special_equiped = atoi(buf);
+	special_equiped = _ttoi(buf);
 	character_ptr->inventory.special_equiped = special_equiped;
 
 	GetDlgItemText(hwnd, IDC_SPC_EQ_LEFT, buf, 100);
-	special_equiped_charges = atoi(buf);
+	special_equiped_charges = _ttoi(buf);
 	character_ptr->inventory.special_equiped_charges = special_equiped_charges;
 
 	GetDlgItemText(hwnd, IDC_SHRT_EQ, buf, 100);
-	shirt_equiped = atoi(buf);
+	shirt_equiped = _ttoi(buf);
 	character_ptr->inventory.shirt_equiped = shirt_equiped;
 
 	GetDlgItemText(hwnd, IDC_SHRT_EQ_DUR, buf, 100);
-	shirt_equiped_durability = atoi(buf);
+	shirt_equiped_durability = _ttoi(buf);
 	character_ptr->inventory.shirt_equiped_durability = shirt_equiped_durability;
 
 	GetDlgItemText(hwnd, IDC_VEST_EQ, buf, 100);
-	vest_equiped = atoi(buf);
+	vest_equiped = _ttoi(buf);
 	character_ptr->inventory.vest_equiped = vest_equiped;
 
 	GetDlgItemText(hwnd, IDC_VEST_DUR, buf, 100);
-	vest_equiped_durability = atoi(buf);
+	vest_equiped_durability = _ttoi(buf);
 	character_ptr->inventory.vest_equiped_durability = vest_equiped_durability;
 
 	GetDlgItemText(hwnd, IDC_SHOES_EQ, buf, 100);
-	shoes_equiped = atoi(buf);
+	shoes_equiped = _ttoi(buf);
 	character_ptr->inventory.shoes_equiped = shoes_equiped;
 
 	GetDlgItemText(hwnd, IDC_SHOES_DUR, buf, 100);
-	shoes_equiped_durability = atoi(buf);
+	shoes_equiped_durability = _ttoi(buf);
 	character_ptr->inventory.shoes_equiped_durability = shoes_equiped_durability;
 
 	GetDlgItemText(hwnd, IDC_PANTS_EQ, buf, 100);
-	pants_equiped = atoi(buf);
+	pants_equiped = _ttoi(buf);
 	character_ptr->inventory.pants_equiped = pants_equiped;
 
 	GetDlgItemText(hwnd, IDC_PANTS_DUR, buf, 100);
-	pants_equiped_durability = atoi(buf);
+	pants_equiped_durability = _ttoi(buf);
 	character_ptr->inventory.pants_equiped_durability = pants_equiped_durability;
 
 	GetDlgItemText(hwnd, IDC_WPN_MOD, buf, 100);
-	weapon_attachment_removable = atoi(buf);
+	weapon_attachment_removable = _ttoi(buf);
 	character_ptr->inventory.weapon_attachment_removable = weapon_attachment_removable;	
 
 	character_ptr->inventory.weapon_attachment_status = 1;
 
 	// get name and it's length
-	memset(buf, 0x0, JABIA_CHARACTER_MAX_NAME_LENGTH);
-	GetDlgItemText(hwnd, IDC_MERC_NAME, buf, JABIA_CHARACTER_MAX_NAME_LENGTH);
-	memcpy(character_ptr->merc_name, buf, JABIA_CHARACTER_MAX_NAME_LENGTH); // TODO read length of name from character struct
+	memset(nameBuf, 0x0, JABIA_CHARACTER_MAX_NAME_LENGTH);
+	GetDlgItemTextA(hwnd, IDC_MERC_NAME, nameBuf, JABIA_CHARACTER_MAX_NAME_LENGTH);
+	memcpy(character_ptr->merc_name, nameBuf, JABIA_CHARACTER_MAX_NAME_LENGTH); // TODO read length of name from character struct
 	character_ptr->name_length = (uint32_t)strlen(character_ptr->merc_name);
 
 	// inventory
@@ -972,7 +967,7 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr, bool inventory_weapon_change
 	//TODO put this in a separate function
 	if(inventory_weapon_changed) {
 		GetDlgItemText(hwnd, IDC_COMBO4, buf, 100);
-		weapon = atoi(buf);
+		weapon = _ttoi(buf);
 		if(weapon != 0)
 		{								
 			character_ptr->inventory.weapons[last_weaponslot_selected_index].weapon = weapon;
@@ -985,84 +980,84 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr, bool inventory_weapon_change
 		}
 	} else {
 		GetDlgItemText(hwnd, IDC_WPN_INV_DUR, buf, 100);
-		weapon_durability = atoi(buf);
+		weapon_durability = _ttoi(buf);
 		character_ptr->inventory.weapons[last_weaponslot_selected_index].weapon_durability = weapon_durability;
 
 		GetDlgItemText(hwnd, IDC_AMMO_INV_CNT, buf, 100);
-		ammo_count = atoi(buf);
+		ammo_count = _ttoi(buf);
 		character_ptr->inventory.weapons[last_weaponslot_selected_index].ammo_count = ammo_count;	
 	}
 	character_ptr->inventory.weapons[last_weaponslot_selected_index].removable = 1;
 
 	// health and stamina
 	GetDlgItemText(hwnd, IDC_HLTH, buf, 100);
-	health = (float)atof(buf);
+	health = (float)_ttof(buf);
 	character_ptr->health = health;
 
 	GetDlgItemText(hwnd, IDC_STAMINA, buf, 100);
-	stamina = (float)atof(buf);
+	stamina = (float)_ttof(buf);
 	character_ptr->stamina = stamina;
 
 	GetDlgItemText(hwnd, IDC_MERC_FAC, buf, 100);
-	faction = atoi(buf);
+	faction = _ttoi(buf);
 	character_ptr->faction = faction;
 
 	GetDlgItemText(hwnd, IDC_MED_COND, buf, 100);
-	medical_condition = atoi(buf);
+	medical_condition = _ttoi(buf);
 	character_ptr->medical_condition = medical_condition;
 
 	// attributes
 	GetDlgItemText(hwnd, IDC_AG, buf, 100);
-	agility = atoi(buf);
+	agility = _ttoi(buf);
 	character_ptr->agility = agility;
 
 	GetDlgItemText(hwnd, IDC_DEX, buf, 100);
-	dexterity = atoi(buf);
+	dexterity = _ttoi(buf);
 	character_ptr->dexterity = dexterity;
 
 	GetDlgItemText(hwnd, IDC_STR, buf, 100);
-	strength = atoi(buf);
+	strength = _ttoi(buf);
 	character_ptr->strength = strength;
 
 	GetDlgItemText(hwnd, IDC_INT, buf, 100);
-	intelligence = atoi(buf);
+	intelligence = _ttoi(buf);
 	character_ptr->intelligence = intelligence;
 
 	GetDlgItemText(hwnd, IDC_PER, buf, 100);
-	perception = atoi(buf);
+	perception = _ttoi(buf);
 	character_ptr->perception = perception;
 
 	// skills
 	GetDlgItemText(hwnd, IDC_MED, buf, 100);
-	medical = atoi(buf);
+	medical = _ttoi(buf);
 	character_ptr->medical = medical;
 
 	GetDlgItemText(hwnd, IDC_EXPL, buf, 100);
-	explosives = atoi(buf);
+	explosives = _ttoi(buf);
 	character_ptr->explosives = explosives;
 
 	GetDlgItemText(hwnd, IDC_MARK, buf, 100);
-	marksmanship = atoi(buf);
+	marksmanship = _ttoi(buf);
 	character_ptr->marksmanship = marksmanship;
 
 	GetDlgItemText(hwnd, IDC_STEALTH, buf, 100);
-	stealth = atoi(buf);
+	stealth = _ttoi(buf);
 	character_ptr->stealth = stealth;
 
 	GetDlgItemText(hwnd, IDC_MECH, buf, 100);
-	mechanical = atoi(buf);
+	mechanical = _ttoi(buf);
 	character_ptr->mechanical = mechanical;
 
 	GetDlgItemText(hwnd, IDC_BLEED_RATE, buf, 100);
-	bleed_rate = atoi(buf);
+	bleed_rate = _ttoi(buf);
 	character_ptr->bleed_rate = bleed_rate;
 }
 
 void setMoney(HWND hwnd) {
-	char buf[100];
+	TCHAR buf[100];
 	int money;
 	GetDlgItemText(hwnd, IDC_MONEY, buf, 100);
-	money = atoi(buf);
+	money = _ttoi(buf);
 	CurrentSaveGamePtr->money = money;	
 }
 
@@ -1159,13 +1154,13 @@ __declspec(naked) void* myWeaponConstReturn(){
 
 
 void __fastcall recordWeapons(void* instance){
-	char buf [100];
+	TCHAR buf [100];
 	JABIA_Weapon * weapon_ptr;
-	OutputDebugString("Parsing weapon!");
+	OutputDebugString(_T("Parsing weapon!"));
 
 	weapon_ptr = (JABIA_Weapon *)instance;
 
-	wsprintf(buf, "Weapon at 0x%X, ID: %i", weapon_ptr, weapon_ptr->ID);
+	wsprintf(buf, _T("Weapon at 0x%X, ID: %i"), weapon_ptr, weapon_ptr->ID);
 	OutputDebugString(buf);
 	jabia_weapons.push_back(weapon_ptr);	
 	jabia_weapons_map[weapon_ptr->ID] = weapon_ptr;
