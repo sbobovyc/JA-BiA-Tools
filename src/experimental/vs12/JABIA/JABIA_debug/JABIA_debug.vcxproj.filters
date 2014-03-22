@@ -30,6 +30,12 @@
     <ClInclude Include="..\h\ctx_file.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\h\weapons.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\h\attachments.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source Files">

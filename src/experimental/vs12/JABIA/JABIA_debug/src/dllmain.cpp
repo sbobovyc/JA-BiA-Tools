@@ -39,6 +39,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #include "resource.h"
 #include "character.h"
 #include "weapons.h"
+#include "attachments.h"
 #include "assembly_opcodes.h"
 #include "ctx_file.h"
 
@@ -53,6 +54,7 @@ CharacterDestructorPtr CharacterDestructor;
 ParseGameInfoReturnPtr ParseGameInfoReturn;
 SaveGame * CurrentSaveGamePtr = NULL;
 WeaponReturnPtr WeaponReturn;
+AttachmentReturnPtr AttachmentReturn;
 int * money_ptr;
 
 JABIA_DEBUGMOD_parameters debugmod_params;
@@ -74,8 +76,10 @@ int last_inventory_selected_index = 0;
 std::vector<JABIA_Weapon *> jabia_weapons;
 std::map<int, JABIA_Weapon *> jabia_weapons_map;
 
-// game info
-void myAccessGameInfo(int, GameInfo *);
+// attachment vector
+std::vector<JABIA_Attachment *> jabia_attachments;
+std::map<int, JABIA_Attachment *> jabia_attachments_map;
+
 
 CTX_file ctx;
 
@@ -130,6 +134,10 @@ DWORD WINAPI MyThread(LPVOID)
 		// find address of weapon constructor return
 		WeaponReturn = (WeaponReturnPtr)((uint32_t)game_handle+WEAPON_CONST_RETURN_OFFSET);
 		wsprintf (debugStrBuf, _T("Address of WeaponReturn 0x%x"), WeaponReturn);
+		OutputDebugString(debugStrBuf); 
+		// find address of attachment constructor return
+		AttachmentReturn = (AttachmentReturnPtr)((uint32_t)game_handle+ATTACHMENT_CONST_RETURN_OFFSET);
+		wsprintf (debugStrBuf, _T("Address of AttachmentReturn 0x%x"), AttachmentReturn);
 		OutputDebugString(debugStrBuf); 
 
 		// If jabia_characters is not empty, clear it. Every time the game loads a level, character pointers change.
@@ -188,6 +196,15 @@ DWORD WINAPI MyThread(LPVOID)
 		// restore protection
 		VirtualProtect((LPVOID)WeaponReturn, 6, oldProtection, NULL);
 
+		// hook attachment constructor return
+		VirtualProtect(AttachmentReturn, 6, PAGE_EXECUTE_READWRITE, &oldProtection);
+		JMPSize = ((DWORD)myAttachmentConstReturn - (DWORD)AttachmentReturn - 5);		
+		memcpy(&JMP_hook[1], &JMPSize, 4);
+		// overwrite retn with JMP_hook
+		memcpy((void *)AttachmentReturn, (void *)JMP_hook, 6);
+		// restore protection
+		VirtualProtect((LPVOID)AttachmentReturn, 6, oldProtection, NULL);
+
 		wsprintf(debugStrBuf, _T("Size of JABIA_Character struct %i"), sizeof(JABIA_Character));
 		OutputDebugString(debugStrBuf);
 		wsprintf(debugStrBuf, _T("Size of JABIA_weapon struct %i"), sizeof(JABIA_weapon));
@@ -205,8 +222,9 @@ DWORD WINAPI MyThread(LPVOID)
 			save(fullpath.string(), debugmod_params);
 		}
 
-		uint32_t address;
+		uint32_t address = 0;
 		// TODO put memory scanner in its own function
+		// TODO if search for patter happens before ctx file is loaded in memory, crash will occur
 		// begin mem scan function
 		int MIN_MEM = 0x00BF0000;
 		int MAX_MEM = 0x7FFFFFFF;
@@ -247,22 +265,11 @@ DWORD WINAPI MyThread(LPVOID)
 		}
 		// end mem scan function
 		DONE_MEM_SCAN:
-		_stprintf_s (debugStrBuf, DEBUG_STR_SIZE, _T("CTX at 0x%x"), address+22);
-		OutputDebugString(debugStrBuf); 
-		ctx = CTX_file((void *)(address+22));
-		for( std::map<int, wchar_t *>::iterator ii=ctx.string_map.begin(); ii!=ctx.string_map.end(); ++ii) {
-			int id = (*ii).first;
-			_stprintf_s(debugStrBuf, DEBUG_STR_SIZE, _T("%i %s"), id, ctx.string_map[id]);		
-			OutputDebugString(debugStrBuf);
-		}
-		for( std::map<wchar_t *, int>::iterator ii=ctx.id_map.begin(); ii!=ctx.id_map.end(); ++ii) {
-			wchar_t * txt = (*ii).first;
-			_stprintf_s(debugStrBuf, DEBUG_STR_SIZE, _T("%s %i"), txt, ctx.id_map[txt]);		
-			OutputDebugStringW(debugStrBuf);
-		}
-		_stprintf_s(debugStrBuf, DEBUG_STR_SIZE, _T("String: %s is id: %i"), _T("NF SCAR-H CQB"), ctx.id_map[_T("NF SCAR-H CQB\0\0")]);
-		OutputDebugStringW(debugStrBuf);
 
+		_stprintf_s (debugStrBuf, DEBUG_STR_SIZE, _T("CTX at 0x%x"), address+22);
+		OutputDebugString(debugStrBuf); 		
+		ctx = CTX_file((void *)(address+22));
+		
 		while(true)
 		{
 			//TODO add size checking to all data structures and give a warning and exit thread if something is size 0
@@ -312,7 +319,10 @@ DWORD WINAPI MyThread(LPVOID)
 					}
 				}
 			} else if(GetAsyncKeyState(VK_F8) &1) {
-				OutputDebugString(_T("Unloading JABIA_debug DLL"));
+				//TODO this is unsafe since I have not restored all the hooks
+				TCHAR unloadString[] = _T("You've unloaded the JABIA_debug DLL. To fix this, relaunch the game.");
+				OutputDebugString(unloadString);
+				MessageBox (0, debugStrBuf, _T("CreateDialog"), MB_ICONEXCLAMATION | MB_OK | MB_SYSTEMMODAL);
 				break;
 			}
 		Sleep(100);
@@ -374,7 +384,7 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 			// add characters to drop down list
 			for(size_t i = 0; i < jabia_characters.size(); i++) {							
 				SendMessageA(comboControl1,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCTSTR)jabia_characters.at(i)->merc_name)); // merc names in structure are ASCII		
-				wsprintf(debugStrBuf, _T("In init, Character at 0x%X"), jabia_characters.at(i));	
+				wsprintf(debugStrBuf, _T("In WM_INITDIALOG, character at 0x%X"), jabia_characters.at(i));	
 				OutputDebugString(debugStrBuf);
 			}
 				// select fist item in list
@@ -399,33 +409,20 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 			// select fist item in list
 			SendMessage(comboControl3, CB_SETCURSEL, 0, 0);
 
-			// add weapons to inventory weapons combo box			
-			for( std::map<int, JABIA_Weapon *>::iterator ii=jabia_weapons_map.begin(); ii!=jabia_weapons_map.end(); ++ii) {
-				uint32_t id = (*ii).second->ID;
-				wsprintf(debugStrBuf, _T("%i"), id);
-				SendMessage(comboControl4,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCTSTR)debugStrBuf));					
-			}
-			SendMessageA(comboControl4,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCTSTR)"None"));
+			// add weapons to inventory weapons combo box		
 			//TODO figure out how to put weapon names into list
-			/*
-			for( std::map<wchar_t *, int>::iterator ii=ctx.id_map.begin(); ii!=ctx.id_map.end(); ++ii) {
-				wchar_t wbuf[255];
-				wchar_t * txt = (*ii).first;
-				wsprintfW(wbuf, L"%s", txt);
-				SendMessage(comboControl4,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)wbuf));					
+			for( std::map<int, JABIA_Weapon *>::iterator ii=jabia_weapons_map.begin(); ii!=jabia_weapons_map.end(); ++ii) {
+				OutputDebugString(ctx.string_map[(*ii).second->ID].c_str());
+				SendMessage(comboControl4,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)ctx.string_map[(*ii).second->ID].c_str()));					
 			}
-			SendMessage(comboControl4,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)"None"));
-			*/
+			SendMessage(comboControl4,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)_T("None")));
+			
 			// add weapons to active weapon combo box
 			for( std::map<int, JABIA_Weapon *>::iterator ii=jabia_weapons_map.begin(); ii!=jabia_weapons_map.end(); ++ii) {
-				uint32_t id = (*ii).second->ID;
-				wsprintf(debugStrBuf, _T("%i"), id);
-				SendMessage(comboControl5,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCTSTR)debugStrBuf));	
-				//wchar_t wbuf[255];
-				//wsprintfW(wbuf, L"%i %s", id, ctx.string_map[id]);	
-				//SendMessage(comboControl5,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPWSTR)wbuf));	
+				OutputDebugString(ctx.string_map[(*ii).second->ID].c_str());
+				SendMessage(comboControl5,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)ctx.string_map[(*ii).second->ID].c_str()));					
 			}
-			SendMessage(comboControl5,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCTSTR)"None"));	
+			SendMessage(comboControl5,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)_T("None")));
 
 			break;
         case WM_COMMAND:
@@ -479,16 +476,10 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 					switch(HIWORD(wParam))
 					{
 						case CBN_CLOSEUP:
-							wsprintf(debugStrBuf, _T("Combo5"));
-							OutputDebugString(debugStrBuf);
 							// use combo box selected index to get weapon id
 							ptr = jabia_characters.at(last_character_selected_index);
 							setCharacter(hwnd, ptr, false, true);
-							wsprintf(debugStrBuf, _T("set done"));
-							OutputDebugString(debugStrBuf);
 							fillDialog(hwnd, ptr);
-							wsprintf(debugStrBuf, _T("fill done"));
-							OutputDebugString(debugStrBuf);
 							break;
 					}
 					break;
@@ -657,9 +648,6 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 
 		_itot_s(character.training_points, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_TP, buf);
-
-		//_itoa_s(character.inventory.weapon_in_hand, buf, 100, 10);
-		//SetDlgItemText(hwnd, IDC_WPN_EQ, buf);
 
 		_itot_s(character.inventory.weapon_in_hand_durability, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_WPN_EQ_DUR, buf);
@@ -854,7 +842,7 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr, bool inventory_weapon_change
 
 	if(equiped_weapon_changed) {		
 		GetDlgItemText(hwnd, IDC_COMBO5, buf, 100);
-		weapon_in_hand = _ttoi(buf);
+		weapon_in_hand = getWeaponIdByName(buf);
 		if(weapon_in_hand != 0)
 		{								
 			character_ptr->inventory.weapon_in_hand = weapon_in_hand;
@@ -868,10 +856,6 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr, bool inventory_weapon_change
 			character_ptr->inventory.ammo_equiped_count = 0;
 		}
 	} else {
-		//GetDlgItemText(hwnd, IDC_WPN_EQ, buf, 100);
-		//weapon_in_hand = atoi(buf);
-		//character_ptr->inventory.weapon_in_hand = weapon_in_hand;
-
 		GetDlgItemText(hwnd, IDC_WPN_EQ_DUR, buf, 100);
 		weapon_in_hand_durability = _ttoi(buf);
 		character_ptr->inventory.weapon_in_hand_durability = weapon_in_hand_durability;
@@ -961,13 +945,9 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr, bool inventory_weapon_change
 	character_ptr->name_length = (uint32_t)strlen(character_ptr->merc_name);
 
 	// inventory
-	//GetDlgItemText(hwnd, IDC_WPN_INV, buf, 100);
-	//weapon = atoi(buf);
-	//character_ptr->inventory.weapons[last_weaponslot_selected_index].weapon = weapon;
-	//TODO put this in a separate function
 	if(inventory_weapon_changed) {
-		GetDlgItemText(hwnd, IDC_COMBO4, buf, 100);
-		weapon = _ttoi(buf);
+		GetDlgItemText(hwnd, IDC_COMBO4, buf, 100);		
+		weapon = getWeaponIdByName(buf);
 		if(weapon != 0)
 		{								
 			character_ptr->inventory.weapons[last_weaponslot_selected_index].weapon = weapon;
@@ -1052,6 +1032,19 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr, bool inventory_weapon_change
 	bleed_rate = _ttoi(buf);
 	character_ptr->bleed_rate = bleed_rate;
 }
+
+int getWeaponIdByName(TCHAR * buf) {
+		//OutputDebugString(_T("Got this weapon:"));
+		//OutputDebugString(buf);
+		std::wstring weaponString = std::wstring(buf);
+		//OutputDebugString(buf);
+		if(weaponString.compare(L"None") != 0) {
+			return ctx.id_map[weaponString];
+		} else {
+			return 0;
+		}
+}
+// begin hooks
 
 void setMoney(HWND hwnd) {
 	TCHAR buf[100];
@@ -1164,4 +1157,28 @@ void __fastcall recordWeapons(void* instance){
 	OutputDebugString(buf);
 	jabia_weapons.push_back(weapon_ptr);	
 	jabia_weapons_map[weapon_ptr->ID] = weapon_ptr;
+}
+
+__declspec(naked) void* myAttachmentConstReturn(){	
+	__asm{
+		push eax;
+		mov ecx, eax;
+		call recordAttachments;
+		pop eax;
+		retn 8;
+	}
+}
+
+
+void __fastcall recordAttachments(void* instance){
+	TCHAR buf [100];
+	JABIA_Attachment * attachment_ptr;
+	OutputDebugString(_T("Parsing attachment!"));
+
+	attachment_ptr = (JABIA_Attachment *)instance;
+
+	wsprintf(buf, _T("Attachment at 0x%X, ID: %i"), attachment_ptr, attachment_ptr->ID);
+	OutputDebugString(buf);
+	jabia_attachments.push_back(attachment_ptr);	
+	jabia_attachments_map[attachment_ptr->ID] = attachment_ptr;
 }

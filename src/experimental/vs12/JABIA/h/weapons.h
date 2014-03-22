@@ -29,7 +29,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #define WEAPON_CONST_RETURN_OFFSET 0x12E328
 #elif defined(JAC)
 #define WEAPON_MINUMUM_FUNCTIONAL_DURABILITY_CALCULATION_OFFSET 0x1412FD
-#define WEAPON_CONST_RETURN_OFFSET 0x12E328
+#define WEAPON_CONST_RETURN_OFFSET 0x12E328 //TODO
 #else
 #error Need to define either JABIA or JAC.
 #endif
@@ -41,7 +41,7 @@ enum GunType {Shotgun=0, Handgun=1, AssaultRifle=2, SniperRifle=3, MachineGun=4,
 #define AMMO_START_ID 900
 
 typedef struct JABIA_Weapon {
-	uint32_t	unknown1;
+	uint32_t	Class; // = 4 for attachments, 0 for weapons
 	uint32_t	ID;
 	uint32_t	ResourceId;
 	bool		Deliverable;

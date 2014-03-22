@@ -43,6 +43,7 @@ typedef void * (_stdcall *UpdateCharacterExpPtr)();
 typedef void * (_stdcall *CharacterDestReturnPtr)();
 typedef int (_stdcall *CharacterDestructorPtr)(JABIA_Character *);
 typedef void * (_fastcall *WeaponReturnPtr)();
+typedef void * (_fastcall *AttachmentReturnPtr)();
 
 #ifdef __cplusplus
 extern "C" {
@@ -60,9 +61,11 @@ void* myCharacterConstReturn();
 void* myCharacterDestReturn();
 void* mySaveGameParseReturn();
 void* myWeaponConstReturn();
+void* myAttachmentConstReturn();
 void __fastcall recordCharacters(void* instance);
 void __fastcall removeCharacter(JABIA_Character * ptr);
 void __fastcall recordWeapons(void* instance);
+void __fastcall recordAttachments(void* instance);
 int myCharacterDestructor(JABIA_Character * ptr);
 
 // gui functions
@@ -71,6 +74,7 @@ BOOL dump_all_characters(HWND hwnd);
 void fillDialog(HWND hwnd, JABIA_Character * ptr);
 void setCharacter(HWND hwnd, JABIA_Character * ptr, bool inventory_weapon_changed, bool equiped_weapon_changed);
 void setMoney(HWND hwnd);
+int getWeaponIdByName(TCHAR * buf);
 
 #define PATH_TO_DEBUGMOD_XML "\\mods\\debugger\\JABIA_debugger.xml"
 
