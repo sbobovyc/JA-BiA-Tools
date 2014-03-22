@@ -21,6 +21,7 @@
     <ClInclude Include="resources\resource.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\assembly_opcodes.cpp" />
     <ClCompile Include="..\src\character.cpp" />
     <ClCompile Include="..\src\game_version.cpp" />
     <ClCompile Include="src\dllmain.cpp" />

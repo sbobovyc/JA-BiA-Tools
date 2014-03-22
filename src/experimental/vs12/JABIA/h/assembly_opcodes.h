@@ -26,4 +26,6 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #define JMP 0xE9
 #define NOP 0x90
 
+void returnHook(void * returnAddress, void * hookAddress, BYTE * savedReturn);
+
 #endif /* _ASSEMBLY_OPCODES_H_ */

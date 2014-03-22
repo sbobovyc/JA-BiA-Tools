@@ -47,10 +47,10 @@ typedef struct JABIA_Weapon {
 	bool		Deliverable;
 	uint32_t	Price;
 	uint32_t	Weight;
-	uint32_t	unknown2;
+	uint32_t	unknown1;
 	uint32_t	ui_equipment_icons_number;
-	uint16_t	incon_x_offset;
-	uint16_t	incon_y_offset;
+	uint16_t	icon_x_offset;
+	uint16_t	icon_y_offset;
 	uint16_t	icon_width;
 	uint16_t	icon_height;
 	uint32_t	ui_equipment_pictures_number;
@@ -64,14 +64,19 @@ typedef struct JABIA_Weapon {
 	uint32_t	Quality; //Durability
 	uint32_t	Damage;
 	uint32_t	Burst;
-	uint32_t	unknown3;
+	uint32_t	Auto; // unused by game
 	uint32_t	RPM; //Rate of fire
 	uint32_t	ClipSize; 
-	float		Range; 
-	uint32_t	unknown4[5]; 
-	uint8_t		DisableAttachments;
-	uint8_t		unknown5[3];
-	uint32_t	unknown6[3]; 
+	float		BestRange; 
+	uint32_t	unknown3; 
+	float		unknown4;
+	float		unknown5;
+	float		unknown6;
+	float		unknown7;
+	uint32_t	unknown8;
+	bool		DisableAttachments;
+	uint32_t	unknown9; 
+	uint32_t	unknown10;
 } JABIA_weapon;
 
 #endif /* _WEAPONS_H_ */

@@ -100,12 +100,19 @@ INT APIENTRY DllMain(HMODULE hDLL, DWORD Reason, LPVOID Reserved)
     return TRUE;
 }
 
+
+
 DWORD WINAPI MyThread(LPVOID)
 {
 	load(PATH_TO_DEBUGMOD_XML, debugmod_params);
 	TCHAR debugStrBuf [DEBUG_STR_SIZE];
 	DWORD oldProtection;
-	BYTE Before_JMP[6]; // save retn here
+	BYTE ParseCharacterSavedReturn[6]; // save retn here
+	BYTE RemoveCharacterSavedReturn[6]; // save retn here
+	BYTE ParseGameInfoSavedReturn[6]; // save retn here
+	BYTE WeaponSavedReturn[6]; // save retn here
+	BYTE AttachmentSavedReturn[6]; // save retn here
+
 	// find base address of GameDemo.exe in memory
 	if(GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, ProcessName, &game_handle) == NULL) {
 		wsprintf(debugStrBuf, _T("Failed to get module handle"));
@@ -156,58 +163,25 @@ DWORD WINAPI MyThread(LPVOID)
 		jabia_characters.clear();
 		
 		// hook character constructor return
-		VirtualProtect(ParseCharacter, 6, PAGE_EXECUTE_READWRITE, &oldProtection);
-		DWORD JMPSize = ((DWORD)myCharacterConstReturn - (DWORD)ParseCharacter - 5);		
-		BYTE JMP_hook[6] = {JMP, NOP, NOP, NOP, NOP, NOP}; 
-		memcpy((void *)Before_JMP, (void *)ParseCharacter, 6); // save retn
-		memcpy(&JMP_hook[1], &JMPSize, 4);
-		//wsprintf(buf, "JMP: %x%x%x%x%x", JMP[0], JMP[1], JMP[2], JMP[3], JMP[4], JMP[5]);
-		//OutputDebugString(debugStrBuf);
-		// overwrite retn with JMP_hook
-		memcpy((void *)ParseCharacter, (void *)JMP_hook, 6);
-		// restore protection
-		VirtualProtect((LPVOID)ParseCharacter, 6, oldProtection, NULL);
+		returnHook(ParseCharacter, myCharacterConstReturn, ParseCharacterSavedReturn);
 
 		// hook character destructor return
-		VirtualProtect(RemoveCharacter, 6, PAGE_EXECUTE_READWRITE, &oldProtection);
-		JMPSize = ((DWORD)myCharacterDestReturn - (DWORD)RemoveCharacter - 5);		
-		memcpy(&JMP_hook[1], &JMPSize, 4);
-		// overwrite retn with JMP
-		memcpy((void *)RemoveCharacter, (void *)JMP_hook, 6);
-		// restore protection
-		VirtualProtect((LPVOID)RemoveCharacter, 6, oldProtection, NULL);
-
+		returnHook(RemoveCharacter, myCharacterDestReturn, RemoveCharacterSavedReturn);
 		
 		// hook parse game info return
-		VirtualProtect(ParseGameInfoReturn, 6, PAGE_EXECUTE_READWRITE, &oldProtection);
-		JMPSize = ((DWORD)mySaveGameParseReturn - (DWORD)ParseGameInfoReturn - 5);		
-		memcpy(&JMP_hook[1], &JMPSize, 4);
-		// overwrite retn with JMP_hook
-		memcpy((void *)ParseGameInfoReturn, (void *)JMP_hook, 6);
-		// restore protection
-		VirtualProtect((LPVOID)ParseGameInfoReturn, 6, oldProtection, NULL);
+		returnHook(ParseGameInfoReturn, mySaveGameParseReturn, ParseGameInfoSavedReturn);
 
 		// hook weapon constructor return
-		VirtualProtect(WeaponReturn, 6, PAGE_EXECUTE_READWRITE, &oldProtection);
-		JMPSize = ((DWORD)myWeaponConstReturn - (DWORD)WeaponReturn - 5);		
-		memcpy(&JMP_hook[1], &JMPSize, 4);
-		// overwrite retn with JMP_hook
-		memcpy((void *)WeaponReturn, (void *)JMP_hook, 6);
-		// restore protection
-		VirtualProtect((LPVOID)WeaponReturn, 6, oldProtection, NULL);
+		returnHook(WeaponReturn, myWeaponConstReturn, WeaponSavedReturn);
 
 		// hook attachment constructor return
-		VirtualProtect(AttachmentReturn, 6, PAGE_EXECUTE_READWRITE, &oldProtection);
-		JMPSize = ((DWORD)myAttachmentConstReturn - (DWORD)AttachmentReturn - 5);		
-		memcpy(&JMP_hook[1], &JMPSize, 4);
-		// overwrite retn with JMP_hook
-		memcpy((void *)AttachmentReturn, (void *)JMP_hook, 6);
-		// restore protection
-		VirtualProtect((LPVOID)AttachmentReturn, 6, oldProtection, NULL);
+		returnHook(AttachmentReturn, myAttachmentConstReturn, AttachmentSavedReturn);
 
 		wsprintf(debugStrBuf, _T("Size of JABIA_Character struct %i"), sizeof(JABIA_Character));
 		OutputDebugString(debugStrBuf);
 		wsprintf(debugStrBuf, _T("Size of JABIA_weapon struct %i"), sizeof(JABIA_weapon));
+		OutputDebugString(debugStrBuf);
+		wsprintf(debugStrBuf, _T("Size of JABIA_Attachment struct %i"), sizeof(JABIA_Attachment));
 		OutputDebugString(debugStrBuf);
 		wsprintf(debugStrBuf, _T("First run? %i"), debugmod_params.first_run);
 		OutputDebugString(debugStrBuf);
@@ -321,19 +295,19 @@ DWORD WINAPI MyThread(LPVOID)
 						}
 					}
 				}
-			} else if(GetAsyncKeyState(VK_F8) &1) {
+			} /* else if(GetAsyncKeyState(VK_F8) &1) {
 				//TODO this is unsafe since I have not restored all the hooks
 				TCHAR unloadString[] = _T("You've unloaded the JABIA_debug DLL. To fix this, relaunch the game.");
 				OutputDebugString(unloadString);
 				MessageBox (0, debugStrBuf, _T("CreateDialog"), MB_ICONEXCLAMATION | MB_OK | MB_SYSTEMMODAL);
 				break;
-			}
+			} */
 		Sleep(100);
 		}
 		// restore retn hook
 		// read + write
 		VirtualProtect(ParseCharacter, 6, PAGE_EXECUTE_READWRITE, &oldProtection);
-		memcpy((void *)ParseCharacter, (void *)Before_JMP, 6);
+		memcpy((void *)ParseCharacter, (void *)ParseCharacterSavedReturn, 6);
 		// restore protection
 		VirtualProtect((LPVOID)ParseCharacter, 6, oldProtection, NULL);
 
@@ -741,9 +715,6 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 		_itot_s(character.inventory.ammo_equiped_count, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_AMMO_EQ_CNT, buf);
 
-		//_itot_s(character.inventory.weapon_attachment_removable, buf, 100, 10);
-		//SetDlgItemText(hwnd, IDC_WPN_MOD, buf);
-
 		// health and stamina 	
 		_stprintf_s(buf, _T("%.1f"), character.health, 4);
 		//OutputDebugString(buf);
@@ -764,9 +735,6 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 		SetDlgItemText(hwnd, IDC_MED_COND, buf);
 
 		// inventory
-		//_itoa_s(character.inventory.weapons[last_weaponslot_selected_index].weapon, buf, 100, 10);
-		//SetDlgItemText(hwnd, IDC_WPN_INV, buf);
-
 		_itot_s(character.inventory.weapons[last_weaponslot_selected_index].weapon_durability, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_WPN_INV_DUR, buf);
 
@@ -970,10 +938,6 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr, bool inventory_weapon_change
 	GetDlgItemText(hwnd, IDC_PANTS_DUR, buf, 100);
 	pants_equiped_durability = _ttoi(buf);
 	character_ptr->inventory.pants_equiped_durability = pants_equiped_durability;
-
-	//GetDlgItemText(hwnd, IDC_WPN_MOD, buf, 100);
-	//weapon_attachment_removable = _ttoi(buf);
-	//character_ptr->inventory.weapon_attachment_removable = weapon_attachment_removable;	
 
 	if(attachment_changed) {		
 		GetDlgItemText(hwnd, IDC_COMBO_WEAPON_MOD, buf, 100);
