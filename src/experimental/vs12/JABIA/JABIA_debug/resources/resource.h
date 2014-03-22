@@ -33,7 +33,6 @@
 #define IDC_PANTS_EQ                            1046
 #define IDC_PANTS_DUR                           1048
 #define IDC_AMMO_EQ_CNT                         1050
-#define IDC_WPN_MOD                             1052
 #define IDC_MED                                 1058
 #define IDC_EXPL                                1059
 #define IDC_MARK                                1060
@@ -59,3 +58,4 @@
 #define IDC_COMBO_INVENTORY_SLOT                40002
 #define IDC_COMBO_WEAPON_SLOT                   40003
 #define IDC_MONEY                               40004
+#define IDC_COMBO_WEAPON_MOD                    40005

@@ -222,7 +222,8 @@ DWORD WINAPI MyThread(LPVOID)
 			save(fullpath.string(), debugmod_params);
 		}
 
-		uint32_t address = 0;
+		Sleep(100); //TODO instead of sleeping to wait for ctx to get loaded into memory, hook the function that loads it
+		uint32_t address = NULL;
 		// TODO put memory scanner in its own function
 		// TODO if search for patter happens before ctx file is loaded in memory, crash will occur
 		// begin mem scan function
@@ -265,7 +266,9 @@ DWORD WINAPI MyThread(LPVOID)
 		}
 		// end mem scan function
 		DONE_MEM_SCAN:
-
+		if(address == NULL) {
+			OutputDebugString(_T("CTX not found")); 		
+		}
 		_stprintf_s (debugStrBuf, DEBUG_STR_SIZE, _T("CTX at 0x%x"), address+22);
 		OutputDebugString(debugStrBuf); 		
 		ctx = CTX_file((void *)(address+22));
@@ -350,11 +353,13 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 	HWND comboControl3;
 	HWND comboControl4;
 	HWND comboControl5;
+	HWND comboControl6;
 	comboControl1=GetDlgItem(hwnd,IDC_COMBO_CHARACTER);	
 	comboControl2=GetDlgItem(hwnd,IDC_COMBO_WEAPON_SLOT);	
 	comboControl3=GetDlgItem(hwnd,IDC_COMBO_INVENTORY_SLOT);	
 	comboControl4=GetDlgItem(hwnd,IDC_COMBO_INVENTORY_WEAPON);	
 	comboControl5=GetDlgItem(hwnd,IDC_COMBO_EQUIPED_WEAPON);	
+	comboControl6=GetDlgItem(hwnd,IDC_COMBO_WEAPON_MOD);	
 	BOOL status = FALSE;
 	JABIA_Character * ptr = 0; // character address
 	TCHAR debugStrBuf[255];
@@ -423,6 +428,13 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 			}
 			SendMessage(comboControl5,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)_T("None")));
 
+			// add weapon mods to combo box
+			for( std::map<int, JABIA_Attachment *>::iterator ii=jabia_attachments_map.begin(); ii!=jabia_attachments_map.end(); ++ii) {
+				OutputDebugString(ctx.string_map[(*ii).second->ID].c_str());
+				SendMessage(comboControl6,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)ctx.string_map[(*ii).second->ID].c_str()));					
+			}
+			SendMessage(comboControl6,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)_T("None")));
+
 			break;
         case WM_COMMAND:
             switch(LOWORD(wParam))
@@ -466,7 +478,7 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 						case CBN_CLOSEUP:
 							// use combo box selected index to get weapon id
 							ptr = jabia_characters.at(last_character_selected_index);
-							setCharacter(hwnd, ptr, true, false);
+							setCharacter(hwnd, ptr, true, false, false);
 							fillDialog(hwnd, ptr);
 							break;
 					}
@@ -477,14 +489,24 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 						case CBN_CLOSEUP:
 							// use combo box selected index to get weapon id
 							ptr = jabia_characters.at(last_character_selected_index);
-							setCharacter(hwnd, ptr, false, true);
+							setCharacter(hwnd, ptr, false, true, false);
+							fillDialog(hwnd, ptr);
+							break;
+					}
+				case IDC_COMBO_WEAPON_MOD:
+					switch(HIWORD(wParam))
+					{
+						case CBN_CLOSEUP:
+							// use combo box selected index to get weapon id
+							ptr = jabia_characters.at(last_character_selected_index);
+							setCharacter(hwnd, ptr, false, false, true);
 							fillDialog(hwnd, ptr);
 							break;
 					}
 					break;
                 case IDSET:
 					ptr = jabia_characters.at(last_character_selected_index);
-					setCharacter(hwnd, ptr, false, false);
+					setCharacter(hwnd, ptr, false, false, false);
 					setMoney(hwnd);
 					break;
 				case IDM_HEAL_CHARACTER:					
@@ -635,6 +657,23 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 			SendMessage(comboControl5, CB_SETCURSEL, jabia_weapons_map.size(), 0);
 		}		
 
+		HWND comboControl6;
+		comboControl6=GetDlgItem(hwnd,IDC_COMBO_WEAPON_MOD);			
+		uint32_t equiped_attachment_id = character.inventory.weapon_attachment_removable;		
+		int attachment_id = 0;		
+		if(equiped_attachment_id != 0xFFFF) {
+			for( std::map<int, JABIA_Attachment *>::iterator ii=jabia_attachments_map.begin(); ii!=jabia_attachments_map.end(); ++ii) {
+				uint32_t id = (*ii).second->ID;
+				if(equiped_attachment_id == id) {
+					SendMessage(comboControl6, CB_SETCURSEL, attachment_id, 0);
+					break;
+				}
+				attachment_id++;
+			}		
+		} else {
+			SendMessage(comboControl6, CB_SETCURSEL, jabia_attachments_map.size(), 0);
+		}	
+
 		// address of character
 		_itot_s((uint32_t)ptr, buf, 100, 16);
 		SetDlgItemText(hwnd, IDC_ADDRESS, buf);	
@@ -702,8 +741,8 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 		_itot_s(character.inventory.ammo_equiped_count, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_AMMO_EQ_CNT, buf);
 
-		_itot_s(character.inventory.weapon_attachment_removable, buf, 100, 10);
-		SetDlgItemText(hwnd, IDC_WPN_MOD, buf);
+		//_itot_s(character.inventory.weapon_attachment_removable, buf, 100, 10);
+		//SetDlgItemText(hwnd, IDC_WPN_MOD, buf);
 
 		// health and stamina 	
 		_stprintf_s(buf, _T("%.1f"), character.health, 4);
@@ -775,7 +814,8 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 	}	
 }
 
-void setCharacter(HWND hwnd, JABIA_Character * ptr, bool inventory_weapon_changed, bool equiped_weapon_changed) {
+//TODO instead of bool for each, make on variable as bitfield
+void setCharacter(HWND hwnd, JABIA_Character * ptr, bool inventory_weapon_changed, bool equiped_weapon_changed, bool attachment_changed) {
 	TCHAR buf [100];
 	char nameBuf[100];
 	JABIA_Character * character_ptr = ptr;
@@ -931,9 +971,22 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr, bool inventory_weapon_change
 	pants_equiped_durability = _ttoi(buf);
 	character_ptr->inventory.pants_equiped_durability = pants_equiped_durability;
 
-	GetDlgItemText(hwnd, IDC_WPN_MOD, buf, 100);
-	weapon_attachment_removable = _ttoi(buf);
-	character_ptr->inventory.weapon_attachment_removable = weapon_attachment_removable;	
+	//GetDlgItemText(hwnd, IDC_WPN_MOD, buf, 100);
+	//weapon_attachment_removable = _ttoi(buf);
+	//character_ptr->inventory.weapon_attachment_removable = weapon_attachment_removable;	
+
+	if(attachment_changed) {		
+		GetDlgItemText(hwnd, IDC_COMBO_WEAPON_MOD, buf, 100);
+		weapon_attachment_removable = getWeaponIdByName(buf);
+		if(weapon_attachment_removable != 0)
+		{								
+			character_ptr->inventory.weapon_attachment_removable = weapon_attachment_removable;
+			character_ptr->inventory.weapon_attachment_status = 1;
+		} else {
+			character_ptr->inventory.weapon_attachment_removable = 0xFFFF;
+			character_ptr->inventory.weapon_attachment_status = 0;
+		}
+	} 
 
 	character_ptr->inventory.weapon_attachment_status = 1;
 

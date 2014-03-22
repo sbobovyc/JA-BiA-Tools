@@ -72,7 +72,7 @@ int myCharacterDestructor(JABIA_Character * ptr);
 void dump_current_character(HWND hwnd, JABIA_Character * ptr);
 BOOL dump_all_characters(HWND hwnd);
 void fillDialog(HWND hwnd, JABIA_Character * ptr);
-void setCharacter(HWND hwnd, JABIA_Character * ptr, bool inventory_weapon_changed, bool equiped_weapon_changed);
+void setCharacter(HWND hwnd, JABIA_Character * ptr, bool inventory_weapon_changed, bool equiped_weapon_changed, bool attachment_changed);
 void setMoney(HWND hwnd);
 int getWeaponIdByName(TCHAR * buf);
 
