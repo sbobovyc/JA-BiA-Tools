@@ -350,11 +350,11 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 	HWND comboControl3;
 	HWND comboControl4;
 	HWND comboControl5;
-	comboControl1=GetDlgItem(hwnd,IDC_COMBO1);	
-	comboControl2=GetDlgItem(hwnd,IDC_COMBO2);	
-	comboControl3=GetDlgItem(hwnd,IDC_COMBO3);	
-	comboControl4=GetDlgItem(hwnd,IDC_COMBO4);	
-	comboControl5=GetDlgItem(hwnd,IDC_COMBO5);	
+	comboControl1=GetDlgItem(hwnd,IDC_COMBO_CHARACTER);	
+	comboControl2=GetDlgItem(hwnd,IDC_COMBO_WEAPON_SLOT);	
+	comboControl3=GetDlgItem(hwnd,IDC_COMBO_INVENTORY_SLOT);	
+	comboControl4=GetDlgItem(hwnd,IDC_COMBO_INVENTORY_WEAPON);	
+	comboControl5=GetDlgItem(hwnd,IDC_COMBO_EQUIPED_WEAPON);	
 	BOOL status = FALSE;
 	JABIA_Character * ptr = 0; // character address
 	TCHAR debugStrBuf[255];
@@ -410,7 +410,6 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 			SendMessage(comboControl3, CB_SETCURSEL, 0, 0);
 
 			// add weapons to inventory weapons combo box		
-			//TODO figure out how to put weapon names into list
 			for( std::map<int, JABIA_Weapon *>::iterator ii=jabia_weapons_map.begin(); ii!=jabia_weapons_map.end(); ++ii) {
 				OutputDebugString(ctx.string_map[(*ii).second->ID].c_str());
 				SendMessage(comboControl4,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)ctx.string_map[(*ii).second->ID].c_str()));					
@@ -428,7 +427,7 @@ BOOL CALLBACK DialogProc (HWND hwnd,
         case WM_COMMAND:
             switch(LOWORD(wParam))
             {
-				case IDC_COMBO1:
+				case IDC_COMBO_CHARACTER:
 					switch(HIWORD(wParam))
 					{
 						case CBN_CLOSEUP:
@@ -439,7 +438,7 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 							break;
 					}
 					break;
-				case IDC_COMBO2:
+				case IDC_COMBO_WEAPON_SLOT:
 					switch(HIWORD(wParam))
 					{
 						case CBN_CLOSEUP:
@@ -450,18 +449,18 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 							break;
 					}
 					break;
-				case IDC_COMBO3:
+				case IDC_COMBO_INVENTORY_SLOT:
 					switch(HIWORD(wParam))
 					{
 						case CBN_CLOSEUP:
-							// use combo box selected index to get weapon from inventory
+							// use combo box selected index to item from inventory
 							last_inventory_selected_index = SendMessage(comboControl3, CB_GETCURSEL, 0, 0);
 							ptr = jabia_characters.at(last_character_selected_index);
 							fillDialog(hwnd, ptr);
 							break;
 					}
 					break;
-				case IDC_COMBO4:
+				case IDC_COMBO_INVENTORY_WEAPON:
 					switch(HIWORD(wParam))
 					{
 						case CBN_CLOSEUP:
@@ -472,7 +471,7 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 							break;
 					}
 					break;
-				case IDC_COMBO5:
+				case IDC_COMBO_EQUIPED_WEAPON:
 					switch(HIWORD(wParam))
 					{
 						case CBN_CLOSEUP:
@@ -603,7 +602,7 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 		
 		// add weapons to combo boxes
 		HWND comboControl4;
-		comboControl4=GetDlgItem(hwnd,IDC_COMBO4);			
+		comboControl4=GetDlgItem(hwnd,IDC_COMBO_INVENTORY_WEAPON);			
 		uint32_t selected_weapon_id = character.inventory.weapons[last_weaponslot_selected_index].weapon;		
 		int weapon_id = 0;		
 		if(selected_weapon_id != 0xFFFF) {
@@ -620,7 +619,7 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 		}
 		
 		HWND comboControl5;
-		comboControl5=GetDlgItem(hwnd,IDC_COMBO5);			
+		comboControl5=GetDlgItem(hwnd,IDC_COMBO_EQUIPED_WEAPON);			
 		uint32_t equiped_weapon_id = character.inventory.weapon_in_hand;		
 		weapon_id = 0;		
 		if(equiped_weapon_id != 0xFFFF) {
@@ -841,7 +840,7 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr, bool inventory_weapon_change
 	character_ptr->training_points = training_points;
 
 	if(equiped_weapon_changed) {		
-		GetDlgItemText(hwnd, IDC_COMBO5, buf, 100);
+		GetDlgItemText(hwnd, IDC_COMBO_EQUIPED_WEAPON, buf, 100);
 		weapon_in_hand = getWeaponIdByName(buf);
 		if(weapon_in_hand != 0)
 		{								
@@ -946,7 +945,7 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr, bool inventory_weapon_change
 
 	// inventory
 	if(inventory_weapon_changed) {
-		GetDlgItemText(hwnd, IDC_COMBO4, buf, 100);		
+		GetDlgItemText(hwnd, IDC_COMBO_INVENTORY_WEAPON, buf, 100);		
 		weapon = getWeaponIdByName(buf);
 		if(weapon != 0)
 		{								
