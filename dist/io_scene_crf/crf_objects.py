@@ -352,7 +352,8 @@ class CRF_object(object):
         self.header.parse_bin(file)
         self.footer = CRF_footer()
         self.footer.parse_bin(file, self.header.footer_offset1, self.header.footer_offset2, self.header.footer_entries)
-        self.meshfile = CRF_meshfile(file, self.footer.get_meshfile().file_offset)
+        self.meshfile = CRF_meshfile()
+        self.meshfile.parse_bin(file, self.footer.get_meshfile().file_offset)
         
         if(self.footer.get_jointmap() != None):
             self.jointmap = CRF_jointmap(file, self.footer.get_jointmap().file_offset)
@@ -530,11 +531,12 @@ class CRF_entry_descriptor(object):
         return data
 
 class CRF_meshfile(object):
-    def __init__(self, file, file_offset, verbose=False):
+    def __init__(self):
         self.num_meshes = None
         self.model_bounding_box = None # ((LoX, LoY, LoZ), (HiX, HiY, HZ))
         self.meshes = []
 
+    def parse_bin(self, file, file_offset, verbose=False):
         print("===Parsing meshfile===")
         file.seek(file_offset)
         magick, self.num_meshes = struct.unpack("<II", file.read(8))
@@ -545,7 +547,9 @@ class CRF_meshfile(object):
         print("Bounding box of entire model: ", self.model_bounding_box)
 
         for i in range(0, self.num_meshes):
-            self.meshes.append(CRF_mesh(file, file.tell(), i, verbose))
+            mesh = CRF_mesh()
+            mesh.parse_bin(file, file.tell(), i, verbose)
+            self.meshes.append(mesh)
 
         print("===End of parsing meshfile===")
 
@@ -594,8 +598,8 @@ class CRF_meshfile(object):
         return data
 
 class CRF_mesh(object):
-    def __init__(self, file, file_offset, mesh_number, verbose=False):
-        self.mesh_number = mesh_number
+    def __init__(self):
+        self.mesh_number = 0
         self.number_of_verteces = None
         self.number_of_faces = None
         self.face_list = []
@@ -606,10 +610,11 @@ class CRF_mesh(object):
         self.verteces2 = [] # blendindeces and blendweight
         self.vertex_stream3_layout = [] # [layout, stride]             
         self.verteces3 = [] # unknown stream, used on animated meshes
-        self.bounding_box = [] # ((LoX, LoY, LoZ), (HiX, HiY, HZ))
+        self.bounding_box = None # ((LoX, LoY, LoZ), (HiX, HiY, HZ))
         self.materials = None
 
-        # parse
+    def parse_bin(self, file, file_offset, mesh_number, verbose=False):
+        self.mesh_number = mesh_number
         print("Mesh %i, face/vertex list at %s" % (self.mesh_number, hex(file.tell()).strip('L')))
         self.number_of_verteces, = struct.unpack("<I", file.read(4))
         self.number_of_faces, = struct.unpack("<I", file.read(4))
@@ -693,10 +698,11 @@ class CRF_mesh(object):
         data += struct.pack("<B", self.stream_count)
         
         # write first stream
-        data += struct.pack("<II", *self.vertex_stream1_layout)
-        for vertex in self.verteces1:
-            #TODO should convert blender to raw here
-            data += vertex.convert2bin()
+        if len(self.vertex_stream1_layout) != 0:
+            data += struct.pack("<II", *self.vertex_stream1_layout)
+            for vertex in self.verteces1:
+                #TODO should convert blender to raw here
+                data += vertex.convert2bin()
             
         # write second stream
         if len(self.vertex_stream2_layout) != 0:
@@ -719,7 +725,8 @@ class CRF_mesh(object):
         data += struct.pack("<fff", *list(HiXYZ))
 
         # write materials
-        data += self.materials.get_bin()
+        if self.materials != None:
+            data += self.materials.get_bin()
         
         return data
     
@@ -1014,51 +1021,54 @@ class CRF_vertex_blend_indeces_only(object):
         return data
     
 class CRF_vertex(object):
-    """
-        Common variables:
-        CRF_vertex.index
+    def __init__(self):
+        self.index = 0
         
-        Raw CRF variables:
-        CRF_vertex.x, vert.y, vert.z 
-        CRF_vertex.normal_x 
-        CRF_vertex.normal_y 
-        CRF_vertex.normal_z 
-        CRF_vertex.normal_w 
-        CRF_vertex.specular_blue 
-        CRF_vertex.specular_green
-        CRF_vertex.specular_red 
-        CRF_vertex.specular_alpha      
-        CRF_vertex.u0 
-        CRF_vertex.v0 
-        CRF_vertex.u1 
-        CRF_vertex.v1 
-        CRF_vertex.blendweights1_x
-        CRF_vertex.blendweights1_y
-        CRF_vertex.blendweights1_z
-        CRF_vertex.blendweights1_w
+        # Raw CRF variables:
+        self.x = 0
+        self.y = 0
+        self.z = 0
+        self.normal_x = 0
+        self.normal_y = 0
+        self.normal_z = 0
+        self.normal_w = 0
+        self.specular_blue = 0
+        self.specular_green = 0
+        self.specular_red = 0
+        self.specular_alpha = 0
+        self.u0 = 0
+        self.v0 = 0
+        self.u1 = 0
+        self.v1 = 0
+        self.blendweights1_x = 0
+        self.blendweights1_y = 0
+        self.blendweights1_z = 0
+        self.blendweights1_w = 0
 
-        Blender variables
-        CRF_vertex.x_blend, vert.y_blend, vert.z_blend 
-        CRF_vertex.normal_x_blend 
-        CRF_vertex.normal_y_blend 
-        CRF_vertex.normal_z_blend 
-        CRF_vertex.normal_w_blend 
-        CRF_vertex.specular_blue_blend 
-        CRF_vertex.specular_green_blend
-        CRF_vertex.specular_red_blend 
-        CRF_vertex.specular_alpha_blend #Not iplemented      
-        CRF_vertex.u0_blend 
-        CRF_vertex.v0_blend 
-        CRF_vertex.u1_blend 
-        CRF_vertex.v1_blend 
-        CRF_vertex.blendweights1_blend
-        CRF_vertex.blendweights1_x_blend
-        CRF_vertex.blendweights1_y_blend
-        CRF_vertex.blendweights1_z_blend
-        CRF_vertex.blendweights1_w_blend  
+        # Blender variables
+        self.x_blend = 0
+        self.y_blend = 0
+        self.z_blend = 0
+        self.normal_x_blend = 0
+        self.normal_y_blend = 0
+        self.normal_z_blend = 0
+        self.normal_w_blend = 0
+        self.specular_blue_blend = 0
+        self.specular_green_blend = 0
+        self.specular_red_blend = 0
+        self.specular_alpha_blend = 0 #Not iplemented      
+        self.u0_blend = 0
+        self.v0_blend = 0
+        self.u1_blend = 0
+        self.v1_blend = 0
+        self.blendweights1_blend = 0
+        self.blendweights1_x_blend = 0
+        self.blendweights1_y_blend = 0
+        self.blendweights1_z_blend = 0
+        self.blendweights1_w_blend = 0
 
             
-    """
+    
     def __str__(self):
         string = "Vertex index = %s\n" % (self.index)
         string += "Blender values:\n"
@@ -1077,7 +1087,7 @@ class CRF_vertex(object):
                                                                      hex(self.specular_blue), hex(self.specular_green), hex(self.specular_red), hex(self.specular_alpha))
         string += "\tuv0 = %i %i, 0x%x 0x%x\n" % (self.u0, self.v0, self.u0, self.v0)
         string += "\tuv1 = %i %i, 0x%x 0x%x\n" % (self.u1, self.v1, self.u1, self.v1)        
-        string += "\tblendeweight = 0x%x 0x%x 0x%x 0x%x\n" % (self.blendweights1_x & 0xff, self.blendweights1_y & 0xff, self.blendweights1_z & 0xff, self.blendweights1_w & 0xff)       
+        string += "\tblendweight = 0x%x 0x%x 0x%x 0x%x\n" % (self.blendweights1_x & 0xff, self.blendweights1_y & 0xff, self.blendweights1_z & 0xff, self.blendweights1_w & 0xff)       
         return string
 
     def float2uint(self, f_number):

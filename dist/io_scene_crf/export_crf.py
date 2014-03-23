@@ -23,7 +23,7 @@ import bpy
 import mathutils
 import bpy_extras.io_utils
 
-from .crf_objects import CRF_header,CRF_vertex,CRF_entry,CRF_entry_descriptor
+from .crf_objects import CRF_header,CRF_meshfile,CRF_mesh,CRF_vertex,CRF_entry,CRF_entry_descriptor
 
 
 def _write(context, filepath,
@@ -72,117 +72,120 @@ def _write(context, filepath,
     matrix_world = ob_primary.matrix_basis # world matrix so we can transform from local to global coordinates
 
     # write header
-    #header = CRF_header()
-    #file.write(header.get_bin())
-    file.write(b"fknc")
-    file.write(struct.pack("<I", 1))
-    file.write(struct.pack("<II", *(0xFFFF, 0xFFFF))) #these values are set after mesh data is written out
-    
-    file.write(struct.pack("<IHH", *(2, 6, 0xFFFF)))# object type 2, magick 6, magick 0xFFFF
-    file.write(struct.pack("<I", num_meshes))    #number of meshes in file, for now just one
+    header = CRF_header()
+    file.write(header.get_bin())
+    # end of header
+    meshfile = CRF_meshfile()
     LoX = ob_primary.bound_box[0][0]    #TODO, put bbox into a function
     LoY = ob_primary.bound_box[0][1]
     LoZ = ob_primary.bound_box[0][2]
     HiX = ob_primary.bound_box[6][0]
     HiY = ob_primary.bound_box[6][1]
-    HiZ = ob_primary.bound_box[6][2]   
+    HiZ = ob_primary.bound_box[6][2]
+    meshfile.num_meshes = len(bpy.context.selected_objects)
+    meshfile.model_bounding_box = ((LoX, LoY, LoZ), (HiX, HiY, HiZ))
     print("Bounding box (%f, %f, %f) (%f, %f, %f)" % (LoX, LoY, LoZ, HiX, HiY, HiZ))
-    file.write(struct.pack("<ffffff", *(LoX, LoY, LoZ, HiX, HiY, HiZ))) # bounding box
-    # end of header
 
+    
     # start mesh export loop
-    model_number = 0
+    mesh_number = 0
     for ob in bpy.context.selected_objects:
+        # get blender data
+        blender_mesh = ob.data
+        
+        crf_mesh = CRF_mesh()
+        crf_mesh.mesh_number = mesh_number
+        mesh_number = mesh_number + 1
+
+        crf_mesh.number_of_verteces = len(blender_mesh.vertices)
+        crf_mesh.number_of_faces = len(blender_mesh.polygons)
+        
+        # mesh bounding box
         LoX = ob.bound_box[0][0]
         LoY = ob.bound_box[0][1]
         LoZ = ob.bound_box[0][2]
         HiX = ob.bound_box[6][0]
         HiY = ob.bound_box[6][1]
         HiZ = ob.bound_box[6][2]
+        crf_mesh.bounding_box = ((LoX, LoY, LoZ), (HiX, HiY, HiZ))
+
+        crf_mesh.stream_count = 2
+        layout = 0xc018021
+        stride = 32
+        crf_mesh.vertex_stream1_layout = [layout, stride]
+        print(crf_mesh)                
         
-        # mesh header
-        mesh = ob.data
-        number_of_verteces = len(mesh.vertices)
-        number_of_faces = len(mesh.tessfaces)
-        file.write(struct.pack("<II", *(number_of_verteces, number_of_faces))) # number for vertices and faces
-        print("Model: %i, vertices: %i, faces: %i" % (model_number, len(mesh.vertices), len(mesh.tessfaces)))
-        model_number = model_number + 1
         # face/vertex index list
         #TODO, the first face always has the first two vertices switched. Don't know if this will affect
         # anything. Need to verify that this does not cause a problem.
-        for face in mesh.tessfaces:
-            verts_in_face = face.vertices[:]
+        
+        for face in blender_mesh.polygons:
+            verts_in_face = (face.vertices[2],face.vertices[1],face.vertices[0])
             if verbose:
                 print("face index %s, verts %s" % (face.index, verts_in_face))
-            file.write(struct.pack("<HHH", *verts_in_face))
-
-            
-        # start token?
-        print("Writing verts at", hex(file.tell()))
-        file.write(struct.pack("<Qx", 0x0000200c01802102))
-        # end mesh header
-
+            crf_mesh.face_list.append(verts_in_face)
+                    
+        
         # make sure to create uv texture layers before vertex color layers, otherwise uv layer will overwrite a vertex color layer
-        if len(mesh.uv_textures) == 2:
-            uv_tex0 = mesh.uv_textures[0]
-            uv_tex1 = mesh.uv_textures[1]
-        elif len(mesh.uv_textures) == 1:
-            uv_tex0 = mesh.uv_textures[0]
-            uv_tex1 = mesh.uv_textures.new()
+        if len(blender_mesh.uv_textures) == 2:
+            uv_tex0 = blender_mesh.uv_textures[0]
+            uv_tex1 = blender_mesh.uv_textures[1]
+        elif len(blender_mesh.uv_textures) == 1:
+            uv_tex0 = blender_mesh.uv_textures[0]
+            uv_tex1 = blender_mesh.uv_textures.new()
             uv_tex1.name = "UV_Secondary"
         else:
-            uv_tex0 = mesh.uv_textures.new()
+            uv_tex0 = blender_mesh.uv_textures.new()
             uv_tex0.name = "UV_Main"
-            uv_tex1 = mesh.uv_textures.new()
+            uv_tex1 = blender_mesh.uv_textures.new()
             uv_tex1.name = "UV_Secondary"
-
-        mesh.update(calc_tessface=True)
-        uv_tex0 = mesh.tessface_uv_textures[0]
-        uv_tex1 = mesh.tessface_uv_textures[1]
+        
+        blender_mesh.update(calc_tessface=True)
+        uv_tex0 = blender_mesh.tessface_uv_textures[0]
+        uv_tex1 = blender_mesh.tessface_uv_textures[1]
         
         # write out verteces, normals, ks, and UVs
-        if "vertex_specular_colors" in mesh.tessface_vertex_colors:
-            vtex_specular_colors = mesh.tessface_vertex_colors["vertex_specular_colors"]
+        if "vertex_specular_colors" in blender_mesh.tessface_vertex_colors:
+            vtex_specular_colors = blender_mesh.tessface_vertex_colors["vertex_specular_colors"]
         else:
-            vtex_specular_colors_m = mesh.vertex_colors.new()
+            vtex_specular_colors_m = blender_mesh.vertex_colors.new()
             vtex_specular_colors_m.name = "vertex_specular_colors"
-            mesh.update(calc_tessface=True)
-            vtex_specular_colors = mesh.tessface_vertex_colors["vertex_specular_colors"]
+            blender_mesh.update(calc_tessface=True)
+            vtex_specular_colors = blender_mesh.tessface_vertex_colors["vertex_specular_colors"]
 
-        if "vertex_specular_alpha" in mesh.tessface_vertex_colors:
-            vtex_specular_alpha = mesh.tessface_vertex_colors["vertex_specular_alpha"]
+        if "vertex_specular_alpha" in blender_mesh.tessface_vertex_colors:
+            vtex_specular_alpha = blender_mesh.tessface_vertex_colors["vertex_specular_alpha"]
         else:
-            vtex_specular_alpha_m = mesh.vertex_colors.new()
+            vtex_specular_alpha_m = blender_mesh.vertex_colors.new()
             vtex_specular_alpha_m.name = "vertex_specular_alpha"
-            mesh.update(calc_tessface=True)
-            vtex_specular_alpha = mesh.tessface_vertex_colors["vertex_specular_alpha"]
+            blender_mesh.update(calc_tessface=True)
+            vtex_specular_alpha = blender_mesh.tessface_vertex_colors["vertex_specular_alpha"]
 
-        if "vertex_blendweight_xyz" in mesh.tessface_vertex_colors:
-            vtex_blendweights_xyz = mesh.tessface_vertex_colors["vertex_blendweight_xyz"]
+        if "vertex_blendweight_xyz" in blender_mesh.tessface_vertex_colors:
+            vtex_blendweights_xyz = blender_mesh.tessface_vertex_colors["vertex_blendweight_xyz"]
         else:
-            vtex_blendweights_xyz_m = mesh.vertex_colors.new()
+            vtex_blendweights_xyz_m = blender_mesh.vertex_colors.new()
             vtex_blendweights_xyz_m.name = "vertex_blendweight_xyz"
-            mesh.update(calc_tessface=True)
-            vtex_blendweights_xyz = mesh.tessface_vertex_colors["vertex_blendweight_xyz"]
+            blender_mesh.update(calc_tessface=True)
+            vtex_blendweights_xyz = blender_mesh.tessface_vertex_colors["vertex_blendweight_xyz"]
 
-        if "vertex_blendweight_w" in mesh.tessface_vertex_colors:
-            vtex_blendweights_w = mesh.tessface_vertex_colors["vertex_blendweight_w"]
+        if "vertex_blendweight_w" in blender_mesh.tessface_vertex_colors:
+            vtex_blendweights_w = blender_mesh.tessface_vertex_colors["vertex_blendweight_w"]
         else:
-            vtex_blendweights_w_m = mesh.vertex_colors.new()
+            vtex_blendweights_w_m = blender_mesh.vertex_colors.new()
             vtex_blendweights_w_m.name = "vertex_blendweight_w"
-            mesh.update(calc_tessface=True)
-            vtex_blendweights_w = mesh.tessface_vertex_colors["vertex_blendweight_w"]
-
+            blender_mesh.update(calc_tessface=True)
+            vtex_blendweights_w = blender_mesh.tessface_vertex_colors["vertex_blendweight_w"]        
 
         vert_dict = {} # will store CRF_vertex objects
-        for face in mesh.tessfaces:
+        for face in blender_mesh.tessfaces:
             verts_in_face = face.vertices[:]
             if not verts_in_face[0] in vert_dict:
                 vert = CRF_vertex()
                 vert.index = verts_in_face[0]
                 # get vertex coords and make sure to translate from local to global
-                vert.x_blend, vert.y_blend, vert.z_blend = matrix_world * mesh.vertices[verts_in_face[0]].co.xyz 
-                vert.normal_x_blend, vert.normal_y_blend, vert.normal_z_blend = mesh.vertices[verts_in_face[0]].normal
+                vert.x_blend, vert.y_blend, vert.z_blend = matrix_world * blender_mesh.vertices[verts_in_face[0]].co.xyz 
+                vert.normal_x_blend, vert.normal_y_blend, vert.normal_z_blend = blender_mesh.vertices[verts_in_face[0]].normal
                 vert.normal_w_blend = 1.0
                 vert.specular_blue_blend = vtex_specular_colors.data[face.index].color1[2] 
                 vert.specular_green_blend = vtex_specular_colors.data[face.index].color1[1] 
@@ -205,8 +208,8 @@ def _write(context, filepath,
                 vert = CRF_vertex()
                 vert.index = verts_in_face[1]
                 # get vertex coords and make sure to translate from local to global
-                vert.x_blend, vert.y_blend, vert.z_blend = matrix_world * mesh.vertices[verts_in_face[1]].co.xyz
-                vert.normal_x_blend, vert.normal_y_blend, vert.normal_z_blend = mesh.vertices[verts_in_face[1]].normal
+                vert.x_blend, vert.y_blend, vert.z_blend = matrix_world * blender_mesh.vertices[verts_in_face[1]].co.xyz
+                vert.normal_x_blend, vert.normal_y_blend, vert.normal_z_blend = blender_mesh.vertices[verts_in_face[1]].normal
                 vert.normal_w_blend = 1.0
                 vert.specular_blue_blend = vtex_specular_colors.data[face.index].color2[2] 
                 vert.specular_green_blend = vtex_specular_colors.data[face.index].color2[1] 
@@ -229,8 +232,8 @@ def _write(context, filepath,
                 vert = CRF_vertex()
                 vert.index = verts_in_face[2]
                 # get vertex coords and make sure to translate from local to global
-                vert.x_blend, vert.y_blend, vert.z_blend = matrix_world * mesh.vertices[verts_in_face[2]].co.xyz
-                vert.normal_x_blend, vert.normal_y_blend, vert.normal_z_blend = mesh.vertices[verts_in_face[2]].normal     
+                vert.x_blend, vert.y_blend, vert.z_blend = matrix_world * blender_mesh.vertices[verts_in_face[2]].co.xyz
+                vert.normal_x_blend, vert.normal_y_blend, vert.normal_z_blend = blender_mesh.vertices[verts_in_face[2]].normal     
                 vert.normal_w_blend = 1.0
                 vert.specular_blue_blend = vtex_specular_colors.data[face.index].color3[2] 
                 vert.specular_green_blend = vtex_specular_colors.data[face.index].color3[1] 
@@ -253,14 +256,16 @@ def _write(context, filepath,
         for key, vertex in vert_dict.items():
             if verbose:
                 print(vertex)
+            print(vertex.convert2bin())
             file.write(vertex.convert2bin())
-
+        """
         # write separator 0x000000080008000000
         file.write(struct.pack("<II", 0x00080000, 0x00000008))
         # write out second dummy vertex stream
         for i in range(0, number_of_verteces):
             file.write(struct.pack("<ff", 0, 0))
-        # write mesh bounding box 
+        # write mesh bounding box
+        print("Writing bounding box at", hex(file.tell()))
         file.write(struct.pack("<ffffff", *(LoX, LoY, LoZ, HiX, HiY, HiZ))) # bounding box
         # end mesh export loop
 
@@ -332,8 +337,12 @@ def _write(context, filepath,
             file.write(struct.pack("<II", 0,2))
             file.write(struct.pack("16x"))  
         # end of materials
+        """
+        meshfile.meshes.append(crf_mesh)
     # end of all meshes
-    
+
+    file.write(meshfile.get_bin())
+    """
     # entries describing what's in the file
     trailer_1 = file.tell() 
     meshfile_size = trailer_1 - 0x14 # calculate size of meshfile 
@@ -359,7 +368,7 @@ def _write(context, filepath,
     meshfile_entry_description = CRF_entry_descriptor()
     meshfile_entry_description.create_meshfile()
     file.write(meshfile_entry_description.get_bin())
-
+    """
     file.close()
     print("CRF Export time: %.2f" % (time.time() - time1))
     # Restore old active scene.
