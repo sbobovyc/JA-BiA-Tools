@@ -29,7 +29,8 @@ if __name__ == "__main__":
     print(path)
     
     file = open(path, "rb")    
-    obj = crf_objects.CRF_object(file)
+    obj = crf_objects.CRF_object()
+    obj.parse_bin(file)
     file.close()
 
     if scale_factor != 1.0:

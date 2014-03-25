@@ -407,7 +407,8 @@ def load(operator, context, filepath,
     time_sub = time.time()
 
     file = open(filepath, "rb")
-    CRF = CRF_object(file)    
+    CRF = CRF_object()    
+    CRF.parse_bin(file)
     meshfile = CRF.meshfile
 
     bad_vertex_list = []
@@ -441,7 +442,7 @@ def load(operator, context, filepath,
                 faces[i] = (v3,v2,v1)
         bad_vertex_list.append(bad_mesh_vertex_list)
         
-        for vertex in mesh.verteces1:
+        for vertex in mesh.vertices0:
             verts_loc.append( (vertex.x_blend, vertex.y_blend, vertex.z_blend) )            
             verts_tex0.append( (vertex.u0_blend, vertex.v0_blend) )        
 
@@ -524,7 +525,7 @@ def load(operator, context, filepath,
         # add specular constant
         if use_specular:
             vertex_specular = []
-            for vertex in mesh.verteces1:
+            for vertex in mesh.vertices0:
                 vertex_specular.append((vertex.specular_red_blend, vertex.specular_green_blend, vertex.specular_blue_blend, vertex.specular_alpha_blend))
                 
             setVertexSpecularColors(me, ob.data.tessfaces, vertex_specular)

@@ -23,7 +23,7 @@ import bpy
 import mathutils
 import bpy_extras.io_utils
 
-from .crf_objects import CRF_header,CRF_meshfile,CRF_mesh,CRF_vertex,CRF_entry,CRF_entry_descriptor
+from .crf_objects import CRF_object,CRF_header,CRF_meshfile,CRF_mesh,CRF_vertex,CRF_materials,CRF_entry,CRF_entry_descriptor
 
 
 def _write(context, filepath,
@@ -70,11 +70,7 @@ def _write(context, filepath,
         
 
     matrix_world = ob_primary.matrix_basis # world matrix so we can transform from local to global coordinates
-
-    # write header
-    header = CRF_header()
-    file.write(header.get_bin())
-    # end of header
+    
     meshfile = CRF_meshfile()
     LoX = ob_primary.bound_box[0][0]    #TODO, put bbox into a function
     LoY = ob_primary.bound_box[0][1]
@@ -97,7 +93,7 @@ def _write(context, filepath,
         crf_mesh.mesh_number = mesh_number
         mesh_number = mesh_number + 1
 
-        crf_mesh.number_of_verteces = len(blender_mesh.vertices)
+        crf_mesh.number_of_vertices = len(blender_mesh.vertices)
         crf_mesh.number_of_faces = len(blender_mesh.polygons)
         
         # mesh bounding box
@@ -110,8 +106,11 @@ def _write(context, filepath,
         crf_mesh.bounding_box = ((LoX, LoY, LoZ), (HiX, HiY, HiZ))
 
         crf_mesh.stream_count = 2
-        layout = 0xc018021
+        layout = 0xc018021 #TODO magic number
         stride = 32
+        crf_mesh.vertex_stream0_layout = [layout, stride]
+        layout = 0x80000 #TODO magic number
+        stride = 8
         crf_mesh.vertex_stream1_layout = [layout, stride]
         print(crf_mesh)                
         
@@ -144,7 +143,7 @@ def _write(context, filepath,
         uv_tex0 = blender_mesh.tessface_uv_textures[0]
         uv_tex1 = blender_mesh.tessface_uv_textures[1]
         
-        # write out verteces, normals, ks, and UVs
+        # vertices, normals, ks, and UVs
         if "vertex_specular_colors" in blender_mesh.tessface_vertex_colors:
             vtex_specular_colors = blender_mesh.tessface_vertex_colors["vertex_specular_colors"]
         else:
@@ -251,41 +250,30 @@ def _write(context, filepath,
                 vert_dict[verts_in_face[2]] = vert # put object in dictionary
                 if verbose:
                     print(vert)    
-
-        # write out vertices
+        
         for key, vertex in vert_dict.items():
             if verbose:
                 print(vertex)
-            print(vertex.convert2bin())
-            file.write(vertex.convert2bin())
-        """
-        # write separator 0x000000080008000000
-        file.write(struct.pack("<II", 0x00080000, 0x00000008))
-        # write out second dummy vertex stream
-        for i in range(0, number_of_verteces):
-            file.write(struct.pack("<ff", 0, 0))
-        # write mesh bounding box
-        print("Writing bounding box at", hex(file.tell()))
-        file.write(struct.pack("<ffffff", *(LoX, LoY, LoZ, HiX, HiY, HiZ))) # bounding box
-        # end mesh export loop
+            crf_mesh.vertices0.append(vertex)
+        # end mesh geometry and UVs
 
+        # begin materials
         diffuse_texture_file = None
         normals_texture_file = None
         specular_texture_file = None
-        
-        # get textures
-        print(mesh.materials[0].texture_slots[0])
-        print(mesh.materials[0].texture_slots[1])        
-        if mesh.materials[0].texture_slots[0] == None and mesh.materials[0].texture_slots[1] == None:
+                
+        print(blender_mesh.materials[0].texture_slots[0])
+        print(blender_mesh.materials[0].texture_slots[1])        
+        if blender_mesh.materials[0].texture_slots[0] == None and blender_mesh.materials[0].texture_slots[1] == None:
                raise Exception("Missing a diffuse or normal texture")
         else:
-            diffuse_texture_file = mesh.materials[0].texture_slots[0].texture.image.name
-            normals_texture_file = mesh.materials[0].texture_slots[1].texture.image.name
+            diffuse_texture_file = blender_mesh.materials[0].texture_slots[0].texture.image.name
+            normals_texture_file = blender_mesh.materials[0].texture_slots[1].texture.image.name
             
-        if mesh.materials[0].texture_slots[2] == None:
+        if blender_mesh.materials[0].texture_slots[2] == None:
             print("Using a constant specular value")
         else:
-            specular_texture_file = mesh.materials[0].texture_slots[2].texture.image.name
+            specular_texture_file = blender_mesh.materials[0].texture_slots[2].texture.image.name
 
 
         # strip extension from filenames
@@ -295,53 +283,52 @@ def _write(context, filepath,
             specular_texture_file = os.path.splitext(specular_texture_file)[0]
 
         # get diffuse and specular material color
-        diffuse_material_color = mesh.materials[0].diffuse_color
-        specular_material_color = mesh.materials[0].specular_color
+        diffuse_material_color = blender_mesh.materials[0].diffuse_color
+        specular_material_color = blender_mesh.materials[0].specular_color
         print("Textures:", diffuse_texture_file, normals_texture_file, specular_texture_file)
 
-        # write out textures and materials
-        #TODO turn this into a state machine
-        file.write(b"nm")
-        file.write(struct.pack("<II", *(1, 4))) 
-        file.write(b"sffd") #diffuse
-        file.write(struct.pack("<I%is" % len(diffuse_texture_file), len(diffuse_texture_file), diffuse_texture_file.encode()))
-        file.write(struct.pack("<I", 0))
-        file.write(b"smrn") #normals           
-        file.write(struct.pack("<I%ss" % len(normals_texture_file), len(normals_texture_file), normals_texture_file.encode()))
-        file.write(struct.pack("<I", 0))
-        file.write(b"1tsc") #const1
-        file.write(struct.pack("<II", 0,0))
-        
+        materials = CRF_materials()
+        materials.material_type = b'nm' #TODO magic number
+        materials.material_subtype = 0x100000004000000 #TODO magic number 
+        materials.diffuse_texture = str.encode(diffuse_texture_file)
+        materials.normal_texture = str.encode(normals_texture_file)
+        materials.specular_constant = specular_material_color
+                
         if specular_texture_file != None:
-            file.write(b"lcps") #specular
-            file.write(struct.pack("<I%is" % len(specular_texture_file), len(specular_texture_file), specular_texture_file.encode()))
-            file.write(struct.pack("<II", 0,2))
-            file.write(b"lcps") #specular constant
-            file.write(struct.pack("<fff", *specular_material_color))
-            file.write(b"1tsc") #const1
-            file.write(struct.pack("<II", 0,0))
-            file.write(struct.pack("<I", 0))
-            file.write(struct.pack("<I", 1))
-            file.write(b"1tsc") #const1
-            file.write(struct.pack("<II", 0,0))
+            materials.custom_data_count = 2
+            materials.custom1_1 = (0,0,0,1) #TODO magic number
+            materials.specular_texture = str.encode(specular_texture_file)            
         else:
-            file.write(b"lcps") #specular
-            file.write(struct.pack("<II", 0,0))
-            file.write(struct.pack("<I", 2))
-            file.write(b"lcps") #specular
-            file.write(struct.pack("<fff", *specular_material_color))
-            file.write(b"1tsc") #const1
-            file.write(struct.pack("<II", 0,0))
-            file.write(struct.pack("<II", 0,1))
-            file.write(b"1tsc") #const1        
-            file.write(struct.pack("<II", 0,2))
-            file.write(struct.pack("16x"))  
+            materials.custom_data_count = 1
+        crf_mesh.materials = materials
         # end of materials
-        """
+        
         meshfile.meshes.append(crf_mesh)
     # end of all meshes
-
-    file.write(meshfile.get_bin())
+    
+    # create object and fill in data structures    
+    crf_object = CRF_object()
+    
+    footer_root_entry = CRF_entry()
+    footer_root_entry.create_rootnode()
+    footer_meshfile_entry = CRF_entry()
+    footer_meshfile_entry.create_meshfile(len(meshfile.get_bin()))    
+    crf_object.footer.entries.append(footer_root_entry)
+    crf_object.footer.entries.append(footer_meshfile_entry)
+        
+    footer_root_entry_descriptor = CRF_entry_descriptor()
+    footer_root_entry_descriptor.create_rootnode()
+    footer_meshfile_entry_descriptor = CRF_entry_descriptor()
+    footer_meshfile_entry_descriptor.create_meshfile() 
+    crf_object.footer.entry_descriptors.append(footer_root_entry_descriptor)
+    crf_object.footer.entry_descriptors.append(footer_meshfile_entry_descriptor)
+    
+    crf_object.meshfile = meshfile
+    
+    
+    # end of header
+    
+    file.write(crf_object.get_bin())
     """
     # entries describing what's in the file
     trailer_1 = file.tell() 
