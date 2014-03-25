@@ -6,7 +6,7 @@ import crf_objects
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Tool that can parse Jagged Alliance: BiA crf files.', \
-                                epilog='Example: python crf_magick.py -s 10 -t 0 10 0 akm_01.crf new_akm.crf')    
+                                epilog='Example: python crf_magick.py --write -s 10 -t 0 10 0 akm_01.crf new_akm.crf')    
     parser.add_argument('file', nargs='?', help='Input file')
     parser.add_argument('outfile', nargs='?', default='dump.crf', help='Output file')
     parser.add_argument('outdir', nargs='?', default=os.getcwd(), help='Output directory')

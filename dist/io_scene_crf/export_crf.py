@@ -23,7 +23,7 @@ import bpy
 import mathutils
 import bpy_extras.io_utils
 
-from .crf_objects import CRF_object,CRF_header,CRF_meshfile,CRF_mesh,CRF_vertex,CRF_materials,CRF_entry,CRF_entry_descriptor
+from .crf_objects import CRF_object,CRF_header,CRF_meshfile,CRF_mesh,CRF_vertex,CRF_vertex_blend,CRF_materials,CRF_entry,CRF_entry_descriptor
 
 
 def _write(context, filepath,
@@ -255,6 +255,7 @@ def _write(context, filepath,
             if verbose:
                 print(vertex)
             crf_mesh.vertices0.append(vertex)
+            crf_mesh.vertices1.append(CRF_vertex_blend()) #TODO this works with static models
         # end mesh geometry and UVs
 
         # begin materials
