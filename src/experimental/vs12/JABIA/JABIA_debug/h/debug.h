@@ -44,6 +44,7 @@ typedef void * (_stdcall *CharacterDestReturnPtr)();
 typedef int (_stdcall *CharacterDestructorPtr)(JABIA_Character *);
 typedef void * (_fastcall *WeaponReturnPtr)();
 typedef void * (_fastcall *AttachmentReturnPtr)();
+typedef void * (_fastcall *ClothReturnPtr)();
 
 #ifdef __cplusplus
 extern "C" {
@@ -62,10 +63,12 @@ void* myCharacterDestReturn();
 void* mySaveGameParseReturn();
 void* myWeaponConstReturn();
 void* myAttachmentConstReturn();
+void* myClothConstReturn();
 void __fastcall recordCharacters(void* instance);
 void __fastcall removeCharacter(JABIA_Character * ptr);
 void __fastcall recordWeapons(void* instance);
 void __fastcall recordAttachments(void* instance);
+void __fastcall recordCloth(void* instance);
 int myCharacterDestructor(JABIA_Character * ptr);
 
 // gui functions

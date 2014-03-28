@@ -40,6 +40,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #include "character.h"
 #include "weapons.h"
 #include "attachments.h"
+#include "clothing.h"
 #include "assembly_opcodes.h"
 #include "ctx_file.h"
 
@@ -55,6 +56,7 @@ ParseGameInfoReturnPtr ParseGameInfoReturn;
 SaveGame * CurrentSaveGamePtr = NULL;
 WeaponReturnPtr WeaponReturn;
 AttachmentReturnPtr AttachmentReturn;
+ClothReturnPtr ClothReturn;
 int * money_ptr;
 
 JABIA_DEBUGMOD_parameters debugmod_params;
@@ -79,6 +81,10 @@ std::map<int, JABIA_Weapon *> jabia_weapons_map;
 // attachment vector
 std::vector<JABIA_Attachment *> jabia_attachments;
 std::map<int, JABIA_Attachment *> jabia_attachments_map;
+
+// cloth vector
+std::vector<JABIA_Cloth *> jabia_cloth;
+std::map<int, JABIA_Cloth *> jabia_cloth_map;
 
 
 CTX_file ctx;
@@ -112,6 +118,7 @@ DWORD WINAPI MyThread(LPVOID)
 	BYTE ParseGameInfoSavedReturn[6]; // save retn here
 	BYTE WeaponSavedReturn[6]; // save retn here
 	BYTE AttachmentSavedReturn[6]; // save retn here
+	BYTE ClothSavedReturn[6]; // save retn here
 
 	// find base address of GameDemo.exe in memory
 	if(GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, ProcessName, &game_handle) == NULL) {
@@ -146,7 +153,10 @@ DWORD WINAPI MyThread(LPVOID)
 		AttachmentReturn = (AttachmentReturnPtr)((uint32_t)game_handle+ATTACHMENT_CONST_RETURN_OFFSET);
 		wsprintf (debugStrBuf, _T("Address of AttachmentReturn 0x%x"), AttachmentReturn);
 		OutputDebugString(debugStrBuf); 
-
+		// find address of cloth constructor return
+		ClothReturn = (ClothReturnPtr)((uint32_t)game_handle+CLOTHING_CONST_RETURN_OFFSET);
+		wsprintf (debugStrBuf, _T("Address of AttachmentReturn 0x%x"), AttachmentReturn);
+		OutputDebugString(debugStrBuf); 
 		// If jabia_characters is not empty, clear it. Every time the game loads a level, character pointers change.
 		//TODO this function crashes on exit game
 		
@@ -177,11 +187,17 @@ DWORD WINAPI MyThread(LPVOID)
 		// hook attachment constructor return
 		returnHook(AttachmentReturn, myAttachmentConstReturn, AttachmentSavedReturn);
 
+		// hook cloth constructor return
+		returnHook(ClothReturn, myClothConstReturn, ClothSavedReturn);
+
+
 		wsprintf(debugStrBuf, _T("Size of JABIA_Character struct %i"), sizeof(JABIA_Character));
 		OutputDebugString(debugStrBuf);
 		wsprintf(debugStrBuf, _T("Size of JABIA_weapon struct %i"), sizeof(JABIA_weapon));
 		OutputDebugString(debugStrBuf);
 		wsprintf(debugStrBuf, _T("Size of JABIA_Attachment struct %i"), sizeof(JABIA_Attachment));
+		OutputDebugString(debugStrBuf);
+		wsprintf(debugStrBuf, _T("Size of JABIA_Cloth struct %i"), sizeof(JABIA_Cloth));
 		OutputDebugString(debugStrBuf);
 		wsprintf(debugStrBuf, _T("First run? %i"), debugmod_params.first_run);
 		OutputDebugString(debugStrBuf);
@@ -1197,4 +1213,28 @@ void __fastcall recordAttachments(void* instance){
 	OutputDebugString(buf);
 	jabia_attachments.push_back(attachment_ptr);	
 	jabia_attachments_map[attachment_ptr->ID] = attachment_ptr;
+}
+
+__declspec(naked) void* myClothConstReturn(){	
+	__asm{
+		push eax;
+		mov ecx, eax;
+		call recordCloth;
+		pop eax;
+		retn 8;
+	}
+}
+
+
+void __fastcall recordCloth(void* instance){
+	TCHAR buf [100];
+	JABIA_Cloth * cloth_ptr;
+	OutputDebugString(_T("Parsing cloth!"));
+
+	cloth_ptr = (JABIA_Cloth *)instance;
+
+	wsprintf(buf, _T("Cloth at 0x%X, ID: %i"), cloth_ptr, cloth_ptr->ID);
+	OutputDebugString(buf);
+	jabia_cloth.push_back(cloth_ptr);	
+	jabia_cloth_map[cloth_ptr->ID] = cloth_ptr;
 }

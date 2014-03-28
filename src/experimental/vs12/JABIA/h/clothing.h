@@ -19,28 +19,29 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _ATTACHMENTS_H_
-#define _ATTACHMENTS_H_
+#ifndef _CLOTHING_H_
+#define _CLOTHING_H_
 
 #include "game_version.h"
 
 #if defined(JABIA)
-#define ATTACHMENT_CONST_RETURN_OFFSET 0x12E56E
+#define CLOTHING_CONST_RETURN_OFFSET 0x12E3BE
 #elif defined(JAC)
-#define ATTACHMENT_CONST_RETURN_OFFSET 0x12E56E //TODO
+#define CLOTHING_CONST_RETURN_OFFSET 0x12E3BE //TODO
 #else
 #error Need to define either JABIA or JAC.
 #endif
 
-//TODO pad out to 128 bytes
-typedef struct JABIA_Attachment {
+enum Slots {Cap=0, Attachment=1, Glasses=2, Torso=3, Vest=4, Legs=5,  Feet=6}; 
+enum Property {NightVision=0, GasProtection=1};
+typedef struct JABIA_Cloth {
 	uint32_t	Class; // = 4 for attachments, 0 for weapons
 	uint32_t	ID;
 	uint32_t	ResourceID;
 	bool		Deliverable;
 	uint32_t	Price;
 	uint32_t	Weight;
-	uint32_t	unknown;
+	uint32_t	unknown1;
 	uint32_t	ui_equipment_icons_number;
 	uint16_t	icon_x_upper_left;
 	uint16_t	icon_y_upper_left;
@@ -55,6 +56,7 @@ typedef struct JABIA_Attachment {
 	uint32_t	Accuracy;
 	uint32_t	Silencing;
 	uint32_t	Aimtime;
-} JABIA_Attachment;
+	uint32_t	unknown2[12];
+} JABIA_Cloth;
 
 #endif /* _ATTACHMENTS_H_ */

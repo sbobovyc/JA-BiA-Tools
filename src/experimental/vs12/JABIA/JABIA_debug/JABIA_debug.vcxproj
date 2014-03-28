@@ -14,6 +14,7 @@
     <ClInclude Include="..\h\assembly_opcodes.h" />
     <ClInclude Include="..\h\attachments.h" />
     <ClInclude Include="..\h\character.h" />
+    <ClInclude Include="..\h\clothing.h" />
     <ClInclude Include="..\h\ctx_file.h" />
     <ClInclude Include="..\h\game.h" />
     <ClInclude Include="..\h\weapons.h" />
