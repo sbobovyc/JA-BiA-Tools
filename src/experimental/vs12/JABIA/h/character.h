@@ -103,9 +103,9 @@ typedef struct JABIA_Character_inventory {
 	uint16_t unknown5;
 	uint16_t special_equiped_charges; // charges left 
 
-	uint16_t helmet_equiped;
-	uint16_t helmet_equiped_removable; // 0 for not removable	
-	uint16_t helmet_equiped_durability; // divide by ten to get number reported in gui	
+	uint16_t cap_equiped;
+	uint16_t cap_equiped_removable; // 0 for not removable	
+	uint16_t cap_equiped_durability; // divide by ten to get number reported in gui	
 	uint16_t unknown7;
 
 	uint16_t eyewear_equiped; 
@@ -119,7 +119,7 @@ typedef struct JABIA_Character_inventory {
 	uint16_t unknown12;
 
 	uint16_t vest_equiped;
-	uint16_t unknown13;
+	uint16_t vest_equiped_status;
 	uint16_t vest_equiped_durability;
 	uint16_t unknown14;
 

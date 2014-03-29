@@ -75,12 +75,23 @@ int myCharacterDestructor(JABIA_Character * ptr);
 void dump_current_character(HWND hwnd, JABIA_Character * ptr);
 BOOL dump_all_characters(HWND hwnd);
 void fillDialog(HWND hwnd, JABIA_Character * ptr);
-void setCharacter(HWND hwnd, JABIA_Character * ptr, bool inventory_weapon_changed, bool equiped_weapon_changed, bool attachment_changed);
+void setCharacter(HWND hwnd, JABIA_Character * ptr);
 void setMoney(HWND hwnd);
-int getWeaponIdByName(TCHAR * buf);
+int getIdFromString(TCHAR * buf);
 
 #define PATH_TO_DEBUGMOD_XML "\\mods\\debugger\\JABIA_debugger.xml"
 
+typedef struct COMBO_BOX_STATUS {
+	bool inventory_weapon_changed;
+	bool equiped_weapon_changed;
+	bool attachment_changed;
+	bool helmet_changed;
+	bool vest_changed;
+	bool torso_changed;
+	bool pants_changed;
+	bool shoes_changed;
+	bool eyewear_changed;
+} COMBO_BOX_STATUS;
 
 class JABIA_DEBUGMOD_parameters { 
 public:

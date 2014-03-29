@@ -46,9 +46,9 @@ void stun_character(JABIA_Character * ptr) {
 }
 
 void give_equipment1(JABIA_Character * ptr) {
-	ptr->inventory.helmet_equiped = 1125; // urban camo
-	ptr->inventory.helmet_equiped_removable = 1;
-	ptr->inventory.helmet_equiped_durability = 100;
+	ptr->inventory.cap_equiped = 1125; // urban camo
+	ptr->inventory.cap_equiped_removable = 1;
+	ptr->inventory.cap_equiped_durability = 100;
 
 	ptr->inventory.shirt_equiped = 2105; // urban uniform
 	ptr->inventory.shirt_equiped_durability = 100;

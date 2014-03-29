@@ -74,20 +74,35 @@ int last_weaponslot_selected_index = 0;
 int last_weapon_inhand_selected_index = 0;
 int last_inventory_selected_index = 0;
 
-// weapon vector
-std::vector<JABIA_Weapon *> jabia_weapons;
+// weapon 
 std::map<int, JABIA_Weapon *> jabia_weapons_map;
 
-// attachment vector
-std::vector<JABIA_Attachment *> jabia_attachments;
+// attachment 
 std::map<int, JABIA_Attachment *> jabia_attachments_map;
 
-// cloth vector
-std::vector<JABIA_Cloth *> jabia_cloth;
+// clothing
 std::map<int, JABIA_Cloth *> jabia_cloth_map;
 
+// headgear 
+std::map<int, JABIA_Cloth *> jabia_headgear_map;
+
+// vest 
+std::map<int, JABIA_Cloth *> jabia_vest_map;
+
+// torso
+std::map<int, JABIA_Cloth *> jabia_torso_map;
+
+// pants
+std::map<int, JABIA_Cloth *> jabia_pants_map;
+
+// shoes
+std::map<int, JABIA_Cloth *> jabia_shoes_map;
+
+// eyewear
+std::map<int, JABIA_Cloth *> jabia_eyewear_map;
 
 CTX_file ctx;
+COMBO_BOX_STATUS inventory_combo_status;
 
 INT APIENTRY DllMain(HMODULE hDLL, DWORD Reason, LPVOID Reserved)
 {
@@ -262,7 +277,7 @@ DWORD WINAPI MyThread(LPVOID)
 		_stprintf_s (debugStrBuf, DEBUG_STR_SIZE, _T("CTX at 0x%x"), address+22);
 		OutputDebugString(debugStrBuf); 		
 		ctx = CTX_file((void *)(address+22));
-		
+
 		while(true)
 		{
 			//TODO add size checking to all data structures and give a warning and exit thread if something is size 0
@@ -344,12 +359,24 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 	HWND comboControl4;
 	HWND comboControl5;
 	HWND comboControl6;
+	HWND comboControl7;
+	HWND comboControl8;
+	HWND comboControl9;
+	HWND comboControl10;
+	HWND comboControl11;
+	HWND comboControl12;
 	comboControl1=GetDlgItem(hwnd,IDC_COMBO_CHARACTER);	
 	comboControl2=GetDlgItem(hwnd,IDC_COMBO_WEAPON_SLOT);	
 	comboControl3=GetDlgItem(hwnd,IDC_COMBO_INVENTORY_SLOT);	
 	comboControl4=GetDlgItem(hwnd,IDC_COMBO_INVENTORY_WEAPON);	
 	comboControl5=GetDlgItem(hwnd,IDC_COMBO_EQUIPED_WEAPON);	
 	comboControl6=GetDlgItem(hwnd,IDC_COMBO_WEAPON_MOD);	
+	comboControl7=GetDlgItem(hwnd,IDC_COMBO_HELMET);
+	comboControl8=GetDlgItem(hwnd,IDC_COMBO_VEST);
+	comboControl9=GetDlgItem(hwnd,IDC_COMBO_SHIRT);
+	comboControl10=GetDlgItem(hwnd,IDC_COMBO_PANTS);
+	comboControl11=GetDlgItem(hwnd,IDC_COMBO_SHOES);
+	comboControl12=GetDlgItem(hwnd,IDC_COMBO_EYEWEAR);
 	BOOL status = FALSE;
 	JABIA_Character * ptr = 0; // character address
 	TCHAR debugStrBuf[255];
@@ -379,8 +406,8 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 			// add characters to drop down list
 			for(size_t i = 0; i < jabia_characters.size(); i++) {							
 				SendMessageA(comboControl1,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCTSTR)jabia_characters.at(i)->merc_name)); // merc names in structure are ASCII		
-				wsprintf(debugStrBuf, _T("In WM_INITDIALOG, character at 0x%X"), jabia_characters.at(i));	
-				OutputDebugString(debugStrBuf);
+				//wsprintf(debugStrBuf, _T("In WM_INITDIALOG, character at 0x%X"), jabia_characters.at(i));	
+				//OutputDebugString(debugStrBuf);
 			}
 				// select fist item in list
 			SendMessage(comboControl1, CB_SETCURSEL, last_character_selected_index, 0);
@@ -406,24 +433,73 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 
 			// add weapons to inventory weapons combo box		
 			for( std::map<int, JABIA_Weapon *>::iterator ii=jabia_weapons_map.begin(); ii!=jabia_weapons_map.end(); ++ii) {
-				OutputDebugString(ctx.string_map[(*ii).second->ID].c_str());
-				SendMessage(comboControl4,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)ctx.string_map[(*ii).second->ID].c_str()));					
+				wsprintf(debugStrBuf, _T("%i|%s"), (*ii).second->ID, ctx.string_map[(*ii).second->ID].c_str());
+				//OutputDebugString(debugStrBuf);
+				SendMessage(comboControl4,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)debugStrBuf));					
 			}
 			SendMessage(comboControl4,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)_T("None")));
 			
 			// add weapons to active weapon combo box
 			for( std::map<int, JABIA_Weapon *>::iterator ii=jabia_weapons_map.begin(); ii!=jabia_weapons_map.end(); ++ii) {
-				OutputDebugString(ctx.string_map[(*ii).second->ID].c_str());
-				SendMessage(comboControl5,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)ctx.string_map[(*ii).second->ID].c_str()));					
+				wsprintf(debugStrBuf, _T("%i|%s"), (*ii).second->ID, ctx.string_map[(*ii).second->ID].c_str());
+				SendMessage(comboControl5,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)debugStrBuf));
 			}
 			SendMessage(comboControl5,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)_T("None")));
 
 			// add weapon mods to combo box
 			for( std::map<int, JABIA_Attachment *>::iterator ii=jabia_attachments_map.begin(); ii!=jabia_attachments_map.end(); ++ii) {
-				OutputDebugString(ctx.string_map[(*ii).second->ID].c_str());
-				SendMessage(comboControl6,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)ctx.string_map[(*ii).second->ID].c_str()));					
+				wsprintf(debugStrBuf, _T("%i|%s"), (*ii).second->ID, ctx.string_map[(*ii).second->ID].c_str());				
+				SendMessage(comboControl6,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)debugStrBuf));
 			}
 			SendMessage(comboControl6,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)_T("None")));
+
+			// add helmets to combo box
+			for( std::map<int, JABIA_Cloth *>::iterator ii=jabia_headgear_map.begin(); ii!=jabia_headgear_map.end(); ++ii) {
+				wsprintf(debugStrBuf, _T("%i|%s"), (*ii).second->ID, ctx.string_map[(*ii).second->ID].c_str());
+				//OutputDebugString(debugStrBuf);
+				SendMessage(comboControl7,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)debugStrBuf));
+			}
+			SendMessage(comboControl7,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)_T("None")));
+
+			// add vests to combo box
+			for( std::map<int, JABIA_Cloth *>::iterator ii=jabia_vest_map.begin(); ii!=jabia_vest_map.end(); ++ii) {
+				wsprintf(debugStrBuf, _T("%i|%s"), (*ii).second->ID, ctx.string_map[(*ii).second->ID].c_str());
+				//OutputDebugString(debugStrBuf);
+				SendMessage(comboControl8,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)debugStrBuf));
+			}
+			SendMessage(comboControl8,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)_T("None")));
+
+			// add shirts to combo box
+			for( std::map<int, JABIA_Cloth *>::iterator ii=jabia_torso_map.begin(); ii!=jabia_torso_map.end(); ++ii) {
+				wsprintf(debugStrBuf, _T("%i|%s"), (*ii).second->ID, ctx.string_map[(*ii).second->ID].c_str());
+				//OutputDebugString(debugStrBuf);
+				SendMessage(comboControl9,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)debugStrBuf));
+			}
+			SendMessage(comboControl9,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)_T("None")));
+
+			// add pants to combo box
+			for( std::map<int, JABIA_Cloth *>::iterator ii=jabia_pants_map.begin(); ii!=jabia_pants_map.end(); ++ii) {
+				wsprintf(debugStrBuf, _T("%i|%s"), (*ii).second->ID, ctx.string_map[(*ii).second->ID].c_str());
+				//OutputDebugString(debugStrBuf);
+				SendMessage(comboControl10,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)debugStrBuf));
+			}
+			SendMessage(comboControl10,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)_T("None")));
+
+			// add shoes to combo box
+			for( std::map<int, JABIA_Cloth *>::iterator ii=jabia_shoes_map.begin(); ii!=jabia_shoes_map.end(); ++ii) {
+				wsprintf(debugStrBuf, _T("%i|%s"), (*ii).second->ID, ctx.string_map[(*ii).second->ID].c_str());
+				//OutputDebugString(debugStrBuf);
+				SendMessage(comboControl11,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)debugStrBuf));
+			}
+			SendMessage(comboControl11,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)_T("None")));
+
+			// add eyewear to combo box
+			for( std::map<int, JABIA_Cloth *>::iterator ii=jabia_eyewear_map.begin(); ii!=jabia_eyewear_map.end(); ++ii) {
+				wsprintf(debugStrBuf, _T("%i|%s"), (*ii).second->ID, ctx.string_map[(*ii).second->ID].c_str());
+				//OutputDebugString(debugStrBuf);
+				SendMessage(comboControl12,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)debugStrBuf));
+			}
+			SendMessage(comboControl12,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)_T("None")));
 
 			break;
         case WM_COMMAND:
@@ -468,7 +544,9 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 						case CBN_CLOSEUP:
 							// use combo box selected index to get weapon id
 							ptr = jabia_characters.at(last_character_selected_index);
-							setCharacter(hwnd, ptr, true, false, false);
+							ZeroMemory((void *)&inventory_combo_status, sizeof(COMBO_BOX_STATUS));
+							inventory_combo_status.inventory_weapon_changed = true;
+							setCharacter(hwnd, ptr);
 							fillDialog(hwnd, ptr);
 							break;
 					}
@@ -479,7 +557,9 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 						case CBN_CLOSEUP:
 							// use combo box selected index to get weapon id
 							ptr = jabia_characters.at(last_character_selected_index);
-							setCharacter(hwnd, ptr, false, true, false);
+							ZeroMemory((void *)&inventory_combo_status, sizeof(COMBO_BOX_STATUS));
+							inventory_combo_status.equiped_weapon_changed = true;
+							setCharacter(hwnd, ptr);
 							fillDialog(hwnd, ptr);
 							break;
 					}
@@ -489,14 +569,95 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 						case CBN_CLOSEUP:
 							// use combo box selected index to get weapon id
 							ptr = jabia_characters.at(last_character_selected_index);
-							setCharacter(hwnd, ptr, false, false, true);
+							ZeroMemory((void *)&inventory_combo_status, sizeof(COMBO_BOX_STATUS));
+							inventory_combo_status.attachment_changed = true;
+							setCharacter(hwnd, ptr);
+							fillDialog(hwnd, ptr);
+							break;
+					}
+					break;
+				case IDC_COMBO_HELMET:
+					switch(HIWORD(wParam))
+					{
+						case CBN_CLOSEUP:
+							// use combo box selected index to get weapon id
+							ptr = jabia_characters.at(last_character_selected_index);
+							ZeroMemory((void *)&inventory_combo_status, sizeof(COMBO_BOX_STATUS));
+							inventory_combo_status.helmet_changed = true;
+							setCharacter(hwnd, ptr);
+							fillDialog(hwnd, ptr);
+							break;
+					}
+					break;
+				case IDC_COMBO_VEST:
+					switch(HIWORD(wParam))
+					{
+						case CBN_CLOSEUP:
+							// use combo box selected index to get weapon id
+							ptr = jabia_characters.at(last_character_selected_index);
+							ZeroMemory((void *)&inventory_combo_status, sizeof(COMBO_BOX_STATUS));
+							inventory_combo_status.vest_changed = true;
+							setCharacter(hwnd, ptr);
+							fillDialog(hwnd, ptr);
+							break;
+					}
+					break;
+				case IDC_COMBO_SHIRT:
+					switch(HIWORD(wParam))
+					{
+						case CBN_CLOSEUP:
+							// use combo box selected index to get weapon id
+							ptr = jabia_characters.at(last_character_selected_index);
+							ZeroMemory((void *)&inventory_combo_status, sizeof(COMBO_BOX_STATUS));
+							inventory_combo_status.torso_changed = true;
+							setCharacter(hwnd, ptr);
+							fillDialog(hwnd, ptr);
+							break;
+					}
+					break;
+				case IDC_COMBO_PANTS:
+					switch(HIWORD(wParam))
+					{
+						case CBN_CLOSEUP:
+							// use combo box selected index to get weapon id
+							ptr = jabia_characters.at(last_character_selected_index);
+							ZeroMemory((void *)&inventory_combo_status, sizeof(COMBO_BOX_STATUS));
+							inventory_combo_status.pants_changed = true;
+							setCharacter(hwnd, ptr);
+							fillDialog(hwnd, ptr);
+							break;
+					}
+					break;
+				case IDC_COMBO_SHOES:
+					switch(HIWORD(wParam))
+					{
+						case CBN_CLOSEUP:
+							// use combo box selected index to get weapon id
+							ptr = jabia_characters.at(last_character_selected_index);
+							ZeroMemory((void *)&inventory_combo_status, sizeof(COMBO_BOX_STATUS));
+							inventory_combo_status.shoes_changed = true;
+							setCharacter(hwnd, ptr);
+							fillDialog(hwnd, ptr);
+							break;
+					}
+					break;
+				case IDC_COMBO_EYEWEAR:
+					switch(HIWORD(wParam))
+					{
+						case CBN_CLOSEUP:
+							// use combo box selected index to get weapon id
+							ptr = jabia_characters.at(last_character_selected_index);
+							ZeroMemory((void *)&inventory_combo_status, sizeof(COMBO_BOX_STATUS));
+							inventory_combo_status.eyewear_changed = true;
+							setCharacter(hwnd, ptr);
 							fillDialog(hwnd, ptr);
 							break;
 					}
 					break;
                 case IDSET:
 					ptr = jabia_characters.at(last_character_selected_index);
-					setCharacter(hwnd, ptr, false, false, false);
+					ZeroMemory((void *)&inventory_combo_status, sizeof(COMBO_BOX_STATUS));
+					setCharacter(hwnd, ptr);
 					setMoney(hwnd);
 					break;
 				case IDM_HEAL_CHARACTER:					
@@ -663,7 +824,41 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 		} else {
 			SendMessage(comboControl6, CB_SETCURSEL, jabia_attachments_map.size(), 0);
 		}	
+		
+		HWND comboControl7;
+		comboControl7=GetDlgItem(hwnd,IDC_COMBO_HELMET);			
+		uint32_t equiped_helmet_id = character.inventory.cap_equiped;		
+		int helmet_id = 0;
+		if(equiped_helmet_id != 0xFFFF) {
+			for( std::map<int, JABIA_Cloth *>::iterator ii=jabia_headgear_map.begin(); ii!=jabia_headgear_map.end(); ++ii) {
+				uint32_t id = (*ii).second->ID;
+				if(equiped_helmet_id == id) {
+					SendMessage(comboControl7, CB_SETCURSEL, helmet_id, 0);
+					break;
+				}
+				helmet_id++;
+			}		
+		} else {
+			SendMessage(comboControl7, CB_SETCURSEL, jabia_headgear_map.size(), 0);
+		}
 
+		HWND comboControl8;
+		comboControl8=GetDlgItem(hwnd,IDC_COMBO_VEST);			
+		uint32_t equiped_vest_id = character.inventory.vest_equiped;		
+		int vest_id = 0;
+		if(equiped_vest_id != 0xFFFF) {
+			for( std::map<int, JABIA_Cloth *>::iterator ii=jabia_vest_map.begin(); ii!=jabia_vest_map.end(); ++ii) {
+				uint32_t id = (*ii).second->ID;
+				if(equiped_vest_id == id) {
+					SendMessage(comboControl8, CB_SETCURSEL, vest_id, 0);
+					break;
+				}
+				vest_id++;
+			}		
+		} else {
+			SendMessage(comboControl8, CB_SETCURSEL, jabia_vest_map.size(), 0);
+		}
+		
 		// address of character
 		_itot_s((uint32_t)ptr, buf, 100, 16);
 		SetDlgItemText(hwnd, IDC_ADDRESS, buf);	
@@ -680,12 +875,9 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 		_itot_s(character.inventory.weapon_in_hand_durability, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_WPN_EQ_DUR, buf);
 
-		_itot_s(character.inventory.helmet_equiped, buf, 100, 10);
-		SetDlgItemText(hwnd, IDC_HELM_EQ, buf);
-
-		_itot_s(character.inventory.helmet_equiped_durability, buf, 100, 10);
+		_itot_s(character.inventory.cap_equiped_durability, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_HELM_EQ_DUR, buf);
-
+		
 		_itot_s(character.inventory.eyewear_equiped, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_EYE_EQ, buf);
 
@@ -703,10 +895,10 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 
 		_itot_s(character.inventory.shirt_equiped_durability, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_SHRT_EQ_DUR, buf);
-
+		/*
 		_itot_s(character.inventory.vest_equiped, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_VEST_EQ, buf);
-
+		*/
 		_itot_s(character.inventory.vest_equiped_durability, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_VEST_DUR, buf);
 
@@ -798,8 +990,7 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 	}	
 }
 
-//TODO instead of bool for each, make on variable as bitfield
-void setCharacter(HWND hwnd, JABIA_Character * ptr, bool inventory_weapon_changed, bool equiped_weapon_changed, bool attachment_changed) {
+void setCharacter(HWND hwnd, JABIA_Character * ptr) {
 	TCHAR buf [100];
 	char nameBuf[100];
 	JABIA_Character * character_ptr = ptr;
@@ -808,8 +999,8 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr, bool inventory_weapon_change
 	uint32_t training_points;
 	uint16_t weapon_in_hand;
 	uint16_t weapon_in_hand_durability;
-	uint16_t helmet_equiped;
-	uint16_t helmet_equiped_durability;
+	uint16_t cap_equiped;
+	uint16_t cap_equiped_durability;
 	uint16_t eyewear_equiped; 
 	uint16_t eyewear_equiped_durability;
 	uint16_t special_equiped; 
@@ -863,9 +1054,9 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr, bool inventory_weapon_change
 	training_points = _ttoi(buf);
 	character_ptr->training_points = training_points;
 
-	if(equiped_weapon_changed) {		
+	if(inventory_combo_status.equiped_weapon_changed) {		
 		GetDlgItemText(hwnd, IDC_COMBO_EQUIPED_WEAPON, buf, 100);
-		weapon_in_hand = getWeaponIdByName(buf);
+		weapon_in_hand = getIdFromString(buf);
 		if(weapon_in_hand != 0)
 		{								
 			character_ptr->inventory.weapon_in_hand = weapon_in_hand;
@@ -892,18 +1083,48 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr, bool inventory_weapon_change
 		character_ptr->inventory.ammo_equiped_count = ammo_equiped_count;
 
 	}
-
 	character_ptr->inventory.weapon_in_hand_removable = 1;
+	
+	if(inventory_combo_status.helmet_changed) {
+		GetDlgItemText(hwnd, IDC_COMBO_HELMET, buf, 100);	
+		cap_equiped = getIdFromString(buf);
+		if(cap_equiped != 0)
+		{								
+			character_ptr->inventory.cap_equiped = cap_equiped;
+			character_ptr->inventory.cap_equiped_durability = 100;
+		} else {
+			character_ptr->inventory.cap_equiped = 0xFFFF;
+			character_ptr->inventory.cap_equiped_durability = 0;
+		}
+	} else {
+		GetDlgItemText(hwnd, IDC_HELM_EQ_DUR, buf, 100);
+		cap_equiped_durability = _ttoi(buf);
+		character_ptr->inventory.cap_equiped_durability = cap_equiped_durability;
+	}
+	character_ptr->inventory.cap_equiped_removable = 1;
 
-	GetDlgItemText(hwnd, IDC_HELM_EQ, buf, 100);
-	helmet_equiped = _ttoi(buf);
-	character_ptr->inventory.helmet_equiped = helmet_equiped;
-
-	character_ptr->inventory.helmet_equiped_removable = 1;
-
+	if(inventory_combo_status.vest_changed) {
+		GetDlgItemText(hwnd, IDC_COMBO_VEST, buf, 100);	
+		vest_equiped = getIdFromString(buf);
+		if(vest_equiped != 0)
+		{								
+			character_ptr->inventory.vest_equiped = vest_equiped;
+			character_ptr->inventory.vest_equiped_durability = 100;
+		} else {
+			character_ptr->inventory.vest_equiped = 0xFFFF;
+			character_ptr->inventory.vest_equiped_durability = 0;
+		}
+	} else {
+		GetDlgItemText(hwnd, IDC_VEST_DUR, buf, 100);
+		vest_equiped_durability = _ttoi(buf);
+		character_ptr->inventory.vest_equiped_durability = vest_equiped_durability;
+	}
+	character_ptr->inventory.vest_equiped_status = 1;
+	/*
 	GetDlgItemText(hwnd, IDC_HELM_EQ_DUR, buf, 100);
-	helmet_equiped_durability = _ttoi(buf);
-	character_ptr->inventory.helmet_equiped_durability = helmet_equiped_durability;
+	cap_equiped_durability = _ttoi(buf);
+	character_ptr->inventory.cap_equiped_durability = cap_equiped_durability;
+	*/
 
 	GetDlgItemText(hwnd, IDC_EYE_EQ, buf, 100);
 	eyewear_equiped = _ttoi(buf);
@@ -930,15 +1151,15 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr, bool inventory_weapon_change
 	GetDlgItemText(hwnd, IDC_SHRT_EQ_DUR, buf, 100);
 	shirt_equiped_durability = _ttoi(buf);
 	character_ptr->inventory.shirt_equiped_durability = shirt_equiped_durability;
-
+	/*
 	GetDlgItemText(hwnd, IDC_VEST_EQ, buf, 100);
 	vest_equiped = _ttoi(buf);
 	character_ptr->inventory.vest_equiped = vest_equiped;
-
+	
 	GetDlgItemText(hwnd, IDC_VEST_DUR, buf, 100);
 	vest_equiped_durability = _ttoi(buf);
 	character_ptr->inventory.vest_equiped_durability = vest_equiped_durability;
-
+	*/
 	GetDlgItemText(hwnd, IDC_SHOES_EQ, buf, 100);
 	shoes_equiped = _ttoi(buf);
 	character_ptr->inventory.shoes_equiped = shoes_equiped;
@@ -955,9 +1176,9 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr, bool inventory_weapon_change
 	pants_equiped_durability = _ttoi(buf);
 	character_ptr->inventory.pants_equiped_durability = pants_equiped_durability;
 
-	if(attachment_changed) {		
+	if(inventory_combo_status.attachment_changed) {		
 		GetDlgItemText(hwnd, IDC_COMBO_WEAPON_MOD, buf, 100);
-		weapon_attachment_removable = getWeaponIdByName(buf);
+		weapon_attachment_removable = getIdFromString(buf);
 		if(weapon_attachment_removable != 0)
 		{								
 			character_ptr->inventory.weapon_attachment_removable = weapon_attachment_removable;
@@ -977,9 +1198,9 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr, bool inventory_weapon_change
 	character_ptr->name_length = (uint32_t)strlen(character_ptr->merc_name);
 
 	// inventory
-	if(inventory_weapon_changed) {
+	if(inventory_combo_status.inventory_weapon_changed) {
 		GetDlgItemText(hwnd, IDC_COMBO_INVENTORY_WEAPON, buf, 100);		
-		weapon = getWeaponIdByName(buf);
+		weapon = getIdFromString(buf);
 		if(weapon != 0)
 		{								
 			character_ptr->inventory.weapons[last_weaponslot_selected_index].weapon = weapon;
@@ -1065,13 +1286,19 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr, bool inventory_weapon_change
 	character_ptr->bleed_rate = bleed_rate;
 }
 
-int getWeaponIdByName(TCHAR * buf) {
+int getIdFromString(TCHAR * buf) {
 		//OutputDebugString(_T("Got this weapon:"));
 		//OutputDebugString(buf);
-		std::wstring weaponString = std::wstring(buf);
-		//OutputDebugString(buf);
+		std::wstring weaponBoxString = std::wstring(buf);
+		size_t next = weaponBoxString.find_first_of(_T("|"));
+		int id = _ttoi(weaponBoxString.substr(0, next).c_str());
+		std::wstring weaponString = weaponBoxString.substr(next+1, weaponBoxString.length());		
+		//TCHAR buffer[DEBUG_STR_SIZE];
+		//wsprintf(buffer, _T("%s %i"), weaponString.c_str(), id);
+		//OutputDebugString(buffer);
 		if(weaponString.compare(L"None") != 0) {
-			return ctx.id_map[weaponString];
+			return id;
+			//return ctx.id_map[weaponString];
 		} else {
 			return 0;
 		}
@@ -1187,7 +1414,6 @@ void __fastcall recordWeapons(void* instance){
 
 	wsprintf(buf, _T("Weapon at 0x%X, ID: %i"), weapon_ptr, weapon_ptr->ID);
 	OutputDebugString(buf);
-	jabia_weapons.push_back(weapon_ptr);	
 	jabia_weapons_map[weapon_ptr->ID] = weapon_ptr;
 }
 
@@ -1211,7 +1437,6 @@ void __fastcall recordAttachments(void* instance){
 
 	wsprintf(buf, _T("Attachment at 0x%X, ID: %i"), attachment_ptr, attachment_ptr->ID);
 	OutputDebugString(buf);
-	jabia_attachments.push_back(attachment_ptr);	
 	jabia_attachments_map[attachment_ptr->ID] = attachment_ptr;
 }
 
@@ -1229,12 +1454,32 @@ __declspec(naked) void* myClothConstReturn(){
 void __fastcall recordCloth(void* instance){
 	TCHAR buf [100];
 	JABIA_Cloth * cloth_ptr;
-	OutputDebugString(_T("Parsing cloth!"));
+	OutputDebugString(_T("Parsing clothing!"));
 
 	cloth_ptr = (JABIA_Cloth *)instance;
 
-	wsprintf(buf, _T("Cloth at 0x%X, ID: %i"), cloth_ptr, cloth_ptr->ID);
+	wsprintf(buf, _T("Clothing at 0x%X, ID: %i"), cloth_ptr, cloth_ptr->ID);
 	OutputDebugString(buf);
-	jabia_cloth.push_back(cloth_ptr);	
 	jabia_cloth_map[cloth_ptr->ID] = cloth_ptr;
+
+	for( std::map<int, JABIA_Cloth *>::iterator ii=jabia_cloth_map.begin(); ii!=jabia_cloth_map.end(); ++ii) {
+		if((*ii).second->Slot == Cap) {
+			jabia_headgear_map[(*ii).second->ID] = (*ii).second;
+		}
+		if((*ii).second->Slot == Vest) {
+			jabia_vest_map[(*ii).second->ID] = (*ii).second;
+		}
+		if((*ii).second->Slot == Torso) {
+			jabia_torso_map[(*ii).second->ID] = (*ii).second;
+		}
+		if((*ii).second->Slot == Legs) {
+			jabia_pants_map[(*ii).second->ID] = (*ii).second;
+		}
+		if((*ii).second->Slot == Feet) {
+			jabia_shoes_map[(*ii).second->ID] = (*ii).second;
+		}
+		if((*ii).second->Slot == Glasses) {
+			jabia_eyewear_map[(*ii).second->ID] = (*ii).second;
+		}
+	}
 }

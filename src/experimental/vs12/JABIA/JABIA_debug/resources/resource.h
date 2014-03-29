@@ -10,7 +10,6 @@
 #define IDC_SHRT_EQ                             1002
 #define IDC_SPC_EQ                              1003
 #define IDC_MERC_NAME                           1004
-#define IDC_VEST_EQ                             1005
 #define IDC_AMMO_EQ                             1006
 #define IDC_ADDRESS                             1009
 #define IDC_LEV                                 1010
@@ -19,7 +18,6 @@
 #define IDC_EX                                  1013
 #define IDC_BLEED_RATE                          1014
 #define IDC_INV_ITEM_ID                         1015
-#define IDC_HELM_EQ                             1016
 #define IDC_HELM_EQ_DUR                         1026
 #define IDC_WPN_EQ_DUR                          1028
 #define IDC_DEX                                 1030
@@ -59,3 +57,9 @@
 #define IDC_COMBO_WEAPON_SLOT                   40003
 #define IDC_MONEY                               40004
 #define IDC_COMBO_WEAPON_MOD                    40005
+#define IDC_COMBO_HELMET                        40006
+#define IDC_COMBO_VEST                          40007
+#define IDC_COMBO_SHIRT                         40008
+#define IDC_COMBO_PANTS                         40009
+#define IDC_COMBO_SHOES                         40010
+#define IDC_COMBO_EYEWEAR                       40011

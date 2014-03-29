@@ -52,10 +52,13 @@ typedef struct JABIA_Cloth {
 	uint16_t	picture_y_upper_left;
 	uint16_t	picture_x_lower_right;
 	uint16_t	picture_y_lower_right;
-	uint32_t	Armament;
-	uint32_t	Accuracy;
-	uint32_t	Silencing;
-	uint32_t	Aimtime;
+	Slots		Slot;
+	uint32_t	Armor;
+	uint32_t	CamoNight;
+	uint32_t	CamoUrban;
+	uint32_t	CamoWoods;
+	uint32_t	CamoDesert;
+	uint32_t	Property;
 	uint32_t	unknown2[12];
 } JABIA_Cloth;
 
