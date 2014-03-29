@@ -7,7 +7,6 @@
 #define IDR_MENU1                               102
 #define IDSET                                   1000
 #define IDC_SPC_EQ_LEFT                         1001
-#define IDC_SHRT_EQ                             1002
 #define IDC_SPC_EQ                              1003
 #define IDC_MERC_NAME                           1004
 #define IDC_AMMO_EQ                             1006
@@ -26,9 +25,7 @@
 #define IDC_PER                                 1036
 #define IDC_SHRT_EQ_DUR                         1038
 #define IDC_VEST_DUR                            1040
-#define IDC_SHOES_EQ                            1042
 #define IDC_SHOES_DUR                           1044
-#define IDC_PANTS_EQ                            1046
 #define IDC_PANTS_DUR                           1048
 #define IDC_AMMO_EQ_CNT                         1050
 #define IDC_MED                                 1058
@@ -38,7 +35,6 @@
 #define IDC_MECH                                1062
 #define IDC_HLTH                                1066
 #define IDC_STAMINA                             1067
-#define IDC_EYE_EQ                              1074
 #define IDC_EYE_EQ_DUR                          1075
 #define IDC_MED_COND                            1077
 #define IDC_MERC_FAC                            1078

@@ -114,7 +114,7 @@ typedef struct JABIA_Character_inventory {
 	uint16_t unknown10;
 
 	uint16_t shirt_equiped;
-	uint16_t unknown11;
+	uint16_t shirt_equiped_status;
 	uint16_t shirt_equiped_durability;
 	uint16_t unknown12;
 
@@ -124,12 +124,12 @@ typedef struct JABIA_Character_inventory {
 	uint16_t unknown14;
 
 	uint16_t shoes_equiped;
-	uint16_t unknown15;
+	uint16_t shoes_equiped_status;
 	uint16_t shoes_equiped_durability;
 	uint16_t unknown16;
 
 	uint16_t pants_equiped;
-	uint16_t unknown17;
+	uint16_t pants_equiped_status;
 	uint16_t pants_equiped_durability;
 	uint16_t unknown18;
 

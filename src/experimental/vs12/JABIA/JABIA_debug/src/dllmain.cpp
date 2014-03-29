@@ -859,6 +859,74 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 			SendMessage(comboControl8, CB_SETCURSEL, jabia_vest_map.size(), 0);
 		}
 		
+		HWND comboControl9;
+		comboControl9=GetDlgItem(hwnd,IDC_COMBO_SHIRT);			
+		uint32_t equiped_shirt_id = character.inventory.shirt_equiped;		
+		int shirt_id = 0;
+		if(equiped_shirt_id != 0xFFFF) {
+			for( std::map<int, JABIA_Cloth *>::iterator ii=jabia_torso_map.begin(); ii!=jabia_torso_map.end(); ++ii) {
+				uint32_t id = (*ii).second->ID;
+				if(equiped_shirt_id == id) {
+					SendMessage(comboControl9, CB_SETCURSEL, shirt_id, 0);
+					break;
+				}
+				shirt_id++;
+			}		
+		} else {
+			SendMessage(comboControl9, CB_SETCURSEL, jabia_torso_map.size(), 0);
+		}
+
+		HWND comboControl10;
+		comboControl10=GetDlgItem(hwnd,IDC_COMBO_PANTS);			
+		uint32_t equiped_pants_id = character.inventory.pants_equiped;		
+		int pants_id = 0;
+		if(equiped_pants_id != 0xFFFF) {
+			for( std::map<int, JABIA_Cloth *>::iterator ii=jabia_pants_map.begin(); ii!=jabia_pants_map.end(); ++ii) {
+				uint32_t id = (*ii).second->ID;
+				if(equiped_pants_id == id) {
+					SendMessage(comboControl10, CB_SETCURSEL, pants_id, 0);
+					break;
+				}
+				pants_id++;
+			}		
+		} else {
+			SendMessage(comboControl10, CB_SETCURSEL, jabia_pants_map.size(), 0);
+		}
+
+		HWND comboControl11;
+		comboControl11=GetDlgItem(hwnd,IDC_COMBO_SHOES);			
+		uint32_t equiped_shoes_id = character.inventory.shoes_equiped;		
+		int shoes_id = 0;
+		if(equiped_shoes_id != 0xFFFF) {
+			for( std::map<int, JABIA_Cloth *>::iterator ii=jabia_shoes_map.begin(); ii!=jabia_shoes_map.end(); ++ii) {
+				uint32_t id = (*ii).second->ID;
+				if(equiped_shoes_id == id) {
+					SendMessage(comboControl11, CB_SETCURSEL, shoes_id, 0);
+					break;
+				}
+				shoes_id++;
+			}		
+		} else {
+			SendMessage(comboControl11, CB_SETCURSEL, jabia_shoes_map.size(), 0);
+		}
+
+		HWND comboControl12;
+		comboControl12=GetDlgItem(hwnd,IDC_COMBO_EYEWEAR);			
+		uint32_t equiped_eyewear_id = character.inventory.eyewear_equiped;		
+		int eyewear_id = 0;
+		if(equiped_eyewear_id != 0xFFFF) {
+			for( std::map<int, JABIA_Cloth *>::iterator ii=jabia_eyewear_map.begin(); ii!=jabia_eyewear_map.end(); ++ii) {
+				uint32_t id = (*ii).second->ID;
+				if(equiped_eyewear_id == id) {
+					SendMessage(comboControl12, CB_SETCURSEL, eyewear_id, 0);
+					break;
+				}
+				eyewear_id++;
+			}		
+		} else {
+			SendMessage(comboControl12, CB_SETCURSEL, jabia_eyewear_map.size(), 0);
+		}
+
 		// address of character
 		_itot_s((uint32_t)ptr, buf, 100, 16);
 		SetDlgItemText(hwnd, IDC_ADDRESS, buf);	
@@ -878,9 +946,6 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 		_itot_s(character.inventory.cap_equiped_durability, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_HELM_EQ_DUR, buf);
 		
-		_itot_s(character.inventory.eyewear_equiped, buf, 100, 10);
-		SetDlgItemText(hwnd, IDC_EYE_EQ, buf);
-
 		_itot_s(character.inventory.eyewear_equiped_durability, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_EYE_EQ_DUR, buf);
 
@@ -889,27 +954,15 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 
 		_itot_s(character.inventory.special_equiped_charges, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_SPC_EQ_LEFT, buf);
-
-		_itot_s(character.inventory.shirt_equiped, buf, 100, 10);
-		SetDlgItemText(hwnd, IDC_SHRT_EQ, buf);
-
+		
 		_itot_s(character.inventory.shirt_equiped_durability, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_SHRT_EQ_DUR, buf);
-		/*
-		_itot_s(character.inventory.vest_equiped, buf, 100, 10);
-		SetDlgItemText(hwnd, IDC_VEST_EQ, buf);
-		*/
+		
 		_itot_s(character.inventory.vest_equiped_durability, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_VEST_DUR, buf);
-
-		_itot_s(character.inventory.shoes_equiped, buf, 100, 10);
-		SetDlgItemText(hwnd, IDC_SHOES_EQ, buf);
-
+		
 		_itot_s(character.inventory.shoes_equiped_durability, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_SHOES_DUR, buf);
-
-		_itot_s(character.inventory.pants_equiped, buf, 100, 10);
-		SetDlgItemText(hwnd, IDC_PANTS_EQ, buf);
 
 		_itot_s(character.inventory.pants_equiped_durability, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_PANTS_DUR, buf);
@@ -948,9 +1001,17 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 
 		_itot_s(character.inventory.weapons[last_weaponslot_selected_index].ammo_count, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_AMMO_INV_CNT, buf);
-
+		/*
 		_itot_s(character.inventory.inventory_items[last_inventory_selected_index].item_id, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_INV_ITEM_ID, buf);
+		*/
+		if(character.inventory.inventory_items[last_inventory_selected_index].item_id != 0xFFFF) {
+			wsprintf(buf, _T("%i|%s"), character.inventory.inventory_items[last_inventory_selected_index].item_id, ctx.string_map[character.inventory.inventory_items[last_inventory_selected_index].item_id].c_str());
+			SetDlgItemText(hwnd, IDC_INV_ITEM_ID, buf);
+		} else {
+			SetDlgItemText(hwnd, IDC_INV_ITEM_ID, _T("None"));
+		}
+
 
 		// attributes
 		_itot_s(character.agility, buf, 100, 10);
@@ -1120,20 +1181,77 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr) {
 		character_ptr->inventory.vest_equiped_durability = vest_equiped_durability;
 	}
 	character_ptr->inventory.vest_equiped_status = 1;
-	/*
-	GetDlgItemText(hwnd, IDC_HELM_EQ_DUR, buf, 100);
-	cap_equiped_durability = _ttoi(buf);
-	character_ptr->inventory.cap_equiped_durability = cap_equiped_durability;
-	*/
 
-	GetDlgItemText(hwnd, IDC_EYE_EQ, buf, 100);
-	eyewear_equiped = _ttoi(buf);
-	character_ptr->inventory.eyewear_equiped = eyewear_equiped;
+	if(inventory_combo_status.torso_changed) {
+		GetDlgItemText(hwnd, IDC_COMBO_SHIRT, buf, 100);	
+		shirt_equiped = getIdFromString(buf);
+		if(shirt_equiped != 0)
+		{								
+			character_ptr->inventory.shirt_equiped = shirt_equiped;
+			character_ptr->inventory.shirt_equiped_durability = 100;
+		} else {
+			character_ptr->inventory.shirt_equiped = 0xFFFF;
+			character_ptr->inventory.shirt_equiped_durability = 0;
+		}
+	} else {
+		GetDlgItemText(hwnd, IDC_SHRT_EQ_DUR, buf, 100);
+		shirt_equiped_durability = _ttoi(buf);
+		character_ptr->inventory.shirt_equiped_durability = shirt_equiped_durability;
+	}
+	character_ptr->inventory.shirt_equiped_status = 1;
 
-	GetDlgItemText(hwnd, IDC_EYE_EQ_DUR, buf, 100);
-	eyewear_equiped_durability = _ttoi(buf);
-	character_ptr->inventory.eyewear_equiped_durability = eyewear_equiped_durability;
+	if(inventory_combo_status.pants_changed) {
+		GetDlgItemText(hwnd, IDC_COMBO_PANTS, buf, 100);	
+		pants_equiped = getIdFromString(buf);
+		if(pants_equiped != 0)
+		{								
+			character_ptr->inventory.pants_equiped = pants_equiped;
+			character_ptr->inventory.pants_equiped_durability = 100;
+		} else {
+			character_ptr->inventory.pants_equiped = 0xFFFF;
+			character_ptr->inventory.pants_equiped_durability = 0;
+		}
+	} else {
+		GetDlgItemText(hwnd, IDC_PANTS_DUR, buf, 100);
+		pants_equiped_durability = _ttoi(buf);
+		character_ptr->inventory.pants_equiped_durability = pants_equiped_durability;
+	}
+	character_ptr->inventory.pants_equiped_status = 1;
 
+	if(inventory_combo_status.shoes_changed) {
+		GetDlgItemText(hwnd, IDC_COMBO_SHOES, buf, 100);	
+		shoes_equiped = getIdFromString(buf);
+		if(shoes_equiped != 0)
+		{								
+			character_ptr->inventory.shoes_equiped = shoes_equiped;
+			character_ptr->inventory.shoes_equiped_durability = 100;
+		} else {
+			character_ptr->inventory.shoes_equiped = 0xFFFF;
+			character_ptr->inventory.shoes_equiped_durability = 0;
+		}
+	} else {
+		GetDlgItemText(hwnd, IDC_SHOES_DUR, buf, 100);
+		shoes_equiped_durability = _ttoi(buf);
+		character_ptr->inventory.shoes_equiped_durability = shoes_equiped_durability;
+	}
+	character_ptr->inventory.shoes_equiped_status = 1;
+
+	if(inventory_combo_status.eyewear_changed) {
+		GetDlgItemText(hwnd, IDC_COMBO_EYEWEAR, buf, 100);	
+		eyewear_equiped = getIdFromString(buf);
+		if(shoes_equiped != 0)
+		{								
+			character_ptr->inventory.eyewear_equiped = eyewear_equiped;
+			character_ptr->inventory.eyewear_equiped_durability = 100;
+		} else {
+			character_ptr->inventory.eyewear_equiped = 0xFFFF;
+			character_ptr->inventory.eyewear_equiped_durability = 0;
+		}
+	} else {
+		GetDlgItemText(hwnd, IDC_EYE_EQ_DUR, buf, 100);
+		eyewear_equiped_durability = _ttoi(buf);
+		character_ptr->inventory.eyewear_equiped_durability = eyewear_equiped_durability;
+	}
 	character_ptr->inventory.eyewear_equiped_status = 1;
 
 	GetDlgItemText(hwnd, IDC_SPC_EQ, buf, 100);
@@ -1143,38 +1261,6 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr) {
 	GetDlgItemText(hwnd, IDC_SPC_EQ_LEFT, buf, 100);
 	special_equiped_charges = _ttoi(buf);
 	character_ptr->inventory.special_equiped_charges = special_equiped_charges;
-
-	GetDlgItemText(hwnd, IDC_SHRT_EQ, buf, 100);
-	shirt_equiped = _ttoi(buf);
-	character_ptr->inventory.shirt_equiped = shirt_equiped;
-
-	GetDlgItemText(hwnd, IDC_SHRT_EQ_DUR, buf, 100);
-	shirt_equiped_durability = _ttoi(buf);
-	character_ptr->inventory.shirt_equiped_durability = shirt_equiped_durability;
-	/*
-	GetDlgItemText(hwnd, IDC_VEST_EQ, buf, 100);
-	vest_equiped = _ttoi(buf);
-	character_ptr->inventory.vest_equiped = vest_equiped;
-	
-	GetDlgItemText(hwnd, IDC_VEST_DUR, buf, 100);
-	vest_equiped_durability = _ttoi(buf);
-	character_ptr->inventory.vest_equiped_durability = vest_equiped_durability;
-	*/
-	GetDlgItemText(hwnd, IDC_SHOES_EQ, buf, 100);
-	shoes_equiped = _ttoi(buf);
-	character_ptr->inventory.shoes_equiped = shoes_equiped;
-
-	GetDlgItemText(hwnd, IDC_SHOES_DUR, buf, 100);
-	shoes_equiped_durability = _ttoi(buf);
-	character_ptr->inventory.shoes_equiped_durability = shoes_equiped_durability;
-
-	GetDlgItemText(hwnd, IDC_PANTS_EQ, buf, 100);
-	pants_equiped = _ttoi(buf);
-	character_ptr->inventory.pants_equiped = pants_equiped;
-
-	GetDlgItemText(hwnd, IDC_PANTS_DUR, buf, 100);
-	pants_equiped_durability = _ttoi(buf);
-	character_ptr->inventory.pants_equiped_durability = pants_equiped_durability;
 
 	if(inventory_combo_status.attachment_changed) {		
 		GetDlgItemText(hwnd, IDC_COMBO_WEAPON_MOD, buf, 100);
@@ -1287,24 +1373,18 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr) {
 }
 
 int getIdFromString(TCHAR * buf) {
-		//OutputDebugString(_T("Got this weapon:"));
-		//OutputDebugString(buf);
-		std::wstring weaponBoxString = std::wstring(buf);
-		size_t next = weaponBoxString.find_first_of(_T("|"));
-		int id = _ttoi(weaponBoxString.substr(0, next).c_str());
-		std::wstring weaponString = weaponBoxString.substr(next+1, weaponBoxString.length());		
-		//TCHAR buffer[DEBUG_STR_SIZE];
-		//wsprintf(buffer, _T("%s %i"), weaponString.c_str(), id);
-		//OutputDebugString(buffer);
-		if(weaponString.compare(L"None") != 0) {
+		std::wstring comboBoxString = std::wstring(buf);
+		size_t next = comboBoxString.find_first_of(_T("|"));
+		int id = _ttoi(comboBoxString.substr(0, next).c_str());
+		std::wstring itemString = comboBoxString.substr(next+1, comboBoxString.length());		
+		if(itemString.compare(L"None") != 0) {
 			return id;
-			//return ctx.id_map[weaponString];
 		} else {
 			return 0;
 		}
 }
-// begin hooks
 
+// begin hooks
 void setMoney(HWND hwnd) {
 	TCHAR buf[100];
 	int money;
