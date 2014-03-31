@@ -45,6 +45,8 @@ typedef int (_stdcall *CharacterDestructorPtr)(JABIA_Character *);
 typedef void * (_fastcall *WeaponReturnPtr)();
 typedef void * (_fastcall *AttachmentReturnPtr)();
 typedef void * (_fastcall *ClothReturnPtr)();
+typedef void * (_fastcall *ItemReturnPtr)();
+typedef void * (_fastcall *AmmoReturnPtr)();
 
 #ifdef __cplusplus
 extern "C" {
@@ -64,11 +66,15 @@ void* mySaveGameParseReturn();
 void* myWeaponConstReturn();
 void* myAttachmentConstReturn();
 void* myClothConstReturn();
+void* myItemConstReturn();
+void* myAmmoConstReturn();
 void __fastcall recordCharacters(void* instance);
 void __fastcall removeCharacter(JABIA_Character * ptr);
 void __fastcall recordWeapons(void* instance);
 void __fastcall recordAttachments(void* instance);
 void __fastcall recordCloth(void* instance);
+void __fastcall recordItem(void* instance);
+void __fastcall recordAmmo(void* instance);
 int myCharacterDestructor(JABIA_Character * ptr);
 
 // gui functions
@@ -91,6 +97,7 @@ typedef struct COMBO_BOX_STATUS {
 	bool pants_changed;
 	bool shoes_changed;
 	bool eyewear_changed;
+	bool ammo_changed;
 } COMBO_BOX_STATUS;
 
 class JABIA_DEBUGMOD_parameters { 

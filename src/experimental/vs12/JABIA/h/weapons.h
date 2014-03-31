@@ -77,6 +77,6 @@ typedef struct JABIA_Weapon {
 	bool		DisableAttachments;
 	uint32_t	unknown9; 
 	uint32_t	unknown10;
-} JABIA_weapon;
+} JABIA_Weapon;
 
 #endif /* _WEAPONS_H_ */

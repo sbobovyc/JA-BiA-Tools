@@ -42,6 +42,12 @@
     <ClInclude Include="..\h\clothing.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\h\items.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\h\ammo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source Files">

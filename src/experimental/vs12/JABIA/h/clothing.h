@@ -62,4 +62,4 @@ typedef struct JABIA_Cloth {
 	uint32_t	unknown2[12];
 } JABIA_Cloth;
 
-#endif /* _ATTACHMENTS_H_ */
+#endif /* _CLOTHING_H_ */

@@ -9,7 +9,6 @@
 #define IDC_SPC_EQ_LEFT                         1001
 #define IDC_SPC_EQ                              1003
 #define IDC_MERC_NAME                           1004
-#define IDC_AMMO_EQ                             1006
 #define IDC_ADDRESS                             1009
 #define IDC_LEV                                 1010
 #define IDC_TP                                  1011
@@ -59,3 +58,4 @@
 #define IDC_COMBO_PANTS                         40009
 #define IDC_COMBO_SHOES                         40010
 #define IDC_COMBO_EYEWEAR                       40011
+#define IDC_COMBO_AMMO                          40012

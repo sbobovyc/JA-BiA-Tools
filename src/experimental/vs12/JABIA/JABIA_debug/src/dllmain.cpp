@@ -41,6 +41,8 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #include "weapons.h"
 #include "attachments.h"
 #include "clothing.h"
+#include "items.h"
+#include "ammo.h"
 #include "assembly_opcodes.h"
 #include "ctx_file.h"
 
@@ -57,6 +59,8 @@ SaveGame * CurrentSaveGamePtr = NULL;
 WeaponReturnPtr WeaponReturn;
 AttachmentReturnPtr AttachmentReturn;
 ClothReturnPtr ClothReturn;
+ItemReturnPtr ItemReturn;
+AmmoReturnPtr AmmoReturn;
 int * money_ptr;
 
 JABIA_DEBUGMOD_parameters debugmod_params;
@@ -101,6 +105,12 @@ std::map<int, JABIA_Cloth *> jabia_shoes_map;
 // eyewear
 std::map<int, JABIA_Cloth *> jabia_eyewear_map;
 
+// items
+std::map<int, JABIA_Item *> jabia_item_map;
+
+// ammo
+std::map<int, JABIA_Ammo *> jabia_ammo_map;
+
 CTX_file ctx;
 COMBO_BOX_STATUS inventory_combo_status;
 
@@ -134,6 +144,8 @@ DWORD WINAPI MyThread(LPVOID)
 	BYTE WeaponSavedReturn[6]; // save retn here
 	BYTE AttachmentSavedReturn[6]; // save retn here
 	BYTE ClothSavedReturn[6]; // save retn here
+	BYTE ItemSavedReturn[6]; // save retn here
+	BYTE AmmoSavedReturn[6]; // save retn here
 
 	// find base address of GameDemo.exe in memory
 	if(GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, ProcessName, &game_handle) == NULL) {
@@ -170,7 +182,15 @@ DWORD WINAPI MyThread(LPVOID)
 		OutputDebugString(debugStrBuf); 
 		// find address of cloth constructor return
 		ClothReturn = (ClothReturnPtr)((uint32_t)game_handle+CLOTHING_CONST_RETURN_OFFSET);
-		wsprintf (debugStrBuf, _T("Address of AttachmentReturn 0x%x"), AttachmentReturn);
+		wsprintf (debugStrBuf, _T("Address of ClothReturn 0x%x"), ClothReturn);
+		OutputDebugString(debugStrBuf); 
+		// find address of item constructor return
+		ItemReturn = (ItemReturnPtr)((uint32_t)game_handle+ITEM_CONST_RETURN_OFFSET);
+		wsprintf (debugStrBuf, _T("Address of ItemReturn 0x%x"), ItemReturn);
+		OutputDebugString(debugStrBuf); 
+		// find address of ammo constructor return
+		AmmoReturn = (AmmoReturnPtr)((uint32_t)game_handle+AMMO_CONST_RETURN_OFFSET);
+		wsprintf (debugStrBuf, _T("Address of AmmoReturn 0x%x"), AmmoReturn);
 		OutputDebugString(debugStrBuf); 
 		// If jabia_characters is not empty, clear it. Every time the game loads a level, character pointers change.
 		//TODO this function crashes on exit game
@@ -205,14 +225,23 @@ DWORD WINAPI MyThread(LPVOID)
 		// hook cloth constructor return
 		returnHook(ClothReturn, myClothConstReturn, ClothSavedReturn);
 
+		// hook item constructor return
+		returnHook(ItemReturn, myItemConstReturn, ItemSavedReturn);
+
+		// hook ammo constructor return
+		returnHook(AmmoReturn, myAmmoConstReturn, AmmoSavedReturn);
 
 		wsprintf(debugStrBuf, _T("Size of JABIA_Character struct %i"), sizeof(JABIA_Character));
 		OutputDebugString(debugStrBuf);
-		wsprintf(debugStrBuf, _T("Size of JABIA_weapon struct %i"), sizeof(JABIA_weapon));
+		wsprintf(debugStrBuf, _T("Size of JABIA_Weapon struct %i"), sizeof(JABIA_Weapon));
 		OutputDebugString(debugStrBuf);
 		wsprintf(debugStrBuf, _T("Size of JABIA_Attachment struct %i"), sizeof(JABIA_Attachment));
 		OutputDebugString(debugStrBuf);
 		wsprintf(debugStrBuf, _T("Size of JABIA_Cloth struct %i"), sizeof(JABIA_Cloth));
+		OutputDebugString(debugStrBuf);
+		wsprintf(debugStrBuf, _T("Size of JABIA_Item struct %i"), sizeof(JABIA_Item));
+		OutputDebugString(debugStrBuf);
+		wsprintf(debugStrBuf, _T("Size of JABIA_Ammo struct %i"), sizeof(JABIA_Ammo));
 		OutputDebugString(debugStrBuf);
 		wsprintf(debugStrBuf, _T("First run? %i"), debugmod_params.first_run);
 		OutputDebugString(debugStrBuf);
@@ -365,6 +394,7 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 	HWND comboControl10;
 	HWND comboControl11;
 	HWND comboControl12;
+	HWND comboControl13;
 	comboControl1=GetDlgItem(hwnd,IDC_COMBO_CHARACTER);	
 	comboControl2=GetDlgItem(hwnd,IDC_COMBO_WEAPON_SLOT);	
 	comboControl3=GetDlgItem(hwnd,IDC_COMBO_INVENTORY_SLOT);	
@@ -377,6 +407,7 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 	comboControl10=GetDlgItem(hwnd,IDC_COMBO_PANTS);
 	comboControl11=GetDlgItem(hwnd,IDC_COMBO_SHOES);
 	comboControl12=GetDlgItem(hwnd,IDC_COMBO_EYEWEAR);
+	comboControl13=GetDlgItem(hwnd,IDC_COMBO_AMMO);
 	BOOL status = FALSE;
 	JABIA_Character * ptr = 0; // character address
 	TCHAR debugStrBuf[255];
@@ -500,6 +531,14 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 				SendMessage(comboControl12,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)debugStrBuf));
 			}
 			SendMessage(comboControl12,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)_T("None")));
+
+			// add eyewear to combo box
+			for( std::map<int, JABIA_Ammo *>::iterator ii=jabia_ammo_map.begin(); ii!=jabia_ammo_map.end(); ++ii) {
+				wsprintf(debugStrBuf, _T("%i|%s"), (*ii).second->ID, ctx.string_map[(*ii).second->ID].c_str());
+				//OutputDebugString(debugStrBuf);
+				SendMessage(comboControl13,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)debugStrBuf));
+			}
+			SendMessage(comboControl13,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)_T("None")));
 
 			break;
         case WM_COMMAND:
@@ -649,6 +688,19 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 							ptr = jabia_characters.at(last_character_selected_index);
 							ZeroMemory((void *)&inventory_combo_status, sizeof(COMBO_BOX_STATUS));
 							inventory_combo_status.eyewear_changed = true;
+							setCharacter(hwnd, ptr);
+							fillDialog(hwnd, ptr);
+							break;
+					}
+					break;
+				case IDC_COMBO_AMMO:
+					switch(HIWORD(wParam))
+					{
+						case CBN_CLOSEUP:
+							// use combo box selected index to get weapon id
+							ptr = jabia_characters.at(last_character_selected_index);
+							ZeroMemory((void *)&inventory_combo_status, sizeof(COMBO_BOX_STATUS));
+							inventory_combo_status.ammo_changed = true;
 							setCharacter(hwnd, ptr);
 							fillDialog(hwnd, ptr);
 							break;
@@ -927,6 +979,23 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 			SendMessage(comboControl12, CB_SETCURSEL, jabia_eyewear_map.size(), 0);
 		}
 
+		HWND comboControl13;
+		comboControl13=GetDlgItem(hwnd,IDC_COMBO_AMMO);			
+		uint32_t equiped_ammo_id = character.inventory.ammo_equiped;		
+		int ammo_id = 0;
+		if(equiped_ammo_id != 0xFFFF) {
+			for( std::map<int, JABIA_Ammo *>::iterator ii=jabia_ammo_map.begin(); ii!=jabia_ammo_map.end(); ++ii) {
+				uint32_t id = (*ii).second->ID;
+				if(equiped_ammo_id == id) {
+					SendMessage(comboControl13, CB_SETCURSEL, ammo_id, 0);
+					break;
+				}
+				ammo_id++;
+			}		
+		} else {
+			SendMessage(comboControl13, CB_SETCURSEL, jabia_ammo_map.size(), 0);
+		}
+
 		// address of character
 		_itot_s((uint32_t)ptr, buf, 100, 16);
 		SetDlgItemText(hwnd, IDC_ADDRESS, buf);	
@@ -966,13 +1035,10 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 
 		_itot_s(character.inventory.pants_equiped_durability, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_PANTS_DUR, buf);
-
+		/*
 		_itot_s(character.inventory.ammo_equiped, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_AMMO_EQ, buf);
-
-		_itot_s(character.inventory.ammo_equiped_count, buf, 100, 10);
-		SetDlgItemText(hwnd, IDC_AMMO_EQ_CNT, buf);
-
+		*/
 		_itot_s(character.inventory.ammo_equiped_count, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_AMMO_EQ_CNT, buf);
 
@@ -1073,8 +1139,7 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr) {
 	uint16_t shoes_equiped;
 	uint16_t shoes_equiped_durability;
 	uint16_t pants_equiped;
-	uint16_t pants_equiped_durability;
-	uint16_t ammo_equiped;
+	uint16_t pants_equiped_durability;	
 	uint16_t ammo_equiped_count;
 	uint16_t weapon_attachment_removable;
 
@@ -1122,7 +1187,13 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr) {
 		{								
 			character_ptr->inventory.weapon_in_hand = weapon_in_hand;
 			character_ptr->inventory.weapon_in_hand_durability = jabia_weapons_map[weapon_in_hand]->Quality;
-			character_ptr->inventory.ammo_equiped = jabia_weapons_map[weapon_in_hand]->AmmunitionType - 1 + AMMO_START_ID;
+			uint16_t ammoType = jabia_weapons_map[weapon_in_hand]->AmmunitionType;
+			for( std::map<int, JABIA_Ammo *>::iterator ii=jabia_ammo_map.begin(); ii!=jabia_ammo_map.end(); ++ii) {
+				if(ammoType == (*ii).second->AmmunitionType) {
+					character_ptr->inventory.ammo_equiped = (*ii).second->ID;
+					break;
+				}
+			}
 			character_ptr->inventory.ammo_equiped_count = jabia_weapons_map[weapon_in_hand]->ClipSize;
 		} else {
 			character_ptr->inventory.weapon_in_hand = 0xFFFF;
@@ -1135,10 +1206,11 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr) {
 		weapon_in_hand_durability = _ttoi(buf);
 		character_ptr->inventory.weapon_in_hand_durability = weapon_in_hand_durability;
 
+		/*
 		GetDlgItemText(hwnd, IDC_AMMO_EQ, buf, 100);
 		ammo_equiped = _ttoi(buf);
 		character_ptr->inventory.ammo_equiped = ammo_equiped;
-
+		*/
 		GetDlgItemText(hwnd, IDC_AMMO_EQ_CNT, buf, 100);
 		ammo_equiped_count = _ttoi(buf);
 		character_ptr->inventory.ammo_equiped_count = ammo_equiped_count;
@@ -1488,11 +1560,10 @@ __declspec(naked) void* myWeaponConstReturn(){
 void __fastcall recordWeapons(void* instance){
 	TCHAR buf [100];
 	JABIA_Weapon * weapon_ptr;
-	OutputDebugString(_T("Parsing weapon!"));
 
 	weapon_ptr = (JABIA_Weapon *)instance;
 
-	wsprintf(buf, _T("Weapon at 0x%X, ID: %i"), weapon_ptr, weapon_ptr->ID);
+	wsprintf(buf, _T("Weapon at 0x%X, ID: %i, AmmunitionType: %i"), weapon_ptr, weapon_ptr->ID, weapon_ptr->AmmunitionType);
 	OutputDebugString(buf);
 	jabia_weapons_map[weapon_ptr->ID] = weapon_ptr;
 }
@@ -1511,7 +1582,6 @@ __declspec(naked) void* myAttachmentConstReturn(){
 void __fastcall recordAttachments(void* instance){
 	TCHAR buf [100];
 	JABIA_Attachment * attachment_ptr;
-	OutputDebugString(_T("Parsing attachment!"));
 
 	attachment_ptr = (JABIA_Attachment *)instance;
 
@@ -1534,7 +1604,6 @@ __declspec(naked) void* myClothConstReturn(){
 void __fastcall recordCloth(void* instance){
 	TCHAR buf [100];
 	JABIA_Cloth * cloth_ptr;
-	OutputDebugString(_T("Parsing clothing!"));
 
 	cloth_ptr = (JABIA_Cloth *)instance;
 
@@ -1562,4 +1631,46 @@ void __fastcall recordCloth(void* instance){
 			jabia_eyewear_map[(*ii).second->ID] = (*ii).second;
 		}
 	}
+}
+
+__declspec(naked) void* myItemConstReturn(){	
+	__asm{
+		push eax;
+		mov ecx, eax;
+		call recordItem;
+		pop eax;
+		retn 8;
+	}
+}
+
+void __fastcall recordItem(void* instance){
+	TCHAR buf [100];
+	JABIA_Item * item_ptr;
+
+	item_ptr = (JABIA_Item *)instance;
+
+	wsprintf(buf, _T("Item at 0x%X, ID: %i"), item_ptr, item_ptr->ID);
+	OutputDebugString(buf);
+	jabia_item_map[item_ptr->ID] = item_ptr;
+}
+
+__declspec(naked) void* myAmmoConstReturn(){	
+	__asm{
+		push eax;
+		mov ecx, eax;
+		call recordAmmo;
+		pop eax;
+		retn 4;
+	}
+}
+
+void __fastcall recordAmmo(void* instance){
+	TCHAR buf [100];
+	JABIA_Ammo * ammo_ptr;
+
+	ammo_ptr = (JABIA_Ammo *)instance;
+
+	wsprintf(buf, _T("Ammo at 0x%X, ID: %i, AmmunitionType: %i"), ammo_ptr, ammo_ptr->ID, ammo_ptr->AmmunitionType);
+	OutputDebugString(buf);
+	jabia_ammo_map[ammo_ptr->ID] = ammo_ptr;
 }
