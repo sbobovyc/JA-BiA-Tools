@@ -395,6 +395,7 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 	HWND comboControl11;
 	HWND comboControl12;
 	HWND comboControl13;
+	HWND comboControl14;
 	comboControl1=GetDlgItem(hwnd,IDC_COMBO_CHARACTER);	
 	comboControl2=GetDlgItem(hwnd,IDC_COMBO_WEAPON_SLOT);	
 	comboControl3=GetDlgItem(hwnd,IDC_COMBO_INVENTORY_SLOT);	
@@ -408,6 +409,7 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 	comboControl11=GetDlgItem(hwnd,IDC_COMBO_SHOES);
 	comboControl12=GetDlgItem(hwnd,IDC_COMBO_EYEWEAR);
 	comboControl13=GetDlgItem(hwnd,IDC_COMBO_AMMO);
+	comboControl14=GetDlgItem(hwnd,IDC_COMBO_SPECIAL);
 	BOOL status = FALSE;
 	JABIA_Character * ptr = 0; // character address
 	TCHAR debugStrBuf[255];
@@ -532,13 +534,21 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 			}
 			SendMessage(comboControl12,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)_T("None")));
 
-			// add eyewear to combo box
+			// add ammo to combo box
 			for( std::map<int, JABIA_Ammo *>::iterator ii=jabia_ammo_map.begin(); ii!=jabia_ammo_map.end(); ++ii) {
 				wsprintf(debugStrBuf, _T("%i|%s"), (*ii).second->ID, ctx.string_map[(*ii).second->ID].c_str());
 				//OutputDebugString(debugStrBuf);
 				SendMessage(comboControl13,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)debugStrBuf));
 			}
 			SendMessage(comboControl13,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)_T("None")));
+
+			// add special item to combo box
+			for( std::map<int, JABIA_Item *>::iterator ii=jabia_item_map.begin(); ii!=jabia_item_map.end(); ++ii) {
+				wsprintf(debugStrBuf, _T("%i|%s"), (*ii).second->ID, ctx.string_map[(*ii).second->ID].c_str());
+				//OutputDebugString(debugStrBuf);
+				SendMessage(comboControl14,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)debugStrBuf));
+			}
+			SendMessage(comboControl14,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)_T("None")));
 
 			break;
         case WM_COMMAND:
@@ -706,12 +716,26 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 							break;
 					}
 					break;
+				case IDC_COMBO_SPECIAL:
+					switch(HIWORD(wParam))
+					{
+						case CBN_CLOSEUP:
+							// use combo box selected index to get weapon id
+							ptr = jabia_characters.at(last_character_selected_index);
+							ZeroMemory((void *)&inventory_combo_status, sizeof(COMBO_BOX_STATUS));
+							inventory_combo_status.special_changed = true;
+							setCharacter(hwnd, ptr);
+							fillDialog(hwnd, ptr);
+							break;
+					}
+					break;
                 case IDSET:
 					ptr = jabia_characters.at(last_character_selected_index);
 					ZeroMemory((void *)&inventory_combo_status, sizeof(COMBO_BOX_STATUS));
 					setCharacter(hwnd, ptr);
 					setMoney(hwnd);
 					break;
+				case IDHEAL_CHARACTER:
 				case IDM_HEAL_CHARACTER:					
 					ptr = jabia_characters.at(last_character_selected_index);
 					heal_character(ptr);
@@ -738,6 +762,11 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 					break;
 				case IDM_DUMP_ALL:				
 					dump_all_characters(hwnd);
+					break;
+				case IDSUPER:
+					ptr = jabia_characters.at(last_character_selected_index);
+					max_stats(ptr);
+					fillDialog(hwnd, ptr);
 					break;
                 case IDCANCEL:
                     DestroyWindow(hwnd);
@@ -996,6 +1025,23 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 			SendMessage(comboControl13, CB_SETCURSEL, jabia_ammo_map.size(), 0);
 		}
 
+		HWND comboControl14;
+		comboControl14=GetDlgItem(hwnd,IDC_COMBO_SPECIAL);			
+		uint32_t equiped_special_id = character.inventory.special_equiped;		
+		int special_id = 0;
+		if(equiped_special_id != 0xFFFF) {
+			for( std::map<int, JABIA_Item *>::iterator ii=jabia_item_map.begin(); ii!=jabia_item_map.end(); ++ii) {
+				uint32_t id = (*ii).second->ID;
+				if(equiped_special_id == id) {
+					SendMessage(comboControl14, CB_SETCURSEL, special_id, 0);
+					break;
+				}
+				special_id++;
+			}		
+		} else {
+			SendMessage(comboControl14, CB_SETCURSEL, jabia_item_map.size(), 0);
+		}
+
 		// address of character
 		_itot_s((uint32_t)ptr, buf, 100, 16);
 		SetDlgItemText(hwnd, IDC_ADDRESS, buf);	
@@ -1017,10 +1063,10 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 		
 		_itot_s(character.inventory.eyewear_equiped_durability, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_EYE_EQ_DUR, buf);
-
+		/*
 		_itot_s(character.inventory.special_equiped, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_SPC_EQ, buf);
-
+		*/
 		_itot_s(character.inventory.special_equiped_charges, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_SPC_EQ_LEFT, buf);
 		
@@ -1326,14 +1372,39 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr) {
 	}
 	character_ptr->inventory.eyewear_equiped_status = 1;
 
+	if(inventory_combo_status.special_changed) {
+		GetDlgItemText(hwnd, IDC_COMBO_SPECIAL, buf, 100);	
+		OutputDebugString(buf);
+		special_equiped = getIdFromString(buf);
+		TCHAR debugBuffer[100];
+		wsprintf(debugBuffer, _T("%s %i"), buf, special_equiped);
+		OutputDebugString(debugBuffer);
+		if(special_equiped != 0)
+		{								
+			character_ptr->inventory.special_equiped = special_equiped;
+			character_ptr->inventory.special_equiped_charges = jabia_item_map[special_equiped]->Charges;
+			character_ptr->inventory.special_equiped_status = 1;
+		} else {
+			character_ptr->inventory.special_equiped = 0xFFFF;
+			character_ptr->inventory.special_equiped_charges = 0;
+			character_ptr->inventory.special_equiped_status = 0;
+		}
+	} else {
+		GetDlgItemText(hwnd, IDC_SPC_EQ_LEFT, buf, 100);
+		special_equiped_charges = _ttoi(buf);
+		character_ptr->inventory.special_equiped_charges = special_equiped_charges;
+	}	
+
+	/*
 	GetDlgItemText(hwnd, IDC_SPC_EQ, buf, 100);
 	special_equiped = _ttoi(buf);
 	character_ptr->inventory.special_equiped = special_equiped;
-
+	*/
+	/*
 	GetDlgItemText(hwnd, IDC_SPC_EQ_LEFT, buf, 100);
 	special_equiped_charges = _ttoi(buf);
 	character_ptr->inventory.special_equiped_charges = special_equiped_charges;
-
+	*/
 	if(inventory_combo_status.attachment_changed) {		
 		GetDlgItemText(hwnd, IDC_COMBO_WEAPON_MOD, buf, 100);
 		weapon_attachment_removable = getIdFromString(buf);

@@ -78,6 +78,20 @@ void give_equipment1(JABIA_Character * ptr) {
 	ptr->inventory.weapon_attachment_status = 1; 
 }
 
+void max_stats(JABIA_Character * ptr) {
+	// set medical status to healthy
+	ptr->agility = 100;
+	ptr->dexterity = 100;
+	ptr->strength = 100;
+	ptr->intelligence = 100;
+	ptr->perception = 100;
+	ptr->medical = 100;
+	ptr->explosives = 100;
+	ptr->marksmanship = 100;
+	ptr->stealth = 100;
+	ptr->mechanical = 100;
+}
+
 void dump_character(JABIA_Character * ptr, TCHAR * filepath) {
 	FILE *fp;
 	fp=_wfopen(filepath, _T("wb"));

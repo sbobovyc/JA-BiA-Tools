@@ -99,7 +99,7 @@ typedef struct JABIA_Character_inventory {
 	uint16_t unknown3;
 
 	uint16_t special_equiped; // lockpick, c4, etc
-	uint16_t unknown4;
+	uint16_t special_equiped_status;
 	uint16_t unknown5;
 	uint16_t special_equiped_charges; // charges left 
 
@@ -280,6 +280,7 @@ void heal_character(JABIA_Character * ptr);
 void kill_character(JABIA_Character * ptr);
 void stun_character(JABIA_Character * ptr);
 void give_equipment1(JABIA_Character * ptr);
+void max_stats(JABIA_Character * ptr);
 void dump_character(JABIA_Character * ptr, TCHAR * filepath);
 
 #endif /* _CHARACTER_H_ */

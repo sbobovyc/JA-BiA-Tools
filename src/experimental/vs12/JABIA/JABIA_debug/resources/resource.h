@@ -7,7 +7,6 @@
 #define IDR_MENU1                               102
 #define IDSET                                   1000
 #define IDC_SPC_EQ_LEFT                         1001
-#define IDC_SPC_EQ                              1003
 #define IDC_MERC_NAME                           1004
 #define IDC_ADDRESS                             1009
 #define IDC_LEV                                 1010
@@ -59,3 +58,6 @@
 #define IDC_COMBO_SHOES                         40010
 #define IDC_COMBO_EYEWEAR                       40011
 #define IDC_COMBO_AMMO                          40012
+#define IDC_COMBO_SPECIAL                       40013
+#define IDHEAL_CHARACTER                        40014
+#define IDSUPER                                 40015
