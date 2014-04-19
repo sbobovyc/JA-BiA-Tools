@@ -257,6 +257,7 @@ DWORD WINAPI MyThread(LPVOID)
 		}
 
 		Sleep(100); //TODO instead of sleeping to wait for ctx to get loaded into memory, hook the function that loads it
+		MEM_SCAN:
 		uint32_t address = NULL;
 		// TODO put memory scanner in its own function
 		// TODO if search for patter happens before ctx file is loaded in memory, crash will occur
@@ -302,6 +303,7 @@ DWORD WINAPI MyThread(LPVOID)
 		DONE_MEM_SCAN:
 		if(address == NULL) {
 			OutputDebugString(_T("CTX not found")); 		
+			goto MEM_SCAN;
 		}
 		_stprintf_s (debugStrBuf, DEBUG_STR_SIZE, _T("CTX at 0x%x"), address+22);
 		OutputDebugString(debugStrBuf); 		
