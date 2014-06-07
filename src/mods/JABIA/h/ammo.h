@@ -34,7 +34,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
 typedef struct JABIA_Ammo {
-	uint32_t	Class; // = 4 for attachments, 0 for weapons
+	uint32_t	Class; 
 	uint32_t	ID;
 	uint32_t	ResourceID;
 	bool		Deliverable;

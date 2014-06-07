@@ -24,7 +24,6 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #include <stdint.h>
 #include <stdio.h>
 #include <vector>
-#include <map>
 #include <algorithm>
 #include <shlobj.h>
 #include <objbase.h>
@@ -47,7 +46,6 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #include "ctx_file.h"
 
 #pragma comment(lib, "detours.lib")
-
 
 #define DEBUG_STR_SIZE 1024
 
@@ -78,38 +76,7 @@ int last_weaponslot_selected_index = 0;
 int last_weapon_inhand_selected_index = 0;
 int last_inventory_selected_index = 0;
 
-// weapon 
-std::map<int, JABIA_Weapon *> jabia_weapons_map;
 
-// attachment 
-std::map<int, JABIA_Attachment *> jabia_attachments_map;
-
-// clothing
-std::map<int, JABIA_Cloth *> jabia_cloth_map;
-
-// headgear 
-std::map<int, JABIA_Cloth *> jabia_headgear_map;
-
-// vest 
-std::map<int, JABIA_Cloth *> jabia_vest_map;
-
-// torso
-std::map<int, JABIA_Cloth *> jabia_torso_map;
-
-// pants
-std::map<int, JABIA_Cloth *> jabia_pants_map;
-
-// shoes
-std::map<int, JABIA_Cloth *> jabia_shoes_map;
-
-// eyewear
-std::map<int, JABIA_Cloth *> jabia_eyewear_map;
-
-// items
-std::map<int, JABIA_Item *> jabia_item_map;
-
-// ammo
-std::map<int, JABIA_Ammo *> jabia_ammo_map;
 
 CTX_file ctx;
 COMBO_BOX_STATUS inventory_combo_status;
@@ -770,6 +737,11 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 					max_stats(ptr);
 					fillDialog(hwnd, ptr);
 					break;
+				case IDFIXGEAR:
+					ptr = jabia_characters.at(last_character_selected_index);
+					fix_gear(ptr);
+					fillDialog(hwnd, ptr);
+					break;
                 case IDCANCEL:
                     DestroyWindow(hwnd);
 					PostQuitMessage(0);
@@ -861,7 +833,7 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 		comboControl4=GetDlgItem(hwnd,IDC_COMBO_INVENTORY_WEAPON);			
 		uint32_t selected_weapon_id = character.inventory.weapons[last_weaponslot_selected_index].weapon;		
 		int weapon_id = 0;		
-		if(selected_weapon_id != 0xFFFF) {
+		if(selected_weapon_id != EMPTY_SLOT) {
 			for( std::map<int, JABIA_Weapon *>::iterator ii=jabia_weapons_map.begin(); ii!=jabia_weapons_map.end(); ++ii) {
 				uint32_t id = (*ii).second->ID;
 				if(selected_weapon_id == id) {
@@ -878,7 +850,7 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 		comboControl5=GetDlgItem(hwnd,IDC_COMBO_EQUIPED_WEAPON);			
 		uint32_t equiped_weapon_id = character.inventory.weapon_in_hand;		
 		weapon_id = 0;		
-		if(equiped_weapon_id != 0xFFFF) {
+		if(equiped_weapon_id != EMPTY_SLOT) {
 			for( std::map<int, JABIA_Weapon *>::iterator ii=jabia_weapons_map.begin(); ii!=jabia_weapons_map.end(); ++ii) {
 				uint32_t id = (*ii).second->ID;
 				if(equiped_weapon_id == id) {
@@ -895,7 +867,7 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 		comboControl6=GetDlgItem(hwnd,IDC_COMBO_WEAPON_MOD);			
 		uint32_t equiped_attachment_id = character.inventory.weapon_attachment_removable;		
 		int attachment_id = 0;		
-		if(equiped_attachment_id != 0xFFFF) {
+		if(equiped_attachment_id != EMPTY_SLOT) {
 			for( std::map<int, JABIA_Attachment *>::iterator ii=jabia_attachments_map.begin(); ii!=jabia_attachments_map.end(); ++ii) {
 				uint32_t id = (*ii).second->ID;
 				if(equiped_attachment_id == id) {
@@ -912,7 +884,7 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 		comboControl7=GetDlgItem(hwnd,IDC_COMBO_HELMET);			
 		uint32_t equiped_helmet_id = character.inventory.cap_equiped;		
 		int helmet_id = 0;
-		if(equiped_helmet_id != 0xFFFF) {
+		if(equiped_helmet_id != EMPTY_SLOT) {
 			for( std::map<int, JABIA_Cloth *>::iterator ii=jabia_headgear_map.begin(); ii!=jabia_headgear_map.end(); ++ii) {
 				uint32_t id = (*ii).second->ID;
 				if(equiped_helmet_id == id) {
@@ -929,7 +901,7 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 		comboControl8=GetDlgItem(hwnd,IDC_COMBO_VEST);			
 		uint32_t equiped_vest_id = character.inventory.vest_equiped;		
 		int vest_id = 0;
-		if(equiped_vest_id != 0xFFFF) {
+		if(equiped_vest_id != EMPTY_SLOT) {
 			for( std::map<int, JABIA_Cloth *>::iterator ii=jabia_vest_map.begin(); ii!=jabia_vest_map.end(); ++ii) {
 				uint32_t id = (*ii).second->ID;
 				if(equiped_vest_id == id) {
@@ -946,7 +918,7 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 		comboControl9=GetDlgItem(hwnd,IDC_COMBO_SHIRT);			
 		uint32_t equiped_shirt_id = character.inventory.shirt_equiped;		
 		int shirt_id = 0;
-		if(equiped_shirt_id != 0xFFFF) {
+		if(equiped_shirt_id != EMPTY_SLOT) {
 			for( std::map<int, JABIA_Cloth *>::iterator ii=jabia_torso_map.begin(); ii!=jabia_torso_map.end(); ++ii) {
 				uint32_t id = (*ii).second->ID;
 				if(equiped_shirt_id == id) {
@@ -963,7 +935,7 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 		comboControl10=GetDlgItem(hwnd,IDC_COMBO_PANTS);			
 		uint32_t equiped_pants_id = character.inventory.pants_equiped;		
 		int pants_id = 0;
-		if(equiped_pants_id != 0xFFFF) {
+		if(equiped_pants_id != EMPTY_SLOT) {
 			for( std::map<int, JABIA_Cloth *>::iterator ii=jabia_pants_map.begin(); ii!=jabia_pants_map.end(); ++ii) {
 				uint32_t id = (*ii).second->ID;
 				if(equiped_pants_id == id) {
@@ -980,7 +952,7 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 		comboControl11=GetDlgItem(hwnd,IDC_COMBO_SHOES);			
 		uint32_t equiped_shoes_id = character.inventory.shoes_equiped;		
 		int shoes_id = 0;
-		if(equiped_shoes_id != 0xFFFF) {
+		if(equiped_shoes_id != EMPTY_SLOT) {
 			for( std::map<int, JABIA_Cloth *>::iterator ii=jabia_shoes_map.begin(); ii!=jabia_shoes_map.end(); ++ii) {
 				uint32_t id = (*ii).second->ID;
 				if(equiped_shoes_id == id) {
@@ -997,7 +969,7 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 		comboControl12=GetDlgItem(hwnd,IDC_COMBO_EYEWEAR);			
 		uint32_t equiped_eyewear_id = character.inventory.eyewear_equiped;		
 		int eyewear_id = 0;
-		if(equiped_eyewear_id != 0xFFFF) {
+		if(equiped_eyewear_id != EMPTY_SLOT) {
 			for( std::map<int, JABIA_Cloth *>::iterator ii=jabia_eyewear_map.begin(); ii!=jabia_eyewear_map.end(); ++ii) {
 				uint32_t id = (*ii).second->ID;
 				if(equiped_eyewear_id == id) {
@@ -1014,7 +986,7 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 		comboControl13=GetDlgItem(hwnd,IDC_COMBO_AMMO);			
 		uint32_t equiped_ammo_id = character.inventory.ammo_equiped;		
 		int ammo_id = 0;
-		if(equiped_ammo_id != 0xFFFF) {
+		if(equiped_ammo_id != EMPTY_SLOT) {
 			for( std::map<int, JABIA_Ammo *>::iterator ii=jabia_ammo_map.begin(); ii!=jabia_ammo_map.end(); ++ii) {
 				uint32_t id = (*ii).second->ID;
 				if(equiped_ammo_id == id) {
@@ -1031,7 +1003,7 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 		comboControl14=GetDlgItem(hwnd,IDC_COMBO_SPECIAL);			
 		uint32_t equiped_special_id = character.inventory.special_equiped;		
 		int special_id = 0;
-		if(equiped_special_id != 0xFFFF) {
+		if(equiped_special_id != EMPTY_SLOT) {
 			for( std::map<int, JABIA_Item *>::iterator ii=jabia_item_map.begin(); ii!=jabia_item_map.end(); ++ii) {
 				uint32_t id = (*ii).second->ID;
 				if(equiped_special_id == id) {
@@ -1119,7 +1091,7 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 		_itot_s(character.inventory.inventory_items[last_inventory_selected_index].item_id, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_INV_ITEM_ID, buf);
 		*/
-		if(character.inventory.inventory_items[last_inventory_selected_index].item_id != 0xFFFF) {
+		if(character.inventory.inventory_items[last_inventory_selected_index].item_id != EMPTY_SLOT) {
 			wsprintf(buf, _T("%i|%s"), character.inventory.inventory_items[last_inventory_selected_index].item_id, ctx.string_map[character.inventory.inventory_items[last_inventory_selected_index].item_id].c_str());
 			SetDlgItemText(hwnd, IDC_INV_ITEM_ID, buf);
 		} else {
@@ -1244,9 +1216,9 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr) {
 			}
 			character_ptr->inventory.ammo_equiped_count = jabia_weapons_map[weapon_in_hand]->ClipSize;
 		} else {
-			character_ptr->inventory.weapon_in_hand = 0xFFFF;
+			character_ptr->inventory.weapon_in_hand = EMPTY_SLOT;
 			character_ptr->inventory.weapon_in_hand_durability = 0;
-			character_ptr->inventory.ammo_equiped = 0xFFFF;
+			character_ptr->inventory.ammo_equiped = EMPTY_SLOT;
 			character_ptr->inventory.ammo_equiped_count = 0;
 		}
 	} else {
@@ -1254,11 +1226,6 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr) {
 		weapon_in_hand_durability = _ttoi(buf);
 		character_ptr->inventory.weapon_in_hand_durability = weapon_in_hand_durability;
 
-		/*
-		GetDlgItemText(hwnd, IDC_AMMO_EQ, buf, 100);
-		ammo_equiped = _ttoi(buf);
-		character_ptr->inventory.ammo_equiped = ammo_equiped;
-		*/
 		GetDlgItemText(hwnd, IDC_AMMO_EQ_CNT, buf, 100);
 		ammo_equiped_count = _ttoi(buf);
 		character_ptr->inventory.ammo_equiped_count = ammo_equiped_count;
@@ -1274,7 +1241,7 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr) {
 			character_ptr->inventory.cap_equiped = cap_equiped;
 			character_ptr->inventory.cap_equiped_durability = 100;
 		} else {
-			character_ptr->inventory.cap_equiped = 0xFFFF;
+			character_ptr->inventory.cap_equiped = EMPTY_SLOT;
 			character_ptr->inventory.cap_equiped_durability = 0;
 		}
 	} else {
@@ -1292,7 +1259,7 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr) {
 			character_ptr->inventory.vest_equiped = vest_equiped;
 			character_ptr->inventory.vest_equiped_durability = 100;
 		} else {
-			character_ptr->inventory.vest_equiped = 0xFFFF;
+			character_ptr->inventory.vest_equiped = EMPTY_SLOT;
 			character_ptr->inventory.vest_equiped_durability = 0;
 		}
 	} else {
@@ -1310,7 +1277,7 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr) {
 			character_ptr->inventory.shirt_equiped = shirt_equiped;
 			character_ptr->inventory.shirt_equiped_durability = 100;
 		} else {
-			character_ptr->inventory.shirt_equiped = 0xFFFF;
+			character_ptr->inventory.shirt_equiped = EMPTY_SLOT;
 			character_ptr->inventory.shirt_equiped_durability = 0;
 		}
 	} else {
@@ -1328,7 +1295,7 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr) {
 			character_ptr->inventory.pants_equiped = pants_equiped;
 			character_ptr->inventory.pants_equiped_durability = 100;
 		} else {
-			character_ptr->inventory.pants_equiped = 0xFFFF;
+			character_ptr->inventory.pants_equiped = EMPTY_SLOT;
 			character_ptr->inventory.pants_equiped_durability = 0;
 		}
 	} else {
@@ -1346,7 +1313,7 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr) {
 			character_ptr->inventory.shoes_equiped = shoes_equiped;
 			character_ptr->inventory.shoes_equiped_durability = 100;
 		} else {
-			character_ptr->inventory.shoes_equiped = 0xFFFF;
+			character_ptr->inventory.shoes_equiped = EMPTY_SLOT;
 			character_ptr->inventory.shoes_equiped_durability = 0;
 		}
 	} else {
@@ -1364,7 +1331,7 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr) {
 			character_ptr->inventory.eyewear_equiped = eyewear_equiped;
 			character_ptr->inventory.eyewear_equiped_durability = 100;
 		} else {
-			character_ptr->inventory.eyewear_equiped = 0xFFFF;
+			character_ptr->inventory.eyewear_equiped = EMPTY_SLOT;
 			character_ptr->inventory.eyewear_equiped_durability = 0;
 		}
 	} else {
@@ -1387,7 +1354,7 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr) {
 			character_ptr->inventory.special_equiped_charges = jabia_item_map[special_equiped]->Charges;
 			character_ptr->inventory.special_equiped_status = 1;
 		} else {
-			character_ptr->inventory.special_equiped = 0xFFFF;
+			character_ptr->inventory.special_equiped = EMPTY_SLOT;
 			character_ptr->inventory.special_equiped_charges = 0;
 			character_ptr->inventory.special_equiped_status = 0;
 		}
@@ -1397,16 +1364,6 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr) {
 		character_ptr->inventory.special_equiped_charges = special_equiped_charges;
 	}	
 
-	/*
-	GetDlgItemText(hwnd, IDC_SPC_EQ, buf, 100);
-	special_equiped = _ttoi(buf);
-	character_ptr->inventory.special_equiped = special_equiped;
-	*/
-	/*
-	GetDlgItemText(hwnd, IDC_SPC_EQ_LEFT, buf, 100);
-	special_equiped_charges = _ttoi(buf);
-	character_ptr->inventory.special_equiped_charges = special_equiped_charges;
-	*/
 	if(inventory_combo_status.attachment_changed) {		
 		GetDlgItemText(hwnd, IDC_COMBO_WEAPON_MOD, buf, 100);
 		weapon_attachment_removable = getIdFromString(buf);
@@ -1438,7 +1395,7 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr) {
 			character_ptr->inventory.weapons[last_weaponslot_selected_index].weapon_durability = jabia_weapons_map[weapon]->Quality;
 			character_ptr->inventory.weapons[last_weaponslot_selected_index].ammo_count = jabia_weapons_map[weapon]->ClipSize;
 		} else {
-			character_ptr->inventory.weapons[last_weaponslot_selected_index].weapon = 0xFFFF;
+			character_ptr->inventory.weapons[last_weaponslot_selected_index].weapon = EMPTY_SLOT;
 			character_ptr->inventory.weapons[last_weaponslot_selected_index].weapon_durability = 0;
 			character_ptr->inventory.weapons[last_weaponslot_selected_index].ammo_count = 0;
 		}

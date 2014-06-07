@@ -61,3 +61,4 @@
 #define IDC_COMBO_SPECIAL                       40013
 #define IDHEAL_CHARACTER                        40014
 #define IDSUPER                                 40015
+#define IDFIXGEAR                               40016

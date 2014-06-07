@@ -23,6 +23,40 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include "character.h"
 
+// weapon 
+std::map<int, JABIA_Weapon *> jabia_weapons_map;
+
+// attachment 
+std::map<int, JABIA_Attachment *> jabia_attachments_map;
+
+// clothing
+std::map<int, JABIA_Cloth *> jabia_cloth_map;
+
+// headgear 
+std::map<int, JABIA_Cloth *> jabia_headgear_map;
+
+// vest 
+std::map<int, JABIA_Cloth *> jabia_vest_map;
+
+// torso
+std::map<int, JABIA_Cloth *> jabia_torso_map;
+
+// pants
+std::map<int, JABIA_Cloth *> jabia_pants_map;
+
+// shoes
+std::map<int, JABIA_Cloth *> jabia_shoes_map;
+
+// eyewear
+std::map<int, JABIA_Cloth *> jabia_eyewear_map;
+
+// items
+std::map<int, JABIA_Item *> jabia_item_map;
+
+// ammo
+std::map<int, JABIA_Ammo *> jabia_ammo_map;
+
+
 void heal_character(JABIA_Character * ptr) {
 	// set medical status to healthy
 	ptr->medical_condition = JABIA_CHARACTER_MED_HEALTHY;
@@ -90,6 +124,36 @@ void max_stats(JABIA_Character * ptr) {
 	ptr->marksmanship = 100;
 	ptr->stealth = 100;
 	ptr->mechanical = 100;
+}
+
+void fix_gear(JABIA_Character * ptr) {
+	if(ptr->inventory.weapon_in_hand != EMPTY_SLOT) {
+		ptr->inventory.weapon_in_hand_durability = jabia_weapons_map[ptr->inventory.weapon_in_hand]->Quality;
+	}
+	if(ptr->inventory.special_equiped != EMPTY_SLOT) {
+		ptr->inventory.special_equiped_charges = jabia_item_map[ptr->inventory.special_equiped]->Charges;
+	}
+	if(ptr->inventory.cap_equiped != EMPTY_SLOT) {
+		ptr->inventory.cap_equiped_durability = 100;
+	}
+	if(ptr->inventory.eyewear_equiped != EMPTY_SLOT) {
+		ptr->inventory.eyewear_equiped_durability = 100;
+	}
+	if(ptr->inventory.shirt_equiped != EMPTY_SLOT) {
+		ptr->inventory.shirt_equiped_durability = 100;
+	}
+	if(ptr->inventory.vest_equiped != EMPTY_SLOT) {
+		ptr->inventory.vest_equiped_durability = 100;
+	}
+	if(ptr->inventory.shoes_equiped != EMPTY_SLOT) {
+		ptr->inventory.shoes_equiped_durability = 100;
+	}
+	if(ptr->inventory.pants_equiped != EMPTY_SLOT) {
+		ptr->inventory.pants_equiped_durability = 100;
+	}
+	if(ptr->inventory.ammo_equiped != EMPTY_SLOT) {
+		ptr->inventory.ammo_equiped_count = jabia_ammo_map[ptr->inventory.ammo_equiped]->BoxSize;
+	}
 }
 
 void dump_character(JABIA_Character * ptr, TCHAR * filepath) {

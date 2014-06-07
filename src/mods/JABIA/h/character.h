@@ -22,7 +22,13 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #ifndef _CHARACTER_H_
 #define _CHARACTER_H_
 #include <stdint.h>
+#include <map>
 
+#include "weapons.h"
+#include "attachments.h"
+#include "clothing.h"
+#include "items.h"
+#include "ammo.h"
 #include "game_version.h"
 
 #if defined(JABIA)
@@ -69,6 +75,44 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #define JABIA_CHARACTER_MED_WOUNDED								0x0008
 #define JABIA_CHARACTER_MED_BEING_HEALED_BY_SMALL_MEDKIT		0x0080
 #define JABIA_CHARACTER_MED_DEAD								0x0003
+
+// inventory slot is empty
+#define EMPTY_SLOT 0xFFFf
+
+// weapon 
+extern std::map<int, JABIA_Weapon *> jabia_weapons_map;
+
+// attachment 
+extern std::map<int, JABIA_Attachment *> jabia_attachments_map;
+
+// clothing
+extern std::map<int, JABIA_Cloth *> jabia_cloth_map;
+
+// headgear 
+extern std::map<int, JABIA_Cloth *> jabia_headgear_map;
+
+// vest 
+extern std::map<int, JABIA_Cloth *> jabia_vest_map;
+
+// torso
+extern std::map<int, JABIA_Cloth *> jabia_torso_map;
+
+// pants
+extern std::map<int, JABIA_Cloth *> jabia_pants_map;
+
+// shoes
+extern std::map<int, JABIA_Cloth *> jabia_shoes_map;
+
+// eyewear
+extern std::map<int, JABIA_Cloth *> jabia_eyewear_map;
+
+// items
+extern std::map<int, JABIA_Item *> jabia_item_map;
+
+// ammo
+extern std::map<int, JABIA_Ammo *> jabia_ammo_map;
+
+
 
 
 typedef struct JABIA_Character_weapon {
@@ -281,6 +325,7 @@ void kill_character(JABIA_Character * ptr);
 void stun_character(JABIA_Character * ptr);
 void give_equipment1(JABIA_Character * ptr);
 void max_stats(JABIA_Character * ptr);
+void fix_gear(JABIA_Character * ptr);
 void dump_character(JABIA_Character * ptr, TCHAR * filepath);
 
 #endif /* _CHARACTER_H_ */

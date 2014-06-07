@@ -35,7 +35,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 enum Slots {Cap=0, Attachment=1, Glasses=2, Torso=3, Vest=4, Legs=5,  Feet=6}; 
 enum Property {NightVision=0, GasProtection=1};
 typedef struct JABIA_Cloth {
-	uint32_t	Class; // = 4 for attachments, 0 for weapons
+	uint32_t	Class; 
 	uint32_t	ID;
 	uint32_t	ResourceID;
 	bool		Deliverable;
@@ -58,7 +58,7 @@ typedef struct JABIA_Cloth {
 	uint32_t	CamoUrban;
 	uint32_t	CamoWoods;
 	uint32_t	CamoDesert;
-	uint32_t	Property;
+	Property	Property;
 	uint32_t	unknown2[12];
 } JABIA_Cloth;
 
