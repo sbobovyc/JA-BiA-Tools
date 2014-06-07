@@ -40,7 +40,7 @@ Source: "C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\Re
 Source: "C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\Release\JABIA_loot_drop.dll"; DestDir: "{app}\mods\loot_drop"; Flags: ignoreversion 
 Source: "C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\Release\JABIA_camera.dll"; DestDir: "{app}\mods\camera"; Flags: ignoreversion 
 Source: "C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\Release\JABIA_durable_weapons.dll"; DestDir: "{app}\mods\durable_weapons"; Flags: ignoreversion 
-Source: "C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\Release\JABIA_mod_launcher.xml"; DestDir: "{app}\mods"; Flags: ignoreversion 
+;Source: "C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\Release\JABIA_mod_launcher.xml"; DestDir: "{app}\mods"; Flags: ignoreversion 
 Source: "C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\Release\DllInjection.dll"; DestDir: "{app}"; Flags: ignoreversion 
 ;Source: "C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\Release\JABIA_pathmod.dll"; DestDir: "{app}\mods\pathmod"; Flags: ignoreversion 
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files

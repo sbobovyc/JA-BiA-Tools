@@ -52,7 +52,6 @@ Global
 		{7DEF12FC-2577-4C18-859B-F237189FF6C3}.Debug|Win32.Build.0 = Debug|Win32
 		{7DEF12FC-2577-4C18-859B-F237189FF6C3}.Release|Any CPU.ActiveCfg = Release|Win32
 		{7DEF12FC-2577-4C18-859B-F237189FF6C3}.Release|Mixed Platforms.ActiveCfg = Release|Win32
-		{7DEF12FC-2577-4C18-859B-F237189FF6C3}.Release|Mixed Platforms.Build.0 = Release|Win32
 		{7DEF12FC-2577-4C18-859B-F237189FF6C3}.Release|Win32.ActiveCfg = Release|Win32
 		{7DEF12FC-2577-4C18-859B-F237189FF6C3}.Release|Win32.Build.0 = Release|Win32
 		{769A93CA-3DD1-4CB2-B740-0AE2CF549DEB}.Debug|Any CPU.ActiveCfg = Debug|Win32

@@ -27,6 +27,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include "game_version.h"
 #include "detours.h"
+#include "assembly_opcodes.h"
 #include "character.h"
 #include "JABIA_gui.h"
 #include "xpmod.h"
@@ -73,16 +74,8 @@ INT APIENTRY DllMain(HMODULE hDLL, DWORD Reason, LPVOID Reserved)
 }
 
 DWORD WINAPI MyThread(LPVOID)
-{
-	
-	//DWORD cwdsz = GetCurrentDirectory(0,0); // determine size needed
-	//char *cwd = (char*)malloc(cwdsz);
-	//if ( GetCurrentDirectory(cwdsz, cwd) == 0 ) { /*OS error.. */ }
-	//else { /* success.. */ 
-	//	OutputDebugString(cwd);
-	//}
-	//free((void*)cwd);
-	
+{		
+	BYTE UpdateCharacterExpSavedReturn[6]; // save retn here
 
 	load(PATH_TO_XPMOD_XML, xpmod_params);
 	char buf [100];
@@ -100,20 +93,8 @@ DWORD WINAPI MyThread(LPVOID)
 	wsprintf (buf, "Address of PrintCharacterXpGain 0x%x", PrintCharacterXpGain);
 	OutputDebugString(buf);
 
-	// start UpdateCharacterExp redirection
-	DWORD oldProtection;
-	// read + write
-	VirtualProtect(UpdateCharacterExp, 6, PAGE_EXECUTE_READWRITE, &oldProtection);
-	DWORD JMPSize2 = ((DWORD)myUpdateCharacterExp - (DWORD)UpdateCharacterExp - 5);
-	BYTE Before_JMP[6]; // save retn here
-	BYTE JMP2[6] = {0xE9, 0x90, 0x90, 0x90, 0x90, 0x90}; // JMP NOP NOP ...
-	memcpy((void *)Before_JMP, (void *)UpdateCharacterExp, 6); // save retn
-	memcpy(&JMP2[1], &JMPSize2, 4);
-	// overwrite retn with JMP
-	memcpy((void *)UpdateCharacterExp, (void *)JMP2, 6);
-	// restore protection
-    VirtualProtect((LPVOID)UpdateCharacterExp, 6, oldProtection, NULL);
-	// end UpdateCharacterExp redirection
+	// hook UpdateCharacterExp return
+	returnHook(UpdateCharacterExp, myUpdateCharacterExp, UpdateCharacterExpSavedReturn);
 
 	// start detour print xp function
 	DetourRestoreAfterWith();
@@ -123,14 +104,19 @@ DWORD WINAPI MyThread(LPVOID)
 	DetourTransactionCommit();
 	// end detour print xp function
 
+	
     while(true)
     {
+		/*
 		if(GetAsyncKeyState(VK_F8) &1) {
 			OutputDebugString("Unloading JABIA_xpmod DLL");
             break;
 		}
+		*/
     Sleep(100);
     }
+	/*
+	// Since oldProtection is not saved by returnHook, don't restore hooks
 	// restore exp update hook
 	// read + write
 	VirtualProtect(UpdateCharacterExp, 6, PAGE_EXECUTE_READWRITE, &oldProtection);
@@ -143,6 +129,7 @@ DWORD WINAPI MyThread(LPVOID)
     DetourUpdateThread(GetCurrentThread());
     DetourDetach(&(PVOID&)PrintCharacterXpGain, myPrintCharacterXpGain);
     DetourTransactionCommit();
+	*/
 
 
 	FreeLibraryAndExitThread(g_hModule, 0);
@@ -172,7 +159,7 @@ __declspec(naked) void* myUpdateCharacterExp(){
 	jmp3:
 		mov edx,DWORD PTR DS:[ecx+0x0C]		
 		CMP ESI,DWORD PTR DS:[EDX*4+0x71DF84] // find xp required for next level and compare to current level
-		jb jmp1									// and current xp > xp for next level? if yes then don't jump
+		jb jmp1									// is current xp > xp for next level? if yes then don't jump
 		cmp edx,0x0A							// current level >= 10?
 		jae jmp2								// if yes then jump 
 		lea eax,DWORD PTR DS:[edx+0x01]			// increment level
@@ -196,7 +183,7 @@ __declspec(naked) void* myUpdateCharacterExp(){
 	jmp1:
 #ifdef WITH_XP_MOD
 		push ecx
-		call changeCharacterStats
+		call changeCharacterStats				// call custom function to increase stats
 		pop ecx
 #endif
 		pop esi

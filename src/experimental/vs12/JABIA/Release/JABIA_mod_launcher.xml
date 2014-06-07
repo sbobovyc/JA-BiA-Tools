@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Settings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <version>1.02</version>
+  <mods>
+    <Mod>
+      <dllName>JABIA_camera.dll</dllName>
+      <modPath>.\mods\camera\JABIA_camera.dll</modPath>
+      <enabled>true</enabled>
+    </Mod>
+    <Mod>
+      <dllName>JABIA_debug.dll</dllName>
+      <modPath>.\mods\debugger\JABIA_debug.dll</modPath>
+      <enabled>true</enabled>
+    </Mod>
+    <Mod>
+      <dllName>JABIA_loot_drop.dll</dllName>
+      <modPath>.\mods\loot_drop\JABIA_loot_drop.dll</modPath>
+      <enabled>true</enabled>
+    </Mod>
+    <Mod>
+      <dllName>JABIA_xpmod.dll</dllName>
+      <modPath>.\mods\xpmod\JABIA_xpmod.dll</modPath>
+      <enabled>true</enabled>
+    </Mod>
+    <Mod>
+      <dllName>JABIA_durable_weapons.dll</dllName>
+      <modPath>.\mods\durable_weapons\JABIA_durable_weapons.dll</modPath>
+      <enabled>true</enabled>
+    </Mod>
+  </mods>
+  <modPaths />
+</Settings>
