@@ -10,7 +10,7 @@
     <ClInclude Include="..\h\game_version.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h">
+    <ClInclude Include="resources\resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -34,7 +34,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="camera.rc">
+    <ResourceCompile Include="resources\camera.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
   </ItemGroup>

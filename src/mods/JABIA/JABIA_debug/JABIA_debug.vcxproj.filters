@@ -48,6 +48,9 @@
     <ClInclude Include="..\h\ammo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\h\doorhacks.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source Files">

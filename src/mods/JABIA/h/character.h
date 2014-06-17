@@ -38,8 +38,8 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #define CHARACTER_DESTRUCTOR_RETN_OFFSET 0x132BB8 // pop edi 
 // modding drop loot functionality
 #define CALC_DROP_LOOT_OFFSET 0x0013A3F0
-#define WEAPON_DROP_FLD_OFFSET 0x0053A4C5
-#define ITEM_DROP_FLD_OFFSET 0x0053A519
+#define WEAPON_DROP_FLD_OFFSET 0x0053A4C5 //TODO change to relative offset
+#define ITEM_DROP_FLD_OFFSET 0x0053A519	  //TODO change to relative offset
 #define ONE_FLT 0x0071E02C // 1.0 constant in .rdata segment
 #define INVENTORY_DROP_SWTCH_TABLE 0x0053A540
 // modding exp gain function

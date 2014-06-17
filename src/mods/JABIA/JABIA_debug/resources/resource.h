@@ -62,3 +62,4 @@
 #define IDHEAL_CHARACTER                        40014
 #define IDSUPER                                 40015
 #define IDFIXGEAR                               40016
+#define IDMASTERKEY                             40017

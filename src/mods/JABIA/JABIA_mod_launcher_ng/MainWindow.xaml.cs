@@ -124,7 +124,7 @@ namespace JABIA_mod_launcher_ng
 
     public class Settings
     {
-        public String version = "1.02";
+        public String version = "1.03";
         public List<Mod> mods = new List<Mod>();
         public List<string> modPaths;       
     }
@@ -283,9 +283,9 @@ namespace JABIA_mod_launcher_ng
                             break;
                         }
                     }
+                    System.Threading.Thread.Sleep(1000);
                     if (procFound)
-                        break;
-                    System.Threading.Thread.Sleep(500);
+                        break;                    
                 }
                 if (!procFound)
                 {

@@ -150,11 +150,13 @@ DWORD WINAPI MyThread(LPVOID)
 					}
 				}
 			} else if(GetAsyncKeyState(VK_F8) &1) {
+				/*
+				// unloading is only for debugging
 				OutputDebugString("Unloading JABIA_camera DLL");
 				break;
+				*/
 			}
 		Sleep(100);		
-		//print_camera_info();
 	}
 	
 	FreeLibraryAndExitThread(g_hModule, 0);
@@ -173,11 +175,11 @@ void print_camera_info() {
 	wsprintf(buf, "Camera at 0x%X", camera_ptr);
 	OutputDebugString(buf);
 	sprintf(buf, "Camera angle: %f\nCamera min: %f\nCamera max: %f\nCamera min angle: %f\nCamera max angle delta: %f\nCamera height: %f", 
-		camera_ptr->current_angle,
+		camera_ptr->current_pitch_angle,
 		camera_ptr->camera_min, 
 		camera_ptr->camera_max, 
-		camera_ptr->min_angle, 
-		camera_ptr->max_angle_delta,
+		camera_ptr->min_pitch_angle, 
+		camera_ptr->max_pitch_angle_delta,
 		camera_ptr->current_height);
 	OutputDebugString(buf);
 }
@@ -279,14 +281,15 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 					SetCameraDefault();
 					fillDialog(hwnd);
 					OutputDebugString("DEFAULT");
+					print_camera_info();
 					break;
 				case IDC_SAVE:
 					wsprintf(buf, "Cst%i", selected_custom);
 					SetDlgItemText(hwnd, IDC_SELECTED_STATE, buf);
 					camera_params.camera_min[selected_custom] = camera_ptr->camera_min;
 					camera_params.camera_max[selected_custom] = camera_ptr->camera_max;
-					camera_params.min_angle[selected_custom] = camera_ptr->min_angle;
-					camera_params.max_angle_delta[selected_custom] = camera_ptr->max_angle_delta;
+					camera_params.min_pitch_angle[selected_custom] = camera_ptr->min_pitch_angle;
+					camera_params.max_pitch_angle_delta[selected_custom] = camera_ptr->max_pitch_angle_delta;
 					save(PATH_TO_CAMERA_XML, camera_params);
 					SetCameraCustom(selected_custom);
 					fillDialog(hwnd);
@@ -313,7 +316,7 @@ void fillDialog(HWND hwnd) {
 	//OutputDebugString(buf);
 	SetDlgItemText(hwnd, IDC_HEIGHT, buf);
 
-	sprintf_s(buf, "%.1f", camera_ptr->current_angle, 4);
+	sprintf_s(buf, "%.1f", camera_ptr->current_pitch_angle, 4);
 	//OutputDebugString(buf);
 	SetDlgItemText(hwnd, IDC_ANGLE, buf);
 
@@ -325,21 +328,21 @@ void fillDialog(HWND hwnd) {
 	//OutputDebugString(buf);
 	SetDlgItemText(hwnd, IDC_MAX_HEIGHT, buf);
 
-	sprintf_s(buf, "%.1f", camera_ptr->min_angle, 4);
+	sprintf_s(buf, "%.1f", camera_ptr->min_pitch_angle, 4);
 	//OutputDebugString(buf);
-	SetDlgItemText(hwnd, IDC_MIN_ANGLE, buf);
+	SetDlgItemText(hwnd, IDC_MIN_PITCH_ANGLE, buf);
 
-	sprintf_s(buf, "%.1f", camera_ptr->max_angle_delta, 4);
+	sprintf_s(buf, "%.1f", camera_ptr->max_pitch_angle_delta, 4);
 	//OutputDebugString(buf);
-	SetDlgItemText(hwnd, IDC_ANGLE_DELTA, buf);
+	SetDlgItemText(hwnd, IDC_PITCH_ANGLE_DELTA, buf);
 }
 
 void setCamera(HWND hwnd) {
 	char buf[100];
 	float min;
 	float max;
-	float min_angle;
-	float max_angle_delta;
+	float min_pitch_angle;
+	float max_pitch_angle_delta;
 
 	GetDlgItemText(hwnd, IDC_MIN_HEIGHT, buf, 100);
 	min = (float)atof(buf);
@@ -349,50 +352,51 @@ void setCamera(HWND hwnd) {
 	max = (float)atof(buf);
 	camera_ptr->camera_max = max;
 
-	GetDlgItemText(hwnd, IDC_MIN_ANGLE, buf, 100);
-	min_angle = (float)atof(buf);
-	camera_ptr->min_angle = min_angle;
+	GetDlgItemText(hwnd, IDC_MIN_PITCH_ANGLE, buf, 100);
+	min_pitch_angle = (float)atof(buf);
+	camera_ptr->min_pitch_angle = min_pitch_angle;
 
-	GetDlgItemText(hwnd, IDC_ANGLE_DELTA, buf, 100);
-	max_angle_delta = (float)atof(buf);
-	camera_ptr->max_angle_delta = max_angle_delta;
+	GetDlgItemText(hwnd, IDC_PITCH_ANGLE_DELTA, buf, 100);
+	max_pitch_angle_delta = (float)atof(buf);
+	camera_ptr->max_pitch_angle_delta = max_pitch_angle_delta;
 }
 
 void SetCameraGTA(void) {
 	camera_ptr->camera_min = 50;
 	camera_ptr->camera_max = 520;
-	camera_ptr->min_angle = 2.0;
-	camera_ptr->max_angle_delta = 0;
+	camera_ptr->min_pitch_angle = 2.0;
+	camera_ptr->max_pitch_angle_delta = 0;
 }
 
 void SetCameraClose(void) {
 	camera_ptr->camera_min = 50;
 	camera_ptr->camera_max = 520;
-	camera_ptr->min_angle = 1.5;
-	camera_ptr->max_angle_delta = 0.9;
+	camera_ptr->min_pitch_angle = 1.5f;
+	camera_ptr->max_pitch_angle_delta = 0.9f;
 }
 
 void SetCameraLowHigh(void) {
 	camera_ptr->camera_min = 50.0;
 	camera_ptr->camera_max = 700.0;
-	camera_ptr->min_angle = 0.8;
-	camera_ptr->max_angle_delta = 0.6;
+	camera_ptr->min_pitch_angle = 0.8f;
+	camera_ptr->max_pitch_angle_delta = 0.6f;
 }
 
 void SetCameraCustom(int i) {
 	camera_params.last_used = i;
 	camera_ptr->camera_min = camera_params.camera_min[i];
 	camera_ptr->camera_max = camera_params.camera_max[i];
-	camera_ptr->min_angle = camera_params.min_angle[i];
-	camera_ptr->max_angle_delta = camera_params.max_angle_delta[i];
+	camera_ptr->min_pitch_angle = camera_params.min_pitch_angle[i];
+	camera_ptr->max_pitch_angle_delta = camera_params.max_pitch_angle_delta[i];
 }
 
 void SetCameraDefault(void) {
 	JABIA_camera_parameters default_params;
 	camera_ptr->camera_min = default_params.camera_min[0];
 	camera_ptr->camera_max = default_params.camera_max[0];
-	camera_ptr->min_angle = default_params.min_angle[0];
-	camera_ptr->max_angle_delta = default_params.max_angle_delta[0];
-	camera_ptr->current_angle = camera_ptr->min_angle;
+	camera_ptr->min_pitch_angle = default_params.min_pitch_angle[0];
+	camera_ptr->max_pitch_angle_delta = default_params.max_pitch_angle_delta[0];
+	camera_ptr->current_pitch_angle = camera_ptr->min_pitch_angle;
 	camera_ptr->current_height = camera_ptr->camera_max;
+	camera_ptr->real_time_height = camera_ptr->camera_min;
 }

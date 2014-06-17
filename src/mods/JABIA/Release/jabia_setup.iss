@@ -34,14 +34,14 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: checkedonce; OnlyBelowVersion: 0,6.1
 
 [Files]
-Source: "C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\Release\JABIA_mod_launcher_ng.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\Release\JABIA_debug.dll"; DestDir: "{app}\mods\debugger"; Flags: ignoreversion 
-Source: "C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\Release\JABIA_xpmod.dll"; DestDir: "{app}\mods\xpmod"; Flags: ignoreversion 
-Source: "C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\Release\JABIA_loot_drop.dll"; DestDir: "{app}\mods\loot_drop"; Flags: ignoreversion 
-Source: "C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\Release\JABIA_camera.dll"; DestDir: "{app}\mods\camera"; Flags: ignoreversion 
-Source: "C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\Release\JABIA_durable_weapons.dll"; DestDir: "{app}\mods\durable_weapons"; Flags: ignoreversion 
-;Source: "C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\Release\JABIA_mod_launcher.xml"; DestDir: "{app}\mods"; Flags: ignoreversion 
-Source: "C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\Release\DllInjection.dll"; DestDir: "{app}"; Flags: ignoreversion 
+Source: "JABIA_mod_launcher_ng.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "JABIA_debug.dll"; DestDir: "{app}\mods\debugger"; Flags: ignoreversion 
+Source: "JABIA_xpmod.dll"; DestDir: "{app}\mods\xpmod"; Flags: ignoreversion 
+Source: "JABIA_loot_drop.dll"; DestDir: "{app}\mods\loot_drop"; Flags: ignoreversion 
+Source: "JABIA_camera.dll"; DestDir: "{app}\mods\camera"; Flags: ignoreversion 
+Source: "JABIA_durable_weapons.dll"; DestDir: "{app}\mods\durable_weapons"; Flags: ignoreversion 
+Source: "JABIA_mod_launcher.xml"; DestDir: "{app}\mods"; Flags: ignoreversion 
+Source: "DllInjection.dll"; DestDir: "{app}"; Flags: ignoreversion 
 ;Source: "C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\Release\JABIA_pathmod.dll"; DestDir: "{app}\mods\pathmod"; Flags: ignoreversion 
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 

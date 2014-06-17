@@ -44,7 +44,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\Program Files %28x86%29\boost_1_55_0;C:\Program Files %28x86%29\Microsoft Research\Detours Express 3.0\include;.\h;..\h;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Program Files %28x86%29\boost_1_55_0;C:\Program Files %28x86%29\Microsoft Research\Detours Express 3.0\include;.\h;..\h;.\resources;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Program Files %28x86%29\boost_1_55_0\stage\lib;C:\Program Files %28x86%29\Microsoft Research\Detours Express 3.0\lib.X86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -84,10 +84,10 @@
     <ClInclude Include="..\h\camera.h" />
     <ClInclude Include="..\h\game_version.h" />
     <ClInclude Include="h\camera_mod.h" />
-    <ClInclude Include="resource.h" />
+    <ClInclude Include="resources\resource.h" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="camera.rc" />
+    <ResourceCompile Include="resources\camera.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

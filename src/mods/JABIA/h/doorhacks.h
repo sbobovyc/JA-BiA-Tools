@@ -3,7 +3,7 @@
 */
 
 /*
-Copyright (C) 2013 Stanislav Bobovych
+Copyright (C) 2014 Stanislav Bobovych
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -19,31 +19,20 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef CAMERA
-#define CAMERA
-
-typedef struct Camera {
-	float unknown1[76];
-	float current_yaw_angle; 
-	float current_pitch_angle;
-	float real_time_height; 
-	float unknown2[2];
-	float camera_min;
-	float camera_max;
-	float min_pitch_angle;  // 2.0 is 90 degree, ie directly overhead
-	float max_pitch_angle_delta; // min + delta = max angle
-	float current_height;
-} Camera;
+#ifndef DOORHACKS
+#define DOORHACKS
 
 #if defined(JABIA)
-// modding camera callback
-#define CAMERA_CALLBACK_OFFSET 0x001A7020 
+// various offsets for master key hack
+#define DOOR_GUI_JMP_OFFSET 0x00133611 
+#define DOOR_ANIMATION_JMP_OFFSET 0x0018427C
+#define DOOR_KEYCHECK1_JMP_OFFSET 0x00184360
+#define DOOR_KEYCHECK2_JMP_OFFSET 0x00184368
 #elif defined(JAC)
-// modding camera callback
-#define CAMERA_CALLBACK_OFFSET 0x001A6050
+// various offsets for master key hack
+#error This is not supported yet.
 #else
 #error Need to define either JABIA or JAC.
 #endif
 
-
-#endif /* CAMERA */
+#endif /* DOORHACKS */

@@ -35,8 +35,8 @@ public:
 	int last_used;
 	float camera_min[CAMERA_PARAMS_COUNT];
 	float camera_max[CAMERA_PARAMS_COUNT];
-	float min_angle[CAMERA_PARAMS_COUNT];  // 2.0 is 90 degree, ie directly overhead
-	float max_angle_delta[CAMERA_PARAMS_COUNT]; // min + delta = max angle
+	float min_pitch_angle[CAMERA_PARAMS_COUNT];  // 2.0 is 90 degree, ie directly overhead
+	float max_pitch_angle_delta[CAMERA_PARAMS_COUNT]; // min + delta = max angle
 
 	// initializer list to use copy constructor instead of default constructor
     JABIA_camera_parameters() :
@@ -46,8 +46,8 @@ public:
 		{
 			camera_min[i] = 130.0f;
 			camera_max[i] = 520.0f;
-			min_angle[i] = 1.1f;
-			max_angle_delta[i] = 0.8f;
+			min_pitch_angle[i] = 1.1f;
+			max_pitch_angle_delta[i] = 0.8f;
 		}
 	}
 		
@@ -57,8 +57,8 @@ public:
 		out << "last_used: " << last_used
 			<< "camera_min: " << d.camera_min[last_used]
 			<< " camera_max: " << d.camera_max[last_used]
-			<< " min_angle: " << d.min_angle[last_used]
-			<< " max_angle_delta: " << d.max_angle_delta[last_used];
+			<< " min_pitch_angle: " << d.min_pitch_angle[last_used]
+			<< " max_pitch_angle_delta: " << d.max_pitch_angle_delta[last_used];
         return out;
     }
 
@@ -69,8 +69,8 @@ public:
 		archive & BOOST_SERIALIZATION_NVP(last_used);
 		archive & BOOST_SERIALIZATION_NVP(camera_min);
 		archive & BOOST_SERIALIZATION_NVP(camera_max);
-		archive & BOOST_SERIALIZATION_NVP(min_angle);
-		archive & BOOST_SERIALIZATION_NVP(max_angle_delta);
+		archive & BOOST_SERIALIZATION_NVP(min_pitch_angle);
+		archive & BOOST_SERIALIZATION_NVP(max_pitch_angle_delta);
     }
 };
 

@@ -42,6 +42,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #include "clothing.h"
 #include "items.h"
 #include "ammo.h"
+#include "doorhacks.h"
 #include "assembly_opcodes.h"
 #include "ctx_file.h"
 
@@ -101,7 +102,7 @@ INT APIENTRY DllMain(HMODULE hDLL, DWORD Reason, LPVOID Reserved)
 
 
 DWORD WINAPI MyThread(LPVOID)
-{
+{	
 	load(PATH_TO_DEBUGMOD_XML, debugmod_params);
 	TCHAR debugStrBuf [DEBUG_STR_SIZE];
 	DWORD oldProtection;
@@ -114,7 +115,7 @@ DWORD WINAPI MyThread(LPVOID)
 	BYTE ItemSavedReturn[6]; // save retn here
 	BYTE AmmoSavedReturn[6]; // save retn here
 
-	// find base address of GameDemo.exe in memory
+	// find base address of exe in memory
 	if(GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, ProcessName, &game_handle) == NULL) {
 		wsprintf(debugStrBuf, _T("Failed to get module handle"));
 		OutputDebugString(debugStrBuf);
@@ -247,7 +248,7 @@ DWORD WINAPI MyThread(LPVOID)
 			(PAGE_GUARD | PAGE_NOCACHE | PAGE_NOACCESS);
 			if ((mbi.AllocationProtect & dwProtectionMask) && (mbi.State & MEM_COMMIT) && !(mbi.Protect & (PAGE_GUARD | PAGE_NOCACHE | PAGE_NOACCESS))) {
 				wsprintf (debugStrBuf, _T("Scanning page 0x%x"), pAddress);
-				OutputDebugString(debugStrBuf); 						
+				OutputDebugString(debugStrBuf); 							
 					for (pAddress; pAddress < pEndRegion ; pAddress++){
 					// make sure to skip the page that has BYTE_PATTER so not to have a false positive
 						if(pAddress == BYTE_PATTER)
@@ -741,6 +742,11 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 					ptr = jabia_characters.at(last_character_selected_index);
 					fix_gear(ptr);
 					fillDialog(hwnd, ptr);
+					break;
+				case IDMASTERKEY:
+					ptr = jabia_characters.at(last_character_selected_index);
+					fillDialog(hwnd, ptr);
+					patchDoorKeyCheck();
 					break;
                 case IDCANCEL:
                     DestroyWindow(hwnd);
@@ -1703,4 +1709,40 @@ void __fastcall recordAmmo(void* instance){
 	wsprintf(buf, _T("Ammo at 0x%X, ID: %i, AmmunitionType: %i"), ammo_ptr, ammo_ptr->ID, ammo_ptr->AmmunitionType);
 	OutputDebugString(buf);
 	jabia_ammo_map[ammo_ptr->ID] = ammo_ptr;
+}
+
+void patchDoorKeyCheck(void) {	
+	GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, ProcessName, &game_handle);
+	uint32_t * jmpAddressGui = (uint32_t *)((uint32_t)game_handle+DOOR_GUI_JMP_OFFSET);
+	uint32_t * jmpAddressOpenAnim = (uint32_t *)((uint32_t)game_handle+DOOR_ANIMATION_JMP_OFFSET);
+	uint32_t * jmpAddressCheck1 = (uint32_t *)((uint32_t)game_handle+DOOR_KEYCHECK1_JMP_OFFSET);
+	uint32_t * jmpAddressCheck2 = (uint32_t *)((uint32_t)game_handle+DOOR_KEYCHECK2_JMP_OFFSET);
+	TCHAR debugStrBuf[100];
+	wsprintf(debugStrBuf, _T("Game handle 0x%x, offset 0x%x, masterkey patch address 0x%x"), game_handle, DOOR_GUI_JMP_OFFSET, jmpAddressGui);
+	OutputDebugString(debugStrBuf);
+	wsprintf(debugStrBuf, _T("Game handle 0x%x, offset 0x%x, masterkey patch address 0x%x"), game_handle, DOOR_ANIMATION_JMP_OFFSET, jmpAddressOpenAnim);
+	OutputDebugString(debugStrBuf);
+	wsprintf(debugStrBuf, _T("Game handle 0x%x, offset 0x%x, masterkey patch address 0x%x"), game_handle, DOOR_KEYCHECK1_JMP_OFFSET, jmpAddressCheck1);
+	OutputDebugString(debugStrBuf);
+	wsprintf(debugStrBuf, _T("Game handle 0x%x, offset 0x%x, masterkey patch address 0x%x"), game_handle, DOOR_KEYCHECK2_JMP_OFFSET, jmpAddressCheck2);
+	OutputDebugString(debugStrBuf);
+
+
+	uint16_t NOPpatch = 0x9090;
+	DWORD oldProtection;
+	// read + write
+	VirtualProtect((LPVOID)jmpAddressGui, 6, PAGE_EXECUTE_READWRITE, &oldProtection);
+	memcpy((void *)jmpAddressGui, &NOPpatch, sizeof(uint16_t)); 
+	// restore protection
+	VirtualProtect((LPVOID)jmpAddressGui, 6, oldProtection, NULL);
+	VirtualProtect((LPVOID)jmpAddressOpenAnim, 6, PAGE_EXECUTE_READWRITE, &oldProtection);
+	memcpy((void *)jmpAddressOpenAnim, &NOPpatch, sizeof(uint16_t)); 
+	// restore protection
+	VirtualProtect((LPVOID)jmpAddressOpenAnim, 6, oldProtection, NULL);
+	VirtualProtect((LPVOID)jmpAddressCheck1, 6, PAGE_EXECUTE_READWRITE, &oldProtection);
+	memcpy((void *)jmpAddressCheck1, &NOPpatch, sizeof(uint16_t)); 
+	memcpy((void *)jmpAddressCheck2, &NOPpatch, sizeof(uint16_t));
+	// restore protection
+    VirtualProtect((LPVOID)jmpAddressCheck1, 6, oldProtection, NULL);
+	
 }

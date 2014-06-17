@@ -10,8 +10,8 @@
 #define IDC_HEIGHT                              1008
 #define IDC_MIN_HEIGHT                          1009
 #define IDC_MAX_HEIGHT                          1010
-#define IDC_MIN_ANGLE                           1011
-#define IDC_ANGLE_DELTA                         1012
+#define IDC_MIN_PITCH_ANGLE                     1011
+#define IDC_PITCH_ANGLE_DELTA                   1012
 #define IDM_GTA                                 40000
 #define IDM_CLOSE_UP                            40001
 #define IDM_LOW_AND_HIGH                        40002

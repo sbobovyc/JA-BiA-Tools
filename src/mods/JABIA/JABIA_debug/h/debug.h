@@ -75,6 +75,7 @@ void __fastcall recordAttachments(void* instance);
 void __fastcall recordCloth(void* instance);
 void __fastcall recordItem(void* instance);
 void __fastcall recordAmmo(void* instance);
+void patchDoorKeyCheck(void);
 int myCharacterDestructor(JABIA_Character * ptr);
 
 // gui functions
