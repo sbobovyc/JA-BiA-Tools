@@ -27,7 +27,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #include <iostream> 
 #include <fstream> 
 
-#define PATH_TO_XPMOD_XML "\\mods\\xpmod\\JABIA_xpmod.xml"
+#define PATH_TO_XPMOD_XML ".\\mods\\xpmod\\JABIA_xpmod.xml"
 
 class JABIA_XPMOD_parameters { 
 public:

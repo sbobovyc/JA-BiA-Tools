@@ -86,7 +86,7 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr);
 void setMoney(HWND hwnd);
 int getIdFromString(TCHAR * buf);
 
-#define PATH_TO_DEBUGMOD_XML "\\mods\\debugger\\JABIA_debugger.xml"
+#define PATH_TO_DEBUGMOD_XML ".\\mods\\debugger\\JABIA_debugger.xml"
 
 typedef struct COMBO_BOX_STATUS {
 	bool inventory_weapon_changed;

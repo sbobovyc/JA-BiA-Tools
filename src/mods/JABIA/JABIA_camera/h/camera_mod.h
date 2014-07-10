@@ -27,7 +27,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #include <iostream> 
 #include <fstream> 
 
-#define PATH_TO_CAMERA_XML "\\mods\\camera\\JABIA_camera.xml"
+#define PATH_TO_CAMERA_XML ".\\mods\\camera\\JABIA_camera.xml"
 #define CAMERA_PARAMS_COUNT 4
 
 class JABIA_camera_parameters { 

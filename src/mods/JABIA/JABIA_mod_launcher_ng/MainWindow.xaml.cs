@@ -135,6 +135,7 @@ namespace JABIA_mod_launcher_ng
     public partial class MainWindow : Window
     {
         Settings settings;
+        System.IO.StreamWriter logFile = new System.IO.StreamWriter("mod_launcher.log", false);
         const string LAUNCHER_SETTINGS = @".\mods\JABIA_mod_launcher.xml";
         const string JABIA_LAUNCHER = "JaggedAllianceBIA.exe";
         const string JAC_LAUNCHER = "JaggedAllianceCF.exe";
@@ -173,7 +174,9 @@ namespace JABIA_mod_launcher_ng
         {
             InitializeComponent();
             settings = Load();
-            LogTexBox.AppendText("Version " + settings.version);
+            String versionString = "Version " + settings.version; 
+            LogTexBox.AppendText(versionString);
+            logFile.WriteLine(versionString);
             GameVersion version = GetGameVersion();
             if (version == GameVersion.JABIA)
             {
@@ -185,12 +188,16 @@ namespace JABIA_mod_launcher_ng
             }
             else
             {
-                LogTexBox.AppendText("\nMissing game launcher. Make sure mod launcher is installed in correct directory.");
+                String errorMissing = "\nMissing game launcher. Make sure mod launcher is installed in correct directory.";
+                LogTexBox.AppendText(errorMissing);
+                logFile.WriteLine(errorMissing);
+
                 LaunchButton.IsEnabled = false;
             }
             foreach (Mod mod in settings.mods)
             {
                 System.Diagnostics.Debug.WriteLine(mod.dllName);
+                logFile.WriteLine(mod.dllName);
                 AddModToView(mod);
             }
 
@@ -201,15 +208,21 @@ namespace JABIA_mod_launcher_ng
             string[] game = System.IO.Directory.GetFiles(".", JABIA_LAUNCHER);
             if (game.Length == 1)
             {
-                System.Diagnostics.Debug.WriteLine(System.IO.Path.GetFileName(game[0]));
+                String fileName  = System.IO.Path.GetFileName(game[0]);
+                System.Diagnostics.Debug.WriteLine(fileName);
+                logFile.WriteLine(fileName);
                 return GameVersion.JABIA;
             }
             game = System.IO.Directory.GetFiles(".", JAC_LAUNCHER);
             if (game.Length == 1)
             {
-                System.Diagnostics.Debug.WriteLine(System.IO.Path.GetFileName(game[0]));
+                String fileName = System.IO.Path.GetFileName(game[0]);
+                System.Diagnostics.Debug.WriteLine(fileName);
+                logFile.WriteLine(fileName);
                 return GameVersion.JAC;
             }
+            System.Diagnostics.Debug.WriteLine("Unknown game version!");
+            logFile.WriteLine("Unknown game version!");
             return GameVersion.UNKNOWN;
         }
 
@@ -217,17 +230,24 @@ namespace JABIA_mod_launcher_ng
         {
             GameVersion version = GetGameVersion();
             string ProcName = "";
-            string LauncherName ="";
+            string LauncherName = "";
 
             ModListBox.Dispatcher.Invoke((Action)delegate
             {
                 ModListBox.IsEnabled = false;
             });
 
-            IntPtr ThreadHandle = IntPtr.Zero;
+            String launcherName = "\nStarting: ";
+            //IntPtr ThreadHandle = IntPtr.Zero;
             if (version == GameVersion.JABIA)
             {
-                //System.Diagnostics.Process.Start(JABIA_LAUNCHER);
+                LaunchButton.Dispatcher.Invoke((Action)delegate
+                {
+                    LogTexBox.AppendText(launcherName+JABIA_LAUNCHER);
+                    logFile.WriteLine(launcherName + JABIA_LAUNCHER);
+                });                                
+                System.Diagnostics.Process.Start(JABIA_LAUNCHER);
+                /*
                 STARTUPINFO si = new STARTUPINFO();
                 PROCESS_INFORMATION pi = new PROCESS_INFORMATION();
                 bool success = NativeMethods.CreateProcess(JABIA_PROCESS+".exe", null,
@@ -238,43 +258,60 @@ namespace JABIA_mod_launcher_ng
                 NativeMethods.ResumeThread(ThreadHandle); 
                 Thread.Sleep(1000);
                 NativeMethods.SuspendThread(ThreadHandle);                               
+                */
             }
             else
             {
+                LaunchButton.Dispatcher.Invoke((Action)delegate
+                {
+                    LogTexBox.AppendText(launcherName + JAC_LAUNCHER);
+                    logFile.WriteLine(launcherName + JAC_LAUNCHER);
+                });
                 System.Diagnostics.Process.Start(JAC_LAUNCHER);
             }
 
+            String waitForProcess = "\nWaiting for proces to start: ";
             if (version == GameVersion.JABIA)
-            {                
-                LaunchButton.Dispatcher.Invoke((Action)delegate
-                {
-                    LogTexBox.AppendText("\nWaiting for proces to start: " + JABIA_PROCESS);
-                });
+            {
+                waitForProcess += JABIA_PROCESS;
                 ProcName = JABIA_PROCESS;
                 LauncherName = JABIA_LAUNCHER;
             }
             if (version == GameVersion.JAC)
-            {                
-                LaunchButton.Dispatcher.Invoke((Action)delegate
-                {
-                    LogTexBox.AppendText("\nWaiting for proces to start: " + JAC_PROCESS);
-                });
+            {
+                waitForProcess += JAC_PROCESS;
                 ProcName = JAC_PROCESS;
                 LauncherName = JAC_LAUNCHER;
             }
-            
+
+            LaunchButton.Dispatcher.Invoke((Action)delegate
+            {                
+                LogTexBox.AppendText(waitForProcess);
+                logFile.WriteLine(waitForProcess);
+            });
             
             LaunchButton.Dispatcher.Invoke((Action)delegate
             {
                 LaunchButton.IsEnabled = false;
             });
 
+            // wait for launcher to start
+            Process[] _procs = Process.GetProcesses();
+            for (int j = 0; j < _procs.Length; j++)
+            {
+                if (_procs[j].ProcessName == LauncherName)
+                {
+                    break;
+                }
+            }
+
+
             if (settings.mods.Count != 0)
             {
                 bool procFound = false;
                 for(int i = 0; i < 10; i++)
                 {
-                    Process[] _procs = Process.GetProcesses();
+                    _procs = Process.GetProcesses();
                     for (int j = 0; j < _procs.Length; j++)
                     {
                         if (_procs[j].ProcessName == ProcName)
@@ -291,10 +328,12 @@ namespace JABIA_mod_launcher_ng
                 {
                     LaunchButton.Dispatcher.Invoke((Action)delegate
                     {
-                        LogTexBox.AppendText("\nProcess not found. Exiting");
+                        String errorProcessNotFound = "\nProcess not found. Exiting";
+                        LogTexBox.AppendText(errorProcessNotFound);
+                        logFile.WriteLine(launcherName + JABIA_LAUNCHER);
                     });
                     System.Threading.Thread.Sleep(1000);
-                    Process.GetCurrentProcess().Kill(); //TODO nasty, fix
+                    Environment.Exit(0);
                 }
                 
                 DllInjector inj = DllInjector.GetInstance;
@@ -304,16 +343,19 @@ namespace JABIA_mod_launcher_ng
                     {
                         LaunchButton.Dispatcher.Invoke((Action)delegate
                         {
-                            LogTexBox.AppendText("\nInjecting " + mod.modPath);
+                            String injectMod = "\nInjecting " + mod.modPath;
+                            LogTexBox.AppendText(injectMod);
+                            logFile.WriteLine(injectMod);
                         });
                         DllInjectionResult result = inj.Inject(ProcName, mod.modPath);
                     }
                 }
                 
             }
-            NativeMethods.ResumeThread(ThreadHandle); 
+            logFile.Close();
+            //NativeMethods.ResumeThread(ThreadHandle); 
             System.Threading.Thread.Sleep(1000);
-            Process.GetCurrentProcess().Kill(); //TODO nasty, fix
+            Environment.Exit(0);
         }
 
         private Mod AddModToModel(string file)

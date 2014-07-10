@@ -46,9 +46,13 @@ static TCHAR ProcessName[] = _T("GameJACrossfire.exe");
 template <class parameters>
 void save(std::string filepath, parameters params) 
 { 	
+	try {
 	std::ofstream file(filepath); 
 	boost::archive::xml_oarchive oa(file); 		
 	oa & BOOST_SERIALIZATION_NVP(params); 	
+	} catch(std::exception const& e) {				
+		OutputDebugString(_T("Exception in save xml"));	
+	}
 } 
 
 template <class parameters>

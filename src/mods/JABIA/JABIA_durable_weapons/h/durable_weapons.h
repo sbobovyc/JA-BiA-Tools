@@ -27,7 +27,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #include <iostream> 
 #include <fstream> 
 
-#define PATH_TO_DURABLE_WEAPONS_XML "\\mods\\durable_weapons\\JABIA_durable_weapons.xml"
+#define PATH_TO_DURABLE_WEAPONS_XML ".\\mods\\durable_weapons\\JABIA_durable_weapons.xml"
 
 class JABIA_DURABLE_WEAPONS_parameters { 
 public:
