@@ -1,5 +1,5 @@
-PIP=/c/Python27/pyinstaller-2.0
-UPX_PATH=/c/upx308w
+PIP=/c/Python27/pyinstaller-2.1
+UPX_PATH=/c/upx391w
 
 ICON=./misc/jabia_icon.ico
 ICON1=./misc/pak_icon.ico

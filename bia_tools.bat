@@ -1,6 +1,5 @@
-    REM set PIP=C:\Python27\pyinstaller-1.5.1\
-    set PIP=C:\Python27\pyinstaller-2.0\
-    set UPX_PATH=C:\upx308w
+    set PIP=C:\Python27\pyinstaller-2.1\
+    set UPX_PATH=C:\upx391w
     set ICON=.\misc\jabia_icon.ico
     set ICON1=.\misc\pak_icon.ico
     set ICON2=.\misc\ctx_icon.ico
