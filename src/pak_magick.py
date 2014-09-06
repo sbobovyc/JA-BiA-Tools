@@ -22,7 +22,7 @@ Created on February 2, 2012
 
 import argparse
 import os
-from pak_file import PAK_file, PAK_CRYPT_file
+from pak_file2 import PAK_file
 
 parser = argparse.ArgumentParser(description='Tool that can unpack Jagged Alliance: BiA pak/pak.crypt files.')
 
@@ -30,6 +30,7 @@ parser.add_argument('file', nargs='?', help='Input file')
 parser.add_argument('outdir', nargs='?', help='Output directory')
 parser.add_argument('-i', '--info', default=False, action='store_true', help='Output information about pak file')
 parser.add_argument('-d', '--debug', default=False, action='store_true', help='Show debug messages.')
+parser.add_argument('-p', '--parallel', default=False, action='store_true', help='Use multiple workers')
 
 
 args = parser.parse_args()
@@ -37,6 +38,7 @@ file = args.file
 outdir = args.outdir
 info = args.info
 debug = args.debug
+parallel = args.parallel
 
 if file != None and info != False:
     info_filepath = os.path.abspath(file)
@@ -49,17 +51,16 @@ elif file != None:
     print "Unpacking %s" % pak_filepath
     
     if extension == "pak":
-        pak_file = PAK_file(filepath=pak_filepath)
+        pak_file = PAK_file(filepath=pak_filepath, encrypted=False)
     elif extension == "crypt":
-        pak_file = PAK_CRYPT_file(filepath=pak_filepath)
+        pak_file = PAK_file(filepath=pak_filepath, encrypted=True)
     else:
         print "File not pak or pak.crypt" 
-    
+
+    output_filepath = os.path.abspath('.')
     if outdir != None:
         output_filepath = os.path.abspath(outdir)
-        pak_file.dump(outdir, debug)
-    else:
-        pak_file.dump(verbose=debug)
+    pak_file.dump(output_filepath, verbose=debug, parallel=parallel)
             
 else:
     print "Nothing happened"

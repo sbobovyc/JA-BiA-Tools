@@ -126,7 +126,8 @@ namespace JABIA_mod_launcher_ng
     {
         public String version = "1.03";
         public List<Mod> mods = new List<Mod>();
-        public List<string> modPaths;       
+        public List<string> modPaths;
+        public int delay = 1000;
     }
 
     /// <summary>
@@ -141,6 +142,7 @@ namespace JABIA_mod_launcher_ng
         const string JAC_LAUNCHER = "JaggedAllianceCF.exe";
         const string JABIA_PROCESS = "GameJABiA";
         const string JAC_PROCESS = "GameJACrossfire";
+        
         
 
         public Settings Load()
@@ -320,7 +322,7 @@ namespace JABIA_mod_launcher_ng
                             break;
                         }
                     }
-                    System.Threading.Thread.Sleep(1000);
+                    System.Threading.Thread.Sleep(settings.delay);
                     if (procFound)
                         break;                    
                 }
@@ -332,7 +334,7 @@ namespace JABIA_mod_launcher_ng
                         LogTexBox.AppendText(errorProcessNotFound);
                         logFile.WriteLine(launcherName + JABIA_LAUNCHER);
                     });
-                    System.Threading.Thread.Sleep(1000);
+                    System.Threading.Thread.Sleep(settings.delay);
                     Environment.Exit(0);
                 }
                 
@@ -354,7 +356,7 @@ namespace JABIA_mod_launcher_ng
             }
             logFile.Close();
             //NativeMethods.ResumeThread(ThreadHandle); 
-            System.Threading.Thread.Sleep(1000);
+            System.Threading.Thread.Sleep(settings.delay);
             Environment.Exit(0);
         }
 

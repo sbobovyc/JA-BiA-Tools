@@ -37,8 +37,10 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #if defined(JABIA)
 static TCHAR ProcessName[] = _T("GameJABiA.exe");
+static TCHAR LauncherProcessName[] = _T("JaggedAllianceBIA.exe");
 #elif defined(JAC)
 static TCHAR ProcessName[] = _T("GameJACrossfire.exe");
+static TCHAR LauncherProcessName[] = _T("JaggedAllianceBIA.exe"); //FIXME
 #else
 #error Need to define either JABIA or JAC in game_version.h.
 #endif
