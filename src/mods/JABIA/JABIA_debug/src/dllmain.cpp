@@ -84,12 +84,14 @@ COMBO_BOX_STATUS inventory_combo_status;
 
 INT APIENTRY DllMain(HMODULE hDLL, DWORD Reason, LPVOID Reserved)
 {
+	DWORD dwCreateionFlags = NULL;
     switch(Reason)
     {
     case DLL_PROCESS_ATTACH:
         g_hModule = hDLL;
-		DisableThreadLibraryCalls(hDLL);
-        CreateThread(NULL, NULL, &MyThread, NULL, NULL, &g_threadID);
+		DisableThreadLibraryCalls(hDLL);		
+		dwCreateionFlags |= CREATE_SUSPENDED;
+        CreateThread(NULL, NULL, &MyThread, NULL, dwCreateionFlags, &g_threadID);
     break;
     case DLL_THREAD_ATTACH:
     case DLL_PROCESS_DETACH:
