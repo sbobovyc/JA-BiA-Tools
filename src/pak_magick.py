@@ -24,45 +24,47 @@ import argparse
 import os
 from pak_file import PAK_file
 
-parser = argparse.ArgumentParser(description='Tool that can unpack Jagged Alliance: BiA pak/pak.crypt files.')
+if __name__ == '__main__':
 
-parser.add_argument('file', nargs='?', help='Input file')
-parser.add_argument('outdir', nargs='?', help='Output directory')
-parser.add_argument('-i', '--info', default=False, action='store_true', help='Output information about pak file')
-parser.add_argument('-d', '--debug', default=False, action='store_true', help='Show debug messages.')
-parser.add_argument('-p', '--parallel', default=False, action='store_true', help='Use multiple workers')
+    parser = argparse.ArgumentParser(description='Tool that can unpack Jagged Alliance: BiA pak/pak.crypt files.')
+
+    parser.add_argument('file', nargs='?', help='Input file')
+    parser.add_argument('outdir', nargs='?', help='Output directory')
+    parser.add_argument('-i', '--info', default=False, action='store_true', help='Output information about pak file')
+    parser.add_argument('-d', '--debug', default=False, action='store_true', help='Show debug messages.')
+    parser.add_argument('-p', '--parallel', default=False, action='store_true', help='Use multiple workers')
 
 
-args = parser.parse_args()
-file = args.file
-outdir = args.outdir
-info = args.info
-debug = args.debug
-parallel = args.parallel
+    args = parser.parse_args()
+    file = args.file
+    outdir = args.outdir
+    info = args.info
+    debug = args.debug
+    parallel = args.parallel
 
-if file != None and info != False:
-    info_filepath = os.path.abspath(file)
-    print "Not implemented yet."
-        
-elif file != None:      
-    extension = os.path.splitext(file)[1][1:].strip()
-    pak_filepath = os.path.abspath(file)
-    
-    print "Unpacking %s" % pak_filepath
-    
-    if extension == "pak":
-        pak_file = PAK_file(filepath=pak_filepath, encrypted=False)
-    elif extension == "crypt":
-        pak_file = PAK_file(filepath=pak_filepath, encrypted=True)
-    else:
-        print "File not pak or pak.crypt" 
-
-    output_filepath = os.path.abspath('.')
-    if outdir != None:
-        output_filepath = os.path.abspath(outdir)
-    pak_file.dump(dest_filepath=output_filepath, verbose=debug, parallel=parallel)
+    if file != None and info != False:
+        info_filepath = os.path.abspath(file)
+        print "Not implemented yet."
             
-else:
-    print "Nothing happened"
-    parser.print_help()
+    elif file != None:      
+        extension = os.path.splitext(file)[1][1:].strip()
+        pak_filepath = os.path.abspath(file)
         
+        print "Unpacking %s" % pak_filepath
+        
+        if extension == "pak":
+            pak_file = PAK_file(filepath=pak_filepath, encrypted=False)
+        elif extension == "crypt":
+            pak_file = PAK_file(filepath=pak_filepath, encrypted=True)
+        else:
+            print "File not pak or pak.crypt" 
+
+        output_filepath = os.path.abspath('.')
+        if outdir != None:
+            output_filepath = os.path.abspath(outdir)
+        pak_file.dump(dest_filepath=output_filepath, verbose=debug, parallel=parallel)
+                
+    else:
+        print "Nothing happened"
+        parser.print_help()
+            
