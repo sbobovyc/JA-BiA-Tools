@@ -25,9 +25,11 @@ import sys
 import cStringIO
 import base64
 import timeit
-from multiprocessing.dummy import Pool
-from multiprocessing import Manager
-from itertools import repeat
+import time
+#from multiprocessing.dummy import Pool
+#from multiprocessing import Manager
+from multiprocessing import Pool, Manager
+from itertools import repeat, izip
 from Crypto.Cipher import AES
 
 PAK_SIGNATURE = 0x504B4C4501000000
@@ -38,10 +40,9 @@ PAK_filesize = 0 # in bytes
 PAK_bytes_unpacked = 0
 
 def unpack_helper(args):
-    print "in unpack helper"
-    data,q = args
-    data.unpack()
-    q.put(0)
+    data,q,filepath = args
+    data.unpack_parallel(filepath)
+    q.put(0) # increase size of queue by one to indicate job is done
     
 class PAK_data:
     def __init_(self, dir):  
@@ -75,17 +76,21 @@ class PAK_data:
             print 
 
     def unpack(self):
-        print "in unpack"
         self.file_pointer.seek(self.file_offset)
         self.data = self.file_pointer.read(self.file_size)
 
         final_path = os.path.join(self.path, self.file_name)
-        if not os.path.exists(self.path):
-            os.makedirs(self.path)        
+        #print "Creating ", final_path
         with open(final_path, "wb") as f:
             f.write(self.data)
+            pass
             
         return self.file_size
+
+    def unpack_parallel(self, source_file):
+        with open(source_file, "rb") as f:
+            self.file_pointer = f
+            self.unpack()
         
         
 class PAK_dir:
@@ -176,6 +181,7 @@ class PAK_file:
                 aes = AES.new(base64.b64decode(AES_KEY_CIPHERED[CIPHER]), AES.MODE_ECB)
                 self.file_pointer = cStringIO.StringIO(aes.decrypt(buf)[:real_size])
         else:
+            print "Reading ", self.filepath
             self.file_pointer = open(self.filepath, "rb")
             
         self.header = PAK_header()
@@ -184,9 +190,10 @@ class PAK_file:
     def dump(self, dest_filepath=os.getcwd(), parallel=False,verbose=False):      
         if self.file_pointer != None:
             self.header.unpack(self.file_pointer, dest_filepath, verbose)
-            for dir in self.header.dir_list:
-                if not os.path.exists(dir.dir_name):
-                    os.makedirs(dir.dir_name)
+            for directory in self.header.dir_list:
+                final_path = os.path.join(dest_filepath, directory.dir_name)
+                if not os.path.exists(final_path):
+                    os.makedirs(final_path)
             if parallel:
                 master_file_list = []
                 for dir in self.header.dir_list:
@@ -194,35 +201,35 @@ class PAK_file:
                 p = Pool()
                 m = Manager()
                 q = m.Queue()
-                args = [master_file_list, repeat(q)]
-                result = p.map_async(PAK_data.unpack, master_file_list)
-                #result = p.map_async(unpack_helper, args)
-                p.close()
-                p.join()
-                """
+                args = izip(master_file_list, repeat(q), repeat(self.filepath)) # pack arguments in such a way that multiprocessing can take the
+                result = p.map_async(unpack_helper, args)                
+                
                 # monitor loop
                 while True:
                     if result.ready():
                         break
                     else:
                         size = q.qsize()
-                        print(size)
-                """
+                        sys.stdout.write("%.0f%%\r" % (size * 100/ len(master_file_list)) ) # based on number of files dumped
+                        time.sleep(0.1)
+                
             else:
                 for dir in self.header.dir_list:
                     for data in dir.file_list:                    
                         global PAK_bytes_unpacked
                         PAK_bytes_unpacked += float(data.unpack())        
-                        sys.stdout.write("%.0f%%\r" % (PAK_bytes_unpacked * 100/ PAK_filesize) )
+                        sys.stdout.write("%.0f%%\r" % (PAK_bytes_unpacked * 100/ PAK_filesize) ) # based on number of bytes written
          
                 
 def test():
-    pF = PAK_file("C:\\Program Files (x86)\\Steam\\steamapps\\common\\JABIA\\data6_win32.pak") # 15 mb
+    #pF = PAK_file("C:\\Program Files (x86)\\Steam\\steamapps\\common\\JABIA\\data6_win32.pak") # 15 mb
     pF = PAK_file("C:\\Program Files (x86)\\Steam\\steamapps\\common\\JABIA\\data5_win32.pak") # 93 mb
     #pF = PAK_file("C:\\Program Files (x86)\\Steam\\steamapps\\common\\JABIA\\data_win32.pak") # 600 mb
     #pF = PAK_file("C:\\Program Files (x86)\\Steam\\steamapps\\common\\JABIA\\configs_win32.pak.crypt")
-    pF.open(encrypted=False)    
-    pF.dump(parallel=True, verbose=False)
+    #pF.open(encrypted=False)    
+    pF.dump(parallel=False, verbose=False)
     
+
 if __name__ == "__main__":        
     print timeit.timeit(test, number=1)
+
