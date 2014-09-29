@@ -1,4 +1,10 @@
-pycrypto 2.6
-wxpython 2.9.4
+python 2.7
+pycrypto 2.6.1
 pyyaml
-pyinstaller 2.0
+pyinstaller 2.1
+pywin32
+
+Additional libraries for experimental code:
+wxpython 2.9.4
+pydot
+pyparsing

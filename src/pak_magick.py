@@ -22,17 +22,23 @@ Created on February 2, 2012
 
 import argparse
 import os
+import multiprocessing
 from pak_file import PAK_file
 
-if __name__ == '__main__':
 
+    
+if __name__ == '__main__':    
+    # On Windows calling this function is necessary.
+    if sys.platform.startswith('win'):
+        multiprocessing.freeze_support()
+        
     parser = argparse.ArgumentParser(description='Tool that can unpack Jagged Alliance: BiA pak/pak.crypt files.')
 
     parser.add_argument('file', nargs='?', help='Input file')
     parser.add_argument('outdir', nargs='?', help='Output directory')
     parser.add_argument('-i', '--info', default=False, action='store_true', help='Output information about pak file')
     parser.add_argument('-d', '--debug', default=False, action='store_true', help='Show debug messages.')
-    parser.add_argument('-p', '--parallel', default=False, action='store_true', help='Use multiple workers')
+    parser.add_argument('-p', '--parallel', default=False, action='store_true', help='Use multiple workers (This feature is experimental and will fail if not used from Python script)')
 
 
     args = parser.parse_args()
@@ -61,7 +67,7 @@ if __name__ == '__main__':
 
         output_filepath = os.path.abspath('.')
         if outdir != None:
-            output_filepath = os.path.abspath(outdir)
+            output_filepath = os.path.abspath(outdir)    
         pak_file.dump(dest_filepath=output_filepath, verbose=debug, parallel=parallel)
                 
     else:
