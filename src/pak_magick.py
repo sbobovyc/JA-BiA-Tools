@@ -22,6 +22,7 @@ Created on February 2, 2012
 
 import argparse
 import os
+import sys
 import multiprocessing
 from pak_file import PAK_file
 
