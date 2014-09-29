@@ -22,7 +22,7 @@ Created on February 2, 2012
 
 import argparse
 import os
-from pak_file2 import PAK_file
+from pak_file import PAK_file
 
 parser = argparse.ArgumentParser(description='Tool that can unpack Jagged Alliance: BiA pak/pak.crypt files.')
 
@@ -60,7 +60,7 @@ elif file != None:
     output_filepath = os.path.abspath('.')
     if outdir != None:
         output_filepath = os.path.abspath(outdir)
-    pak_file.dump(output_filepath, verbose=debug, parallel=parallel)
+    pak_file.dump(dest_filepath=output_filepath, verbose=debug, parallel=parallel)
             
 else:
     print "Nothing happened"
