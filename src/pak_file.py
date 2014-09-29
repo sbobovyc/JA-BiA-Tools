@@ -4,7 +4,7 @@ Created on February 2, 2012
 @author: sbobovyc
 """
 """   
-    Copyright (C) 2012 Stanislav Bobovych
+    Copyright (C) 2014 Stanislav Bobovych
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,12 +19,15 @@ Created on February 2, 2012
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
 import struct 
 import os
 import sys
 import cStringIO
 import base64
+import timeit
+from multiprocessing.dummy import Pool
+from multiprocessing import Manager
+from itertools import repeat
 from Crypto.Cipher import AES
 
 PAK_SIGNATURE = 0x504B4C4501000000
@@ -34,27 +37,33 @@ AES_KEY_CIPHERED = {"JABIA_JAC" : "eFd1cnozbFBFVEVSMjUzeg==",
 PAK_filesize = 0 # in bytes
 PAK_bytes_unpacked = 0
 
-
+def unpack_helper(args):
+    print "in unpack helper"
+    data,q = args
+    data.unpack()
+    q.put(0)
+    
 class PAK_data:
     def __init_(self, dir):  
+        self.file_pointer = None
         self.file_name_length = None    # includes '\0' 
         self.file_size = None   # in bytes
         self.file_offset = None # in bytes
         self.file_crc = None    # unknown crc
-        self.file_name = None   # includes '\0'                
+        self.file_name = None   # includes '\0'      
+        self.path = None          
         self.data = None
     
-    def unpack(self, dir, file_pointer, dest_filepath, verbose=False):
+    def parse(self, dir, file_pointer, dest_filepath, verbose=False):
+        self.file_pointer = file_pointer
         self.file_directory = dir
         self.file_name_length, self.file_size, self.file_offset, self.file_crc = struct.unpack('<IQQQ', file_pointer.read(28))
         
         self.file_name = file_pointer.read(self.file_name_length)
         # strip the null
         self.file_name = self.file_name.replace("\00", "").strip()
-        
-        saved_pointer = file_pointer.tell()
-        file_pointer.seek(self.file_offset)
-        self.data = file_pointer.read(self.file_size)
+        self.path = os.path.join(dest_filepath, self.file_directory)
+
         
         if verbose:
             print "File name: %s" % os.path.join(self.file_directory,self.file_name)
@@ -64,29 +73,28 @@ class PAK_data:
             #print "File Adler32 %s" % hex(zlib.adler32(self.data) & 0xffffffff )
             #print "File CRC32 %s" % hex(zlib.crc32(self.data) & 0xffffffff )
             print 
-        
-        global PAK_bytes_unpacked
-        PAK_bytes_unpacked += float(self.file_size)
-        
-        sys.stdout.write("%.0f%%\r" % (PAK_bytes_unpacked * 100/ PAK_filesize) )
 
-        #print "%i\r" % PAK_bytes_unpacked
-        path = os.path.join(dest_filepath, self.file_directory)
-        
-        if not os.path.exists(path):
-            os.makedirs(path)
-            
-        with open(os.path.join(path, self.file_name), "wb") as f:
+    def unpack(self):
+        print "in unpack"
+        self.file_pointer.seek(self.file_offset)
+        self.data = self.file_pointer.read(self.file_size)
+
+        final_path = os.path.join(self.path, self.file_name)
+        if not os.path.exists(self.path):
+            os.makedirs(self.path)        
+        with open(final_path, "wb") as f:
             f.write(self.data)
-        file_pointer.seek(saved_pointer)
+            
+        return self.file_size
+        
         
 class PAK_dir:
-    def __init_(self, dir):
+    def __init__(self):
         self.dir_index = None           # start index is 1  
         self.dir_name_length = None     
         self.dir_number_files = None  
         self.dir_name = None
-                
+        self.file_list = []        
             
     
     def unpack(self, file_pointer, dest_filepath, verbose=False):        
@@ -95,11 +103,11 @@ class PAK_dir:
         
         # strip the null and remove leading slash
         self.dir_name = self.dir_name.replace("\00", "").strip()[1:]
-        
         if self.dir_number_files != 0:
             for i in range(0, self.dir_number_files):
                 pF = PAK_data()
-                pF.unpack(self.dir_name, file_pointer, dest_filepath, verbose)
+                pF.parse(self.dir_name, file_pointer, dest_filepath, verbose)
+                self.file_list.append(pF)
         else:            
             return 
         
@@ -108,6 +116,7 @@ class PAK_header:
         self.magic = None
         self.descriptor_size = None # in bytes
         self.num_dirs = None
+        self.dir_list = []
     
     def unpack(self, file_pointer, dest_filepath, verbose=False):    
         self.magic, = struct.unpack(">Q", file_pointer.read(8))
@@ -129,60 +138,91 @@ class PAK_header:
         for i in range(0, self.num_dirs):
             pD = PAK_dir()
             pD.unpack(file_pointer, dest_filepath, verbose)
-            
+            self.dir_list.append(pD)
+
 class PAK_file:
-    def __init__(self, filepath=None):
+    def __init__(self, filepath=None, encrypted=False):
         self.filepath = filepath
-        self.header = None        
+        self.header = None     
+        self.file_pointer = None
+        self.encrypted = encrypted
         
         if self.filepath != None:
             global PAK_filesize
             PAK_filesize = os.path.getsize(filepath)
-            self.open(filepath)
+            self.open(filepath=self.filepath, encrypted=self.encrypted)
     
-    def open(self, filepath=None, peek=False):
+    def open(self, filepath=None, encrypted=False, peek=False):
         if filepath == None and self.filepath == None:
             print "File path is empty"
             return
         if self.filepath == None:
             self.filepath = filepath
         
-        self.header = PAK_header()
-
-    def dump(self, dest_filepath=os.getcwd(), verbose=False):
-        with open(self.filepath, "rb") as f:            
-            self.header.unpack(f, dest_filepath, verbose)
-
-class PAK_CRYPT_file(PAK_file):
-    def open(self, filepath=None, peek=False):        
-        if filepath == None and self.filepath == None:
-            print "File path is empty"
-            return
-        if self.filepath == None:
-            self.filepath = filepath
-        
-        with open(self.filepath, "rb") as f:
-            _, real_size, block_size = struct.unpack("<HII", f.read(0xa))
-        
-            buf = f.read(block_size)
-
-            CIPHER = ""
-            if os.path.splitext(os.path.basename(self.filepath))[0] == "dlc5_dlc5_configs_win32.pak":
-                CIPHER = "DLC5"
-            elif os.path.splitext(os.path.basename(self.filepath))[0] == "dlc6_dlc6_configs_win32.pak":
-                CIPHER = "DLC6"                
-            else:
-                CIPHER = "JABIA_JAC"
+        if encrypted:
+            with open(self.filepath, "rb") as f:
+                _, real_size, block_size = struct.unpack("<HII", f.read(0xa))
             
-            aes = AES.new(base64.b64decode(AES_KEY_CIPHERED[CIPHER]), AES.MODE_ECB)
-            self.io = cStringIO.StringIO(aes.decrypt(buf)[:real_size])
+                buf = f.read(block_size)
+    
+                CIPHER = ""
+                if os.path.splitext(os.path.basename(self.filepath))[0] == "dlc5_dlc5_configs_win32.pak":
+                    CIPHER = "DLC5"
+                elif os.path.splitext(os.path.basename(self.filepath))[0] == "dlc6_dlc6_configs_win32.pak":
+                    CIPHER = "DLC6"                
+                else:
+                    CIPHER = "JABIA_JAC"
+                
+                aes = AES.new(base64.b64decode(AES_KEY_CIPHERED[CIPHER]), AES.MODE_ECB)
+                self.file_pointer = cStringIO.StringIO(aes.decrypt(buf)[:real_size])
+        else:
+            self.file_pointer = open(self.filepath, "rb")
+            
         self.header = PAK_header()
 
-    def dump(self, dest_filepath=os.getcwd(), verbose=False):          
-            self.header.unpack(self.io, dest_filepath, verbose)
-                            
-if __name__ == "__main__":
-    pF = PAK_file("C:\Program Files (x86)\Jagged Alliance Back in Action Demo\\voices_win32.pak")
-    #pF = PAK_CRYPT_file("C:\Program Files (x86)\Jagged Alliance Back in Action Demo\\configs_win32.pak.crypt")
-    pF.open()        
-    pF.dump()
+    #TODO add destructor that closes file handle
+    def dump(self, dest_filepath=os.getcwd(), parallel=False,verbose=False):      
+        if self.file_pointer != None:
+            self.header.unpack(self.file_pointer, dest_filepath, verbose)
+            for dir in self.header.dir_list:
+                if not os.path.exists(dir.dir_name):
+                    os.makedirs(dir.dir_name)
+            if parallel:
+                master_file_list = []
+                for dir in self.header.dir_list:
+                    master_file_list.extend(dir.file_list)
+                p = Pool()
+                m = Manager()
+                q = m.Queue()
+                args = [master_file_list, repeat(q)]
+                result = p.map_async(PAK_data.unpack, master_file_list)
+                #result = p.map_async(unpack_helper, args)
+                p.close()
+                p.join()
+                """
+                # monitor loop
+                while True:
+                    if result.ready():
+                        break
+                    else:
+                        size = q.qsize()
+                        print(size)
+                """
+            else:
+                for dir in self.header.dir_list:
+                    for data in dir.file_list:                    
+                        global PAK_bytes_unpacked
+                        PAK_bytes_unpacked += float(data.unpack())        
+                        sys.stdout.write("%.0f%%\r" % (PAK_bytes_unpacked * 100/ PAK_filesize) )
+         
+                
+def test():
+    pF = PAK_file("C:\\Program Files (x86)\\Steam\\steamapps\\common\\JABIA\\data6_win32.pak") # 15 mb
+    pF = PAK_file("C:\\Program Files (x86)\\Steam\\steamapps\\common\\JABIA\\data5_win32.pak") # 93 mb
+    #pF = PAK_file("C:\\Program Files (x86)\\Steam\\steamapps\\common\\JABIA\\data_win32.pak") # 600 mb
+    #pF = PAK_file("C:\\Program Files (x86)\\Steam\\steamapps\\common\\JABIA\\configs_win32.pak.crypt")
+    pF.open(encrypted=False)    
+    pF.dump(parallel=True, verbose=False)
+    
+if __name__ == "__main__":        
+    print timeit.timeit(test, number=1)
