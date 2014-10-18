@@ -42,8 +42,8 @@ classKeywords = map(lambda x: Keyword(x), ["Weapon", "Attachment"])
 weaponKeywords = map(lambda x: Keyword(x), ["Weight", "Price", "ResourceId",
                                             "ShotEffectId", "Damage", "BestRange",
                                             "StanceFactor", "Burst", "Auto",
-                                            "RPM", "Spread", "ClipSize", "GunType",
-                                            "Ammunition", "Quality", "Icon",
+                                            "RPM", "Spread", "ClipSize", "GunType", "Silencing",
+                                            "Ammunition", "Quality", "Icon", "Accuracy", "Aimtime",
                                             "Picture", "DisableAttachments","AnchorPoint",
                                             "Deliverable"
                                             ])
