@@ -22,6 +22,7 @@ Created on October 16, 2014
 import pprint
 import sys
 import os
+from collections import namedtuple
 from pyparsing import *
 
 
@@ -38,22 +39,35 @@ comment = cppStyleComment
 
                    
 
-classKeywords = map(lambda x: Keyword(x), ["Weapon", "Attachment"])
-weaponKeywords = map(lambda x: Keyword(x), ["Weight", "Price", "ResourceId",
+classKeywords = map(lambda x: Keyword(x), ["Weapon", "Attachment", "Ammunition",
+                                           "Clothing", "Collectible", "Consumable",
+                                           "Item"])
+commonKeywords = map(lambda x: Keyword(x), ["Weight","Price", "Picture", "Icon", "Deliverable"
+
+                                            ])
+weaponKeywords = map(lambda x: Keyword(x), ["ResourceId",
                                             "ShotEffectId", "Damage", "BestRange",
                                             "StanceFactor", "Burst", "Auto",
                                             "RPM", "Spread", "ClipSize", "GunType", "Silencing",
-                                            "Ammunition", "Quality", "Icon", "Accuracy", "Aimtime",
-                                            "Picture", "DisableAttachments","AnchorPoint",
-                                            "Deliverable"
+                                            "Ammunition", "Quality", "Accuracy", "Aimtime",
+                                            "DisableAttachments","AnchorPoint"
+                                            
                                             ])
-reservedKeywords = MatchFirst(weaponKeywords)
+ammoKeywords = map(lambda x: Keyword(x), ["BoxSize", "ArmorFactor", "Projectiles"])
+collectibleKeywords = Keyword("StackSize")
+clothingKeywords = map(lambda x: Keyword(x), ["CamoUrba", "CamoWoods", "CamoDesert", "Property"])
+#TODO clothings.txt not parsed
+itemKeywords = map(lambda x: Keyword(x), ["SubType", "Requirement", "Efficiency", "Range", "Charges"])
+#TODO consumables.txt not parsed
+reservedKeywords = MatchFirst(commonKeywords) | MatchFirst(weaponKeywords) \
+                    | MatchFirst(ammoKeywords) | MatchFirst(collectibleKeywords) \
+                    | MatchFirst(itemKeywords)
 jabiaInteger = Word(nums)
 jabiaNumber = Combine( Optional('-') + ( '0' | Word('123456789',nums) ) +
                     Optional( '.' + jabiaInteger ) ) 
 jabiaValue = ~reservedKeywords + (jabiaNumber ^ Word(alphanums) ^ Word(alphanums+"_")  )
 #print reservedKeywords
-jabiaStatement =  Group ( reservedKeywords + Optional( ZeroOrMore(jabiaValue) ) )
+jabiaStatement =  Group ( reservedKeywords + Optional( ZeroOrMore(jabiaValue) ) ) # search till next keyword
 jabiaObjectFields = ZeroOrMore( jabiaStatement )
 jabiaClass = Group( MatchFirst(classKeywords) + LPAR + delimitedList(jabiaInteger ^ Word(alphas) ^ Combine(Word(alphas) + Literal(" ") + jabiaInteger) )  + RPAR )
 jabiaObject =  Group( jabiaClass + LBRACE + jabiaObjectFields + RBRACE )
@@ -64,6 +78,9 @@ jabiaNumber.setParseAction( convertNumbers )
 jabiaInteger.setParseAction( convertNumbers )
 
 
+class Weapon(object):
+    def test(self):
+        print "hi"
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
@@ -72,6 +89,32 @@ if __name__ == "__main__":
     f = os.path.abspath(sys.argv[1]) 
     results = configFileDef.parseFile(f)
     pprint.pprint(results.asList())
+"""    
+    weaponList = []
+    for each in results.asList():
+        d = {}
+        for field in each[1:]:
+            if len(field) > 1:
+                if len(field) == 2:
+                    d[field[0]] = field[1]
+                else:
+                    d[field[0]] = field[1:]
+            else:
+                d[field[0]] = True
+            d["Id"] = each[0][1]
+            d["Armament"] = each[0][2]
+            obj = namedtuple(each[0][0], d.keys())(*d.values())    
+        print obj
+        weaponList.append(obj)
+
+    w = Weapon()
+    w.test()
+    print w.__dict__
+    print type(weaponList[0])
+    for i in weaponList:
+        i.test()
+"""
+    
 
 
 
