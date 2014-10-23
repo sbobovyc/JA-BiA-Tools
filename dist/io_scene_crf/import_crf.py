@@ -204,130 +204,7 @@ def setVertexBlendweightColors(me, faces, vertex_blendweight):
         vtex_blendweight.data[face.index].color1 = alpha0
         vtex_blendweight.data[face.index].color2 = alpha1
         vtex_blendweight.data[face.index].color3 = alpha2        
-        
 
-
-def parseMaterialInfo(file, specular_list):
-    texture_name = b''
-    normals_name = b''
-    specular_name = b''
-    state = 0
-    flag = 0
-    #read in material information
-    print("Reading materials", hex(file.tell()))
-    materials, = struct.unpack("2s", file.read(2))
-    if materials == b'nm':
-        unknown, = struct.unpack("<I", file.read(4))
-        unknown, = struct.unpack("<I", file.read(4))
-    else:
-        state = -1
-
-    running = True
-    while running:
-        if state == 0:
-            print("STATE 0", flag)
-            variable, = struct.unpack("4s", file.read(4))
-            print(variable)
-            if variable == b'sffd':
-                state = 1
-                flag = "dffs"
-            elif variable == b'smrn':
-                state = 1
-                flag = "nrms"
-            elif variable == b'lcps':
-                state = 1
-                flag = "spcl"
-            elif variable == b'1tsc':
-                state = 3
-            else:
-                state = -1
-            
-        if state == 1:
-            print("STATE 1", flag)
-            length, = struct.unpack("<I", file.read(4))
-            if length > 0 and flag == "dffs":
-                state = 2
-            elif length > 0 and flag == "nrms":
-                state = 2
-            elif length > 0 and flag == "spcl":
-                state = 2
-            elif length == 0 and flag == "spcl":
-                state = 4
-            else:
-                state = -1
-
-        if state == 2:
-            print("STATE 2", flag)
-            if flag == "dffs":
-                texture_name, = struct.unpack("%ss" % length, file.read(length))
-                file.read(4)
-                flag = 0
-                state = 0                
-            elif flag == "nrms":
-                normals_name, = struct.unpack("%ss" % length, file.read(length))
-                file.read(4)
-                flag = 0
-                state = 0                
-            elif flag == "spcl":
-                specular_name, = struct.unpack("%ss" % length, file.read(length))
-                state = 4
-
-        if state == 3:
-            print("STATE 3", flag)
-            int1, int2 = struct.unpack("<II", file.read(8))
-            if int1 == 0 and int2 == 0:
-                variable, = struct.unpack("4s", file.read(4))
-                print(variable, hex(file.tell()))
-                if variable == b'lcps':
-                    length, = struct.unpack("<I", file.read(4))
-                    print("length", length)
-                    if length != 0:
-                        flag = "spcl"
-                        state = 2
-                    else:
-                        state = 4
-
-        if state == 4:
-            print("STATE 4", flag)
-            int1, int2 = struct.unpack("<II", file.read(8))            
-            variable, = struct.unpack("4s", file.read(4))
-            print(variable, hex(file.tell()))
-            if variable == b'lcps':
-                red,green,blue = struct.unpack("<fff", file.read(12))
-                specular_list.append( (red, green, blue) )
-                if int2 == 2:
-                    variable, = struct.unpack("4s", file.read(4))
-                    file.read(16)
-                    variable, = struct.unpack("4s", file.read(4))
-                    # read trailer
-                    file.read(24)
-                    state = 99
-                if int2 == 1:
-                    # read trailer
-                    file.read(24)
-                    print("Int is one", hex(file.tell()))
-                    state = 99                            
-                
-        # specular constant          
-##        if state == 4:
-##            print("STATE 4", flag)
-##            if flag == "spcl":
-##                garbage,const = struct.unpack("<II", file.read(8))
-##                variable, = struct.unpack("4s", file.read(4))
-##                if variable == b'lcps':
-##                    red,green,blue = struct.read("<fff", file.read(12))
-##                    specular_list.append( (red, green, blue) )
-##                    state = 99
-##                else:
-##                    print("Error in state 4")
-##                    return
-
-        if state == 99:
-            return texture_name, normals_name, specular_name
-        
-        if state == -1:
-            print("This object's materials format is unsupported. Unknown at", hex(file.tell()))
-            return 
 
 def bone_transform(joint_matrix):
     m = mathutils.Matrix(joint_matrix)
@@ -578,10 +455,12 @@ def load(operator, context, filepath,
         """            
         bpy.ops.object.mode_set(mode='OBJECT')
     #TODO add skinning
-    """
-    bpy.context.selected_objects
+    #select object and armature, parent armature to object
+    ob.select = True
+    amt_ob.select = True
     bpy.ops.object.parent_set(type='ARMATURE_NAME')
-    SELECT object
+    """
+    bpy.context.selected_objects        
     SWITCH to edit mode
     assign vertex to vertex group
     bpy.ops.object.vertex_group_assign()
