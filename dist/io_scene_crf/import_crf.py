@@ -427,9 +427,7 @@ def load(operator, context, filepath,
         new_objects.append(ob)
     # end loop for importing meshes
     
-    # import bones
-    #TODO add bone weights
-    #TODO attach armature to all meshes
+    # import bones, create armature    
     if CRF.footer.get_jointmap() != None:
         amt = bpy.data.armatures.new("Armature")
         amt_ob = bpy.data.objects.new("Armature", amt)
@@ -454,18 +452,7 @@ def load(operator, context, filepath,
             bpy.context.object.name = "joint_%s" % key
         """            
         bpy.ops.object.mode_set(mode='OBJECT')
-    #TODO add skinning
-    #select object and armature, parent armature to object
-    ob.select = True
-    amt_ob.select = True
-    bpy.ops.object.parent_set(type='ARMATURE_NAME')
-    """
-    bpy.context.selected_objects        
-    SWITCH to edit mode
-    assign vertex to vertex group
-    bpy.ops.object.vertex_group_assign()
-    Name vertex group after bone.
-    """
+        amt_ob.select = False
         
             
     time_new = time.time()
@@ -500,7 +487,23 @@ def load(operator, context, filepath,
         bpy.ops.object.mode_set(mode='EDIT')        
         bpy.ops.mesh.delete(type='VERT')
         bpy.ops.object.mode_set(mode='OBJECT')
-        
+    
+    #TODO add vertices to vertex groups
+    #TODO vertex weights
+    #select objects and armature, parent objects to armature      
+    bpy.ops.object.select_all(action='DESELECT') #deselect all object        
+    for ob in new_objects:
+        print("in loop ", ob)
+        ob.select = True
+    bpy.context.scene.objects.active = amt_ob    #the active object will be the parent of all selected object
+    bpy.ops.object.parent_set(type='ARMATURE_NAME')
+    """
+    bpy.context.selected_objects        
+    SWITCH to edit mode
+    assign vertex to vertex group
+    bpy.ops.object.vertex_group_assign()
+    Name vertex group after bone.
+    """    
 
     scene.update()
 
