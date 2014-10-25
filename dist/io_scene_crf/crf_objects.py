@@ -336,15 +336,21 @@ CRF_SkinLayeredMP = "6tsc5tsc" #MP+ SkinLayered
 """
 
 def float2uint32(number):
-    return int(number * 4294967295)    
+    return int(number * 4294967295)    # 2^32 - 1
 
 def uint2float(uint_number):
-    if uint_number > 128:
-        return float(uint_number / 127.0)
-    elif uint_number < 128:
-        return float(-uint_number / 128.0)
+    return uint_number / 4294967295
+
+def ubyte2float(ubyte_number):
+    return ubyte_number / 255
+
+def int2float(int_number):
+    if int_number > 128:
+        return float(int_number / 127.0)
+    elif int_number < 128:
+        return float(-int_number / 128.0)
     else:
-        return 0.0
+        return 0.0    
     
 class CRF_object(object):
     def __init__(self):
@@ -997,22 +1003,22 @@ class CRF_vertex_blend(object):
         self.index = 0
         self.blendweight = (0, 0, 0, 0)
         self.blendindeces = (0, 0, 0, 0)        
-        self.blendweight_blend = (0, 0, 0)
+        self.blendweight_blend = (0, 0, 0, 0)
         
     def raw2blend(self):
-        self.blendweight_blend = (uint2float(self.blendweight[0]), uint2float(self.blendweight[1]), uint2float(self.blendweight[2]), uint2float(self.blendweight[3]))
+        self.blendweight_blend = (ubyte2float(self.blendweight[0]), ubyte2float(self.blendweight[1]), ubyte2float(self.blendweight[2]), ubyte2float(self.blendweight[3]))
         
     def bin2raw(self, file, file_offset, index, verbose=False):
         self.index = index
-        self.blendweight = struct.unpack("<bbbb", file.read(4))
-        self.blendindeces = struct.unpack("<bbbb", file.read(4))
+        self.blendweight = struct.unpack("<BBBB", file.read(4))
+        self.blendindeces = struct.unpack("<BBBB", file.read(4))
         if verbose:
             print("vert index=%s, blendweights: %s, blendindeces: %s" % (self.index, self.blendweight, self.blendindeces))
 
     def get_bin(self):
         data = b""
-        data += struct.pack("<bbbb", *self.blendweight)
-        data += struct.pack("<bbbb", *self.blendindeces)
+        data += struct.pack("<BBBB", *self.blendweight)
+        data += struct.pack("<BBBB", *self.blendindeces)
         return data
                                 
 class CRF_vertex_blend_indeces_only(object):
@@ -1105,7 +1111,7 @@ class CRF_vertex(object):
             return int(128 - math.fabs(f_number) * 128)
         else:
             return 128
-        
+    #TODO rename to int2float and make a global function    
     def uint2float(self, uint_number):
         if uint_number > 128:
             return float(uint_number / 127.0)
@@ -1251,6 +1257,7 @@ class CRF_jointmap(object):
         self.bone_count = 0
         self.i1 = 0
         self.bone_dict = {}
+        self.bone_name_id_dict = {} # map bone name to bone id, helper for Blender
         
         if file != None:
             file.seek(file_offset)
@@ -1304,6 +1311,7 @@ class CRF_jointmap(object):
             bone.i1, bone.i2, bone.i3, bone.i4 = struct.unpack("BBBB", file.read(4))
     
             self.bone_dict[bone.bone_id] = bone
+            self.bone_name_id_dict[bone.bone_name] = bone.bone_id
             print(bone)
         #TODO followd by 61 bytes of unknown
             

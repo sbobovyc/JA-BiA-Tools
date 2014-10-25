@@ -487,23 +487,40 @@ def load(operator, context, filepath,
         bpy.ops.object.mode_set(mode='EDIT')        
         bpy.ops.mesh.delete(type='VERT')
         bpy.ops.object.mode_set(mode='OBJECT')
-    
-    #TODO add vertices to vertex groups
-    #TODO vertex weights
-    #select objects and armature, parent objects to armature      
-    bpy.ops.object.select_all(action='DESELECT') #deselect all object        
-    for ob in new_objects:
-        print("in loop ", ob)
-        ob.select = True
-    bpy.context.scene.objects.active = amt_ob    #the active object will be the parent of all selected object
-    bpy.ops.object.parent_set(type='ARMATURE_NAME')
-    """
-    bpy.context.selected_objects        
-    SWITCH to edit mode
-    assign vertex to vertex group
-    bpy.ops.object.vertex_group_assign()
-    Name vertex group after bone.
-    """    
+
+    if CRF.footer.get_jointmap() != None:
+        #TODO add vertices to vertex groups
+        #TODO vertex weights
+        #select objects and armature, parent objects to armature      
+        bpy.ops.object.select_all(action='DESELECT') #deselect all object        
+        for ob in new_objects:
+            print("in loop ", ob)
+            ob.select = True
+        bpy.context.scene.objects.active = amt_ob    #the active object will be the parent of all selected object
+        bpy.ops.object.parent_set(type='ARMATURE_NAME')
+
+        # print all vertex groups for each object
+        #for ob in new_objects:
+        #    print(ob.vertex_groups.keys())
+        for ob in new_objects:
+            for v in ob.data.vertices:
+                print("number of groups", len(v.groups))
+                
+            
+        for ob in new_objects:
+            for v in ob.data.vertices:
+                for g in v.groups:
+                    print("o: %s, v:%s, g:%s" % (ob, v, g))
+        for ob in new_objects:
+            for g in ob.vertex_groups:
+                for v in ob.data.vertices:
+                    print("v index", v.index)
+                    g.add([v.index], 1.0, 'ADD')
+        print(CRF.jointmap.bone_name_id_dict)
+        print(CRF.meshfile.meshes[0].vertices1[0].blendindeces)
+        print(CRF.meshfile.meshes[0].vertices1[0].blendweight)
+        CRF.meshfile.meshes[0].vertices1[0].raw2blend()
+        print(CRF.meshfile.meshes[0].vertices1[0].blendweight_blend)
 
     scene.update()
 
