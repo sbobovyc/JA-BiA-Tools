@@ -615,7 +615,7 @@ class CRF_mesh(object):
         self.vertex_stream0_layout = [] # [layout, stride]
         self.vertices0 = [] # 3d data, colors, uv, normals, specular, blendweight
         self.vertex_stream1_layout = [] # [layout, stride]        
-        self.vertices1 = [] # blendindeces and blendweight
+        self.vertices1 = [] # blendindices and blendweight
         self.vertex_stream2_layout = [] # [layout, stride]             
         self.vertices2 = [] # unknown stream, used on animated meshes
         self.bounding_box = None # ((LoX, LoY, LoZ), (HiX, HiY, HZ))
@@ -663,7 +663,7 @@ class CRF_mesh(object):
             print("First blendweight and blendindex stream at", hex(file.tell()).strip('L'))
             for i in range(0, self.number_of_vertices):
                 vertex_blend = CRF_vertex_blend()
-                vertex_blend.bin2raw(file, file.tell(), i, verbose)
+                vertex_blend.bin2raw(file, file.tell(), i, True)
                 self.vertices1.append(vertex_blend)
        
         if self.stream_count > 2:            
@@ -674,7 +674,7 @@ class CRF_mesh(object):
             
             for i in range(0, self.number_of_vertices):
                 if stride == 4:
-                    vertex_blend = CRF_vertex_blend_indeces_only()
+                    vertex_blend = CRF_vertex_blend_indices_only()
                 elif stride == 8:
                     vertex_blend = CRF_vertex_blend()
                 vertex_blend.bin2raw(file, file.tell(), i, verbose)
@@ -1001,37 +1001,37 @@ class CRF_materials(object):
 class CRF_vertex_blend(object):
     def __init__(self):
         self.index = 0
-        self.blendweight = (0, 0, 0, 0)
-        self.blendindeces = (0, 0, 0, 0)        
-        self.blendweight_blend = (0, 0, 0, 0)
+        self.blendweights = (0, 0, 0, 0)
+        self.blendindices = (0, 0, 0, 0)        
+        self.blendweights_blend = (0, 0, 0, 0)
         
     def raw2blend(self):
-        self.blendweight_blend = (ubyte2float(self.blendweight[0]), ubyte2float(self.blendweight[1]), ubyte2float(self.blendweight[2]), ubyte2float(self.blendweight[3]))
+        self.blendweights_blend = (ubyte2float(self.blendweights[0]), ubyte2float(self.blendweights[1]), ubyte2float(self.blendweights[2]), ubyte2float(self.blendweights[3]))
         
     def bin2raw(self, file, file_offset, index, verbose=False):
         self.index = index
-        self.blendweight = struct.unpack("<BBBB", file.read(4))
-        self.blendindeces = struct.unpack("<BBBB", file.read(4))
+        self.blendweights = struct.unpack("<BBBB", file.read(4))
+        self.blendindices = struct.unpack("<BBBB", file.read(4))
         if verbose:
-            print("vert index=%s, blendweights: %s, blendindeces: %s" % (self.index, self.blendweight, self.blendindeces))
+            print("vert index=%s, blendweights: %s, blendindices: %s" % (self.index, self.blendweights, self.blendindices))
 
     def get_bin(self):
         data = b""
-        data += struct.pack("<BBBB", *self.blendweight)
-        data += struct.pack("<BBBB", *self.blendindeces)
+        data += struct.pack("<BBBB", *self.blendweights)
+        data += struct.pack("<BBBB", *self.blendindices)
         return data
                                 
-class CRF_vertex_blend_indeces_only(object):
+class CRF_vertex_blend_indices_only(object):
     def bin2raw(self, file, file_offset, index, verbose=False):
         self.index = index
-        self.blendindeces = None
-        self.blendindeces = struct.unpack("<bbbb", file.read(4))
+        self.blendindices = None
+        self.blendindices = struct.unpack("<bbbb", file.read(4))
         if verbose:
-            print("vert index=%s, blendindeces: %s" % (self.index, self.blendindeces))
+            print("vert index=%s, blendindices: %s" % (self.index, self.blendindices))
             
     def get_bin(self):
         data = b""
-        data += struct.pack("<bbbb", *self.blendindeces)
+        data += struct.pack("<bbbb", *self.blendindices)
         return data
     
 class CRF_vertex(object):

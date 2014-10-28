@@ -428,7 +428,7 @@ def load(operator, context, filepath,
     # end loop for importing meshes
     
     # import bones, create armature    
-    if CRF.footer.get_jointmap() != None:
+    if CRF.footer.get_jointmap() != None:                
         amt = bpy.data.armatures.new("Armature")
         amt_ob = bpy.data.objects.new("Armature", amt)
         scn = bpy.context.scene
@@ -506,22 +506,31 @@ def load(operator, context, filepath,
             for v in ob.data.vertices:
                 print("number of groups", len(v.groups))
                 
-            
-        for ob in new_objects:
-            for v in ob.data.vertices:
-                for g in v.groups:
-                    print("o: %s, v:%s, g:%s" % (ob, v, g))
+        """
         for ob in new_objects:
             for g in ob.vertex_groups:
                 for v in ob.data.vertices:
                     print("v index", v.index)
                     g.add([v.index], 1.0, 'ADD')
+        
+        """
+        for v in new_objects[0].data.vertices:
+            CRF.meshfile.meshes[0].vertices1[v.index].raw2blend() # convert 
+            blendindices = CRF.meshfile.meshes[0].vertices1[v.index].blendindices
+            blendweights = CRF.meshfile.meshes[0].vertices1[v.index].blendweights_blend
+            print(blendindices, blendweights)
+            for bi,bw in zip(blendindices, blendweights):
+                print("Assign vertex %s group %s with weight %s" % (v.index, bi, bw))
+                new_objects[0].vertex_groups[bi].add([v.index], bw, 'ADD')
+            
+            
         print(CRF.jointmap.bone_name_id_dict)
-        print(CRF.meshfile.meshes[0].vertices1[0].blendindeces)
-        print(CRF.meshfile.meshes[0].vertices1[0].blendweight)
-        CRF.meshfile.meshes[0].vertices1[0].raw2blend()
-        print(CRF.meshfile.meshes[0].vertices1[0].blendweight_blend)
-
+        print(CRF.meshfile.meshes[0].vertices1[0].blendindices)
+        print(CRF.meshfile.meshes[0].vertices1[0].blendweights)
+        
+        print(CRF.meshfile.meshes[0].vertices1[0].blendweights_blend)
+        
+ 
     scene.update()
 
     axis_min = [1000000000] * 3
