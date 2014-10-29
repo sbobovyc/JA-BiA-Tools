@@ -211,6 +211,7 @@ def bone_transform(joint_matrix):
     m = m.inverted().transposed()
     rot = axis_conversion(from_forward='-Z', from_up='Y').to_4x4()
     m = rot * m
+    m[0][3] = -m[0][3] # flip across x axis
     return m
 
 def make_skel(amt, crf_jointmap, parent_id):
@@ -502,9 +503,9 @@ def load(operator, context, filepath,
         # print all vertex groups for each object
         #for ob in new_objects:
         #    print(ob.vertex_groups.keys())
-        for ob in new_objects:
-            for v in ob.data.vertices:
-                print("number of groups", len(v.groups))
+        #for ob in new_objects:
+        #    for v in ob.data.vertices:
+        #        print("number of groups", len(v.groups))
                 
         """
         for ob in new_objects:
@@ -518,9 +519,9 @@ def load(operator, context, filepath,
             CRF.meshfile.meshes[0].vertices1[v.index].raw2blend() # convert 
             blendindices = CRF.meshfile.meshes[0].vertices1[v.index].blendindices
             blendweights = CRF.meshfile.meshes[0].vertices1[v.index].blendweights_blend
-            print(blendindices, blendweights)
+            #print(blendindices, blendweights)
             for bi,bw in zip(blendindices, blendweights):
-                print("Assign vertex %s group %s with weight %s" % (v.index, bi, bw))
+                #print("Assign vertex %s group %s with weight %s" % (v.index, bi, bw))
                 new_objects[0].vertex_groups[bi].add([v.index], bw, 'ADD')
             
             
