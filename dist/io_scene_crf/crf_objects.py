@@ -17,6 +17,10 @@ CRF_GEOMESH = None
 CRF_COLLISION_SHAPE = None
 CRF_OCCLUSION_SHAPE = None
 
+# vertex layout constants
+CRF_VERTEX_DECLRATION_TYPE1 = 0xc
+CRF_VERTEX_DECLRATION_TYPE2 = 0x80000
+
 # Supported texture formats
 CRF_TexFormats = ["bmp", "tga", "jpg", "dds"]
 
@@ -661,6 +665,11 @@ class CRF_mesh(object):
             self.vertex_stream1_layout = [layout, stride]
             print("Stream1 declaration: %s, stride: %i bytes" % (hex(self.vertex_stream1_layout[0]).strip('L'), self.vertex_stream1_layout[1]))
             print("First blendweight and blendindex stream at", hex(file.tell()).strip('L'))
+            print("layout",self.vertex_stream1_layout)
+            if self.vertex_stream1_layout[0] == CRF_VERTEX_DECLRATION_TYPE1:
+                print("Type1")
+            elif self.vertex_stream1_layout[0] == CRF_VERTEX_DECLRATION_TYPE2:
+                print("Type2")
             for i in range(0, self.number_of_vertices):
                 vertex_blend = CRF_vertex_blend()
                 vertex_blend.bin2raw(file, file.tell(), i, True)
@@ -670,14 +679,19 @@ class CRF_mesh(object):
             layout, stride = struct.unpack("<II", file.read(8))
             self.vertex_stream2_layout = [layout, stride]
             print("Stream2 declaration: %s, stride: %i bytes" % (hex(self.vertex_stream2_layout[0]).strip('L'), self.vertex_stream2_layout[1]))
-            print("Blendweight stream at", hex(file.tell()).strip('L'))
+            print("Blendweight stream at", hex(file.tell()).strip('L'))         
+            print("layout",self.vertex_stream2_layout)            
+            if self.vertex_stream2_layout[0] == CRF_VERTEX_DECLRATION_TYPE1:
+                print("Type1")
+            elif self.vertex_stream2_layout[0] == CRF_VERTEX_DECLRATION_TYPE2:
+                print("Type2")            
             
             for i in range(0, self.number_of_vertices):
                 if stride == 4:
                     vertex_blend = CRF_vertex_blend_indices_only()
                 elif stride == 8:
                     vertex_blend = CRF_vertex_blend()
-                vertex_blend.bin2raw(file, file.tell(), i, verbose)
+                vertex_blend.bin2raw(file, file.tell(), i, True)
                 self.vertices2.append(vertex_blend)            
         print("End of vertex data at", hex(file.tell()).strip('L'))
 
