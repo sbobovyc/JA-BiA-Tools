@@ -18,7 +18,8 @@ CRF_COLLISION_SHAPE = None
 CRF_OCCLUSION_SHAPE = None
 
 # vertex layout constants
-CRF_VERTEX_DECLRATION_TYPE1 = 0xc
+CRF_VERTEX_DECLRATION_TYPE0 = 0xc018021 # vertex positions, colors, uv, normals, specular, blendweight
+CRF_VERTEX_DECLRATION_TYPE1 = 0xc # blendindices and blendweight
 CRF_VERTEX_DECLRATION_TYPE2 = 0x80000
 
 # Supported texture formats
@@ -617,7 +618,7 @@ class CRF_mesh(object):
         self.face_list = []
         self.stream_count = 0
         self.vertex_stream0_layout = [] # [layout, stride]
-        self.vertices0 = [] # 3d data, colors, uv, normals, specular, blendweight
+        self.vertices0 = [] # vertex positions, colors, uv, normals, specular, blendweight
         self.vertex_stream1_layout = [] # [layout, stride]        
         self.vertices1 = [] # blendindices and blendweight
         self.vertex_stream2_layout = [] # [layout, stride]             
@@ -644,55 +645,37 @@ class CRF_mesh(object):
         print("Vertex information starts at", hex(file.tell()).strip('L'))                
         self.stream_count, = struct.unpack("<B", file.read(1))
         print("Number of streams:", self.stream_count)
+        for stream in range(0, self.stream_count):
         # then the vertex declaration
-        #TODO should probably parse this, but all meshes that I've seen tend to use the same layout
-        layout, stride = struct.unpack("<II", file.read(8))
-        self.vertex_stream0_layout = [layout, stride]
-        print("Stream0 declaration: %s, stride: %i bytes" % (hex(self.vertex_stream0_layout[0]).strip('L'), self.vertex_stream0_layout[1]))
-
-        print("Vertex stream at", hex(file.tell()).strip('L'))
-        # read in vertices, vertex normals, ks, and UVs
-        for i in range(0, self.number_of_vertices):
-            vertex = CRF_vertex()
-            vertex.bin2raw(file, file.tell(), i)
-            vertex.raw2blend()
-            self.vertices0.append(vertex)
-            if verbose:
-                print(vertex)
-        
-        if self.stream_count > 1:            
             layout, stride = struct.unpack("<II", file.read(8))
-            self.vertex_stream1_layout = [layout, stride]
-            print("Stream1 declaration: %s, stride: %i bytes" % (hex(self.vertex_stream1_layout[0]).strip('L'), self.vertex_stream1_layout[1]))
-            print("First blendweight and blendindex stream at", hex(file.tell()).strip('L'))
-            print("layout",self.vertex_stream1_layout)
-            if self.vertex_stream1_layout[0] == CRF_VERTEX_DECLRATION_TYPE1:
-                print("Type1")
-            elif self.vertex_stream1_layout[0] == CRF_VERTEX_DECLRATION_TYPE2:
-                print("Type2")
-            for i in range(0, self.number_of_vertices):
-                vertex_blend = CRF_vertex_blend()
-                vertex_blend.bin2raw(file, file.tell(), i, True)
-                self.vertices1.append(vertex_blend)
-       
-        if self.stream_count > 2:            
-            layout, stride = struct.unpack("<II", file.read(8))
-            self.vertex_stream2_layout = [layout, stride]
-            print("Stream2 declaration: %s, stride: %i bytes" % (hex(self.vertex_stream2_layout[0]).strip('L'), self.vertex_stream2_layout[1]))
-            print("Blendweight stream at", hex(file.tell()).strip('L'))         
-            print("layout",self.vertex_stream2_layout)            
-            if self.vertex_stream2_layout[0] == CRF_VERTEX_DECLRATION_TYPE1:
-                print("Type1")
-            elif self.vertex_stream2_layout[0] == CRF_VERTEX_DECLRATION_TYPE2:
-                print("Type2")            
+            print("Stream%i declaration: %s, stride: %i bytes" % (stream, hex(layout).strip('L'), stride))
+            if layout == CRF_VERTEX_DECLRATION_TYPE0:
+                print("Vertex stream at", hex(file.tell()).strip('L'))
+                # read in vertices, vertex normals, ks, and UVs
+                for i in range(0, self.number_of_vertices):
+                    vertex = CRF_vertex()
+                    vertex.bin2raw(file, file.tell(), i)
+                    vertex.raw2blend()
+                    self.vertices0.append(vertex)
+                    if verbose:
+                        print(vertex)
+                self.vertex_stream0_layout = [layout, stride]
             
-            for i in range(0, self.number_of_vertices):
-                if stride == 4:
-                    vertex_blend = CRF_vertex_blend_indices_only()
-                elif stride == 8:
+            elif layout == CRF_VERTEX_DECLRATION_TYPE1:
+                for i in range(0, self.number_of_vertices):
                     vertex_blend = CRF_vertex_blend()
-                vertex_blend.bin2raw(file, file.tell(), i, True)
-                self.vertices2.append(vertex_blend)            
+                    vertex_blend.bin2raw(file, file.tell(), i, verbose)
+                    self.vertices1.append(vertex_blend)
+                self.vertex_stream1_layout = [layout, stride]
+            elif layout == CRF_VERTEX_DECLRATION_TYPE2:
+                for i in range(0, self.number_of_vertices):
+                    if stride == 4:
+                        vertex_blend = CRF_vertex_blend_indices_only()
+                    elif stride == 8:
+                        vertex_blend = CRF_vertex_blend()
+                    vertex_blend.bin2raw(file, file.tell(), i, verbose=True)
+                    self.vertices2.append(vertex_blend)
+                self.vertex_stream2_layout = [layout, stride]                    
         print("End of vertex data at", hex(file.tell()).strip('L'))
 
         #read in mesh bounding box
