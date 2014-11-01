@@ -490,9 +490,7 @@ def load(operator, context, filepath,
         bpy.ops.object.mode_set(mode='OBJECT')
 
     if CRF.footer.get_jointmap() != None:
-        #TODO add vertices to vertex groups
-        #TODO vertex weights
-        #select objects and armature, parent objects to armature      
+        #select objects, select armature as active, parent objects to armature      
         bpy.ops.object.select_all(action='DESELECT') #deselect all object        
         for ob in new_objects:
             print("in loop ", ob)
@@ -506,31 +504,19 @@ def load(operator, context, filepath,
         #for ob in new_objects:
         #    for v in ob.data.vertices:
         #        print("number of groups", len(v.groups))
-                
-        """
+
+        obj_id = 0
         for ob in new_objects:
-            for g in ob.vertex_groups:
-                for v in ob.data.vertices:
-                    print("v index", v.index)
-                    g.add([v.index], 1.0, 'ADD')
-        
-        """
-        for v in new_objects[0].data.vertices:
-            CRF.meshfile.meshes[0].vertices1[v.index].raw2blend() # convert 
-            blendindices = CRF.meshfile.meshes[0].vertices1[v.index].blendindices
-            blendweights = CRF.meshfile.meshes[0].vertices1[v.index].blendweights_blend
-            #print(blendindices, blendweights)
-            for bi,bw in zip(blendindices, blendweights):
-                #print("Assign vertex %s group %s with weight %s" % (v.index, bi, bw))
-                new_objects[0].vertex_groups[bi].add([v.index], bw, 'ADD')
-            
-            
-        print(CRF.jointmap.bone_name_id_dict)
-        print(CRF.meshfile.meshes[0].vertices1[0].blendindices)
-        print(CRF.meshfile.meshes[0].vertices1[0].blendweights)
-        
-        print(CRF.meshfile.meshes[0].vertices1[0].blendweights_blend)
-        
+            if len(CRF.meshfile.meshes[obj_id].vertices1) != 0:
+                for v in ob.data.vertices:                
+                    CRF.meshfile.meshes[obj_id].vertices1[v.index].raw2blend() # convert 
+                    blendindices = CRF.meshfile.meshes[obj_id].vertices1[v.index].blendindices
+                    blendweights = CRF.meshfile.meshes[obj_id].vertices1[v.index].blendweights_blend
+                    #print(blendindices, blendweights)
+                    for bi,bw in zip(blendindices, blendweights):
+                        #print("Assign vertex %s group %s with weight %s" % (v.index, bi, bw))
+                        new_objects[obj_id].vertex_groups[bi].add([v.index], bw, 'ADD')
+            obj_id+=1                    
  
     scene.update()
 
