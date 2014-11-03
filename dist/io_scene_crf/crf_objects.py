@@ -363,6 +363,8 @@ class CRF_object(object):
         self.header = CRF_header()
         self.footer = CRF_footer()
         self.meshfile = CRF_meshfile()
+        self.jointmap = None
+        self.skeleton = None
         
     def parse_bin(self, file):        
         self.header.parse_bin(file)        
@@ -1243,8 +1245,8 @@ class CRF_joint(object):
         self.matrix = [ (0,0,0,0), (0,0,0,0), (0,0,0,0), (0,0,0,1) ]
         self.parent_id = 0xFFFFFFFF
         self.skeleton_index = 0
-        self.i1 = 0
-        self.i2 = 0        
+        self.i1 = 0 # unknown
+        self.i2 = 0 # unknown
 
     def __str__(self):
         string = ""
@@ -1276,7 +1278,7 @@ class CRF_jointmap(object):
         self.joint_count = 0
         self.joint_list = []
         self.bone_count = 0
-        self.i1 = 0
+        self.i1 = 0 # unknown
         self.bone_dict = {}
         self.bone_name_id_dict = {} # map bone name to bone id, helper for Blender
         
@@ -1336,6 +1338,20 @@ class CRF_jointmap(object):
             print(bone)
         #TODO followd by 61 bytes of unknown
             
+    def __str__(self):
+        string = ""
+        string += "Jointmap (Bone name: bone id):\n"
+        for key in self.bone_name_id_dict:
+            string += "%s: %s\n" % (key,self.bone_name_id_dict[key])
+        string += "\nBone relationships (parent: children)\n"
+        for key in self.bone_dict:
+            parent = self.bone_dict[key].bone_name
+            child_ids = self.bone_dict[key].child_list
+            children = map(lambda x: self.bone_dict[x].bone_name, child_ids)
+            string += "%s: %s\n" % (parent, children)
+            
+        return string
+    
 class CRF_skeleton(object):
     def __init__(self, file=None, file_offset=0):
         self.skeleton_count = 0
