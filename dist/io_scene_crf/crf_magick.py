@@ -58,9 +58,9 @@ if __name__ == "__main__":
             print(obj.skeleton)
             graph = pydot.Dot(graph_type='digraph')
             for key in obj.jointmap.bone_dict:
-                parent = obj.jointmap.bone_dict[key].bone_name
+                parent = "%s : %s" % (obj.jointmap.bone_dict[key].bone_name, key)
                 child_ids = obj.jointmap.bone_dict[key].child_list
-                children = map(lambda x: obj.jointmap.bone_dict[x].bone_name, child_ids)
+                children = map(lambda x: "%s : %s" % (obj.jointmap.bone_dict[x].bone_name, x), child_ids)
                 for child in children:                    
                     graph.add_edge(pydot.Edge(parent, child))
             graph.write_png('crf_bonegraph.png')

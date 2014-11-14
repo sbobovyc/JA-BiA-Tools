@@ -213,43 +213,42 @@ def bone_transform(joint_matrix):
     m = rot * m
     m[0][3] = -m[0][3] # flip across x axis
     return m
-
+     
 def make_skel(amt, crf_jointmap, parent_id):
-    crf_joint = crf_jointmap.joint_list[parent_id]
+    crf_joint = crf_jointmap.joint_list[parent_id]              
     crf_bone = crf_jointmap.bone_dict[parent_id]
-    m = bone_transform(crf_joint.matrix)
-    
+    m_head = bone_transform(crf_joint.matrix)
+    print("Parent %i, child list %s" % (parent_id, crf_bone.child_list))
+    # this is the case of terminating joints
     if len(crf_bone.child_list) == 0:
-        return
-    if parent_id == 0: #if root bone
-        bone = amt.edit_bones.new(crf_bone.bone_name.decode('UTF-8'))            
-        bone.head = (0,0,0)
-        bone.tail = (0,-1,0)
-        bone.transform(m)
-        head = bone.head.copy()
-        tail = bone.tail.copy() 
-        bone.tail = (0,0,0)
-        bone.tail = head
-        bone.head = tail
-
+        parent = crf_jointmap.bone_dict[crf_joint.parent_id].bone_name.decode('UTF-8')
+        bone = amt.edit_bones.new(crf_bone.bone_name.decode('UTF-8'))
+        bone.head = m_head * mathutils.Vector((0,0,0))
+        bone.tail = bone.head + amt.edit_bones[parent].vector
+        print("Parent of %i is %s" % (parent_id, parent))
+        bone.parent = amt.edit_bones[parent]        
+        
     for child_id in crf_bone.child_list:
-        crf_joint = crf_jointmap.joint_list[child_id]
-        m = bone_transform(crf_joint.matrix)
-        parent_name = crf_jointmap.bone_dict[parent_id].bone_name.decode('UTF-8')
-        child_name = crf_jointmap.bone_dict[child_id].bone_name.decode('UTF-8')
-        bone = amt.edit_bones.new(child_name)
-        bone.head = (0,0,0)
-        bone.tail = (0,0,0.2)
-        bone.transform(m)
-        bone.parent = amt.edit_bones[parent_name]        
-        head = bone.head.copy()
-        tail = bone.tail.copy() 
-        bone.tail = (0,0,0)                
-        amt.edit_bones[child_name].head = amt.edit_bones[parent_name].tail
-        amt.edit_bones[child_name].tail = head
-        bone.use_connect = True
-        make_skel(amt, crf_jointmap, child_id)
-              
+        if child_id == crf_bone.child_list[0]:
+            #print("Parent %i, child %i" % (parent_id, child_id))
+            crf_child_joint = crf_jointmap.joint_list[child_id]
+            m_tail =  bone_transform(crf_child_joint.matrix)        
+            #print("Positions ", m_head, m_tail)
+            bone = amt.edit_bones.new(crf_bone.bone_name.decode('UTF-8'))        
+            bone.head = m_head * mathutils.Vector((0,0,0))
+            bone.tail = m_tail * mathutils.Vector((0,0,0))
+            #bone.use_connect = True
+            for b in amt.edit_bones:
+                print(b)
+            if parent_id != 0:
+                parent = crf_jointmap.bone_dict[crf_joint.parent_id].bone_name.decode('UTF-8')
+                print("Parent of %i is %s" % (parent_id, parent))
+                bone.parent = amt.edit_bones[parent]
+                
+        make_skel(amt, crf_jointmap, child_id)        
+        
+    return 
+
 def load(operator, context, filepath,
          global_clamp_size=0.0,
          use_verbose=False,
@@ -264,6 +263,7 @@ def load(operator, context, filepath,
          viz_blendweights=False,
          use_specular=True,
          global_matrix=None,
+         use_debug_bones=False
          ):
     '''
     Called by the user interface or another script.
@@ -439,19 +439,16 @@ def load(operator, context, filepath,
         
         bpy.ops.object.mode_set(mode='EDIT')        
         make_skel(amt, CRF.jointmap, 0)
-        """
-        for key,value in CRF.jointmap.bone_dict.items():
-            crf_joint = CRF.jointmap.joint_list[key]            
-            m = mathutils.Matrix(crf_joint.matrix)
-            m = m.inverted().transposed()
-            print("Bone %i\n" % key, m, "parent", crf_joint.parent_id)
-            rot = axis_conversion(from_forward='-Z', from_up='Y').to_4x4()
-            m = rot * m
-            crf_joint = CRF.jointmap.joint_list[key]
-            bpy.ops.mesh.primitive_uv_sphere_add(size=0.1, location=(0,0,0))
-            bpy.context.object.matrix_world = m
-            bpy.context.object.name = "joint_%s" % key
-        """            
+
+        if use_debug_bones:
+            for key,value in CRF.jointmap.bone_dict.items():
+                crf_joint = CRF.jointmap.joint_list[key]
+                m = bone_transform(crf_joint.matrix)
+                print("Bone %i\n" % key, m, "parent", crf_joint.parent_id)            
+                bpy.ops.mesh.primitive_uv_sphere_add(size=0.1, location=(0,0,0))
+                bpy.context.object.matrix_world = m
+                bpy.context.object.name = "joint_%s_%s" % (key, CRF.jointmap.bone_dict[key].bone_name)
+               
         bpy.ops.object.mode_set(mode='OBJECT')
         amt_ob.select = False
         
@@ -512,6 +509,16 @@ def load(operator, context, filepath,
                     CRF.meshfile.meshes[obj_id].vertices1[v.index].raw2blend() # convert 
                     blendindices = CRF.meshfile.meshes[obj_id].vertices1[v.index].blendindices
                     blendweights = CRF.meshfile.meshes[obj_id].vertices1[v.index].blendweights_blend
+                    """
+                    try:
+                        pos  = blendindices.index(CRF.jointmap.bone_name_id_dict[b"Bone01_L_Forearm"])
+                        blendindices = [blendindices[pos]+1]
+                        blendweights = [1.0]
+                    except ValueError:
+                        blendindices = []
+                        blendindices = []
+                    """
+                    
                     #print(blendindices, blendweights)
                     for bi,bw in zip(blendindices, blendweights):
                         #print("Assign vertex %s group %s with weight %s" % (v.index, bi, bw))

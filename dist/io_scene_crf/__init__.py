@@ -121,6 +121,12 @@ class ImportCRF(bpy.types.Operator, ImportHelper):
         description="Use vertex normals stored in CRF",
         default=False,
         )
+    
+    use_debug_bones = BoolProperty(
+        name="Debug bones",
+        description="Create spheres at joints",
+        default=False,
+        )    
 
     global_clamp_size = FloatProperty(
             name="Clamp Scale",
@@ -189,6 +195,7 @@ class ImportCRF(bpy.types.Operator, ImportHelper):
         layout.prop(self, "use_normal_texture")
         layout.prop(self, "use_specular_texture")        
         layout.prop(self, "use_computed_normals")
+        layout.prop(self, "use_debug_bones")
 
         row = layout.split(percentage=0.67)
         row.prop(self, "global_clamp_size")

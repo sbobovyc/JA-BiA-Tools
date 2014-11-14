@@ -1269,7 +1269,9 @@ class CRF_bone(object):
 
     def __str__(self):
         string = ""
-        string += "ID: %s, Name: %s, Children: %s, Unknown: %s, %s, %s, %s" % (self.bone_id, self.bone_name, self.child_list, self.i1, self.i2, self.i3, self.i4)
+        string += "ID: %s, Name: %s, Children: %s, Unknown (as ubyte): %s, %s, %s, %s" % (self.bone_id, self.bone_name, self.child_list, self.i1, self.i2, self.i3, self.i4)
+        byte = struct.pack("BBBB", self.i4, self.i3, self.i2, self.i1)        
+        string += " Unknown (as float): %s" % struct.unpack("<f", byte)
         return string
     
 class CRF_jointmap(object):
