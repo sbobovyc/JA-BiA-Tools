@@ -381,6 +381,7 @@ class CRF_object(object):
         data = b""
         #TODO update all data structures, then write them out
         mesh_data = self.meshfile.get_bin()
+        joint_data = self.jointmap.get_bin()
         
         meshfile_size = len(mesh_data)
         footer1_size = len(self.footer.entries * 32)
@@ -1053,8 +1054,7 @@ class CRF_vertex_unknown(object):
 
     def get_bin(self):
         data = b""
-        data += struct.pack("<ff", *self.blendweights)
-        data += struct.pack("<ff", *self.blendindices)
+        data += struct.pack("<ff", *self.unknown)
         return data    
     
 class CRF_vertex(object):
@@ -1248,6 +1248,11 @@ class CRF_joint(object):
         self.i1 = 0 # unknown
         self.i2 = 0 # unknown
 
+    def get_bin(self):
+        print("Getting joint in binary form")
+        data = b""
+        return data        
+
     def __str__(self):
         string = ""
         string += "Joint id: %s\n" % self.joint_id
@@ -1257,7 +1262,7 @@ class CRF_joint(object):
         string += "Unknown: %s, %s\n" % (self.i1, self.i2)
         return string
     
-class CRF_bone(object):
+class CRF_bone(object): #TODO better name since CRF does not use bones
     def __init__(self):
         self.bone_id = 0
         self.bone_name = b""
@@ -1267,6 +1272,14 @@ class CRF_bone(object):
         self.i3 = 0
         self.i4 = 0
 
+    def get_bin(self):
+        print("Getting bone in binary form")
+        data = b""
+        data += struct.pack("<II", self.bone_id, len(self.bone_name))
+        data += struct.pack("%is" % len(self.bone_name), self.bone_name)
+        data += struct.pack("<I", len(self.child_list))
+        return data
+    
     def __str__(self):
         string = ""
         string += "ID: %s, Name: %s, Children: %s, Unknown (as ubyte): %s, %s, %s, %s" % (self.bone_id, self.bone_name, self.child_list, self.i1, self.i2, self.i3, self.i4)
@@ -1289,7 +1302,7 @@ class CRF_jointmap(object):
             self.parse(file)
         
     def parse(self, file):
-        self.magick = struct.unpack("<I", file.read(4)) #TODO can there be multiple jointmaps?
+        self.magick, = struct.unpack("<I", file.read(4)) #TODO can there be multiple jointmaps?
         self.joint_count, = struct.unpack("<I", file.read(4))
         print("Joint count", self.joint_count)
 
@@ -1324,11 +1337,10 @@ class CRF_jointmap(object):
             bone = CRF_bone()
             bone_id,bone_name_length = struct.unpack("<II", file.read(8))
             bone_name, = struct.unpack("%is" % bone_name_length, file.read(bone_name_length))
-
-            num_children, = struct.unpack("<I", file.read(4))
-            
             bone.bone_id = bone_id
             bone.bone_name = bone_name
+            
+            num_children, = struct.unpack("<I", file.read(4))            
             
             for i in range(0, num_children):
                 child, = struct.unpack("<I", file.read(4))
@@ -1339,6 +1351,22 @@ class CRF_jointmap(object):
             self.bone_name_id_dict[bone.bone_name] = bone.bone_id
             print(bone)
         #TODO followd by 61 bytes of unknown
+            
+    def get_bin(self):
+        print("Getting joint in binary form")
+        data = b""
+        data = struct.pack("<I", self.magick)
+        data += struct.pack("<I", self.joint_count)
+        
+        for joint in self.joint_list:
+            data += joint.get_bin()
+
+        data += struct.pack("<I", self.bone_count)
+        data += struct.pack("<I", self.i1)
+
+        for bone in self.bone_dict:
+            data += self.bone_dict[bone].get_bin()
+        
             
     def __str__(self):
         string = ""
