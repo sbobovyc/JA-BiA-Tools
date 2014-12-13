@@ -1,6 +1,7 @@
 
 [Getting started](https://github.com/sbobovyc/JA-BiA-Tools/wiki/Getting-started) <-- Must read for new modders
 [Compiling project from source](https://github.com/sbobovyc/JA-BiA-Tools/wiki/Compiling-project-from-source)
+[Mods] (http://www.moddb.com/mods/sbobovycs-jabia-mods-tools) <strong>Mods are now distributed exclusively through moddb!</strong>
 
 ########
 BINARY
