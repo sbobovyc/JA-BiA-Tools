@@ -32,5 +32,13 @@
     <ClInclude Include="h\durable_weapons.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="resource\resource.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="resource\JABIA_durable_weapons.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

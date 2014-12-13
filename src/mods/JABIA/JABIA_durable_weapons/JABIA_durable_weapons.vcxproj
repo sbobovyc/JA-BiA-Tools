@@ -44,8 +44,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\Program Files %28x86%29\boost_1_55_0;.\h;..\h;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Program Files %28x86%29\boost_1_55_0\stage\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Program Files %28x86%29\boost_1_57_0;.\h;..\h;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Program Files %28x86%29\boost_1_57_0\stage\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -92,6 +92,10 @@
     <ClInclude Include="..\h\assembly_opcodes.h" />
     <ClInclude Include="..\h\weapons.h" />
     <ClInclude Include="h\durable_weapons.h" />
+    <ClInclude Include="resource\resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="resource\JABIA_durable_weapons.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -83,14 +83,14 @@ CTX_file ctx;
 COMBO_BOX_STATUS inventory_combo_status;
 
 INT APIENTRY DllMain(HMODULE hDLL, DWORD Reason, LPVOID Reserved)
-{
+{	
 	DWORD dwCreateionFlags = NULL;
     switch(Reason)
     {
-    case DLL_PROCESS_ATTACH:
+    case DLL_PROCESS_ATTACH:		
         g_hModule = hDLL;
 		DisableThreadLibraryCalls(hDLL);		
-		dwCreateionFlags |= CREATE_SUSPENDED;
+		//dwCreateionFlags |= CREATE_SUSPENDED; // this is only for testing with JABIA_launch_hook
         CreateThread(NULL, NULL, &MyThread, NULL, dwCreateionFlags, &g_threadID);
     break;
     case DLL_THREAD_ATTACH:
@@ -105,6 +105,7 @@ INT APIENTRY DllMain(HMODULE hDLL, DWORD Reason, LPVOID Reserved)
 
 DWORD WINAPI MyThread(LPVOID)
 {	
+	OutputDebugString(_T("In debugger MyThread"));
 	load(PATH_TO_DEBUGMOD_XML, debugmod_params);
 	TCHAR debugStrBuf [DEBUG_STR_SIZE];
 	DWORD oldProtection;
