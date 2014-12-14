@@ -38,7 +38,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 typedef void * (_stdcall *UpdateCharacterExpPtr)();
 BOOL CALLBACK DialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
-DWORD WINAPI MyThread(LPVOID);
+DWORD WINAPI XpModThread(LPVOID);
 void* myUpdateCharacterExp();
 void changeCharacterStats(void* instance);
 void myPrintCharacterXpGain(wchar_t * xp_increase, int unknown, wchar_t * xp_string);
@@ -63,7 +63,7 @@ INT APIENTRY DllMain(HMODULE hDLL, DWORD Reason, LPVOID Reserved)
     case DLL_PROCESS_ATTACH:
         g_hModule = hDLL;
 		DisableThreadLibraryCalls(hDLL);
-        CreateThread(NULL, NULL, &MyThread, NULL, NULL, &g_threadID);
+        CreateThread(NULL, NULL, &XpModThread, NULL, NULL, &g_threadID);
     break;
     case DLL_THREAD_ATTACH:
     case DLL_PROCESS_DETACH:
@@ -73,13 +73,13 @@ INT APIENTRY DllMain(HMODULE hDLL, DWORD Reason, LPVOID Reserved)
     return TRUE;
 }
 
-DWORD WINAPI MyThread(LPVOID)
+DWORD WINAPI XpModThread(LPVOID)
 {		
 	BYTE UpdateCharacterExpSavedReturn[6]; // save retn here
 
 	load(PATH_TO_XPMOD_XML, xpmod_params);
 	char buf [100];
-	// find base address of GameDemo.exe in memory
+	// find base address of game executable
 	GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, ProcessName, &game_handle);
 	// find address of character update xp function
 	UpdateCharacterExp = (UpdateCharacterExpPtr)((uint32_t)game_handle+UPDATE_EXP_OFFSET);

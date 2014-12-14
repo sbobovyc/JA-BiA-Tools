@@ -17,6 +17,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "JABIA_durable_weapons", "JA
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "JABIA_launch_hook", "JABIA_launch_hook\JABIA_launch_hook.vcxproj", "{6F4D0DAE-2FB6-4CDF-AFF3-0F71FA2E2E68}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "JABIA_map_location", "JABIA_map_location\JABIA_map_location.vcxproj", "{DA893E11-E894-4466-A333-48F98B4B711B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -106,6 +108,16 @@ Global
 		{6F4D0DAE-2FB6-4CDF-AFF3-0F71FA2E2E68}.Release|Mixed Platforms.Build.0 = Release|Win32
 		{6F4D0DAE-2FB6-4CDF-AFF3-0F71FA2E2E68}.Release|Win32.ActiveCfg = Release|Win32
 		{6F4D0DAE-2FB6-4CDF-AFF3-0F71FA2E2E68}.Release|Win32.Build.0 = Release|Win32
+		{DA893E11-E894-4466-A333-48F98B4B711B}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{DA893E11-E894-4466-A333-48F98B4B711B}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{DA893E11-E894-4466-A333-48F98B4B711B}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{DA893E11-E894-4466-A333-48F98B4B711B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{DA893E11-E894-4466-A333-48F98B4B711B}.Debug|Win32.Build.0 = Debug|Win32
+		{DA893E11-E894-4466-A333-48F98B4B711B}.Release|Any CPU.ActiveCfg = Release|Win32
+		{DA893E11-E894-4466-A333-48F98B4B711B}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{DA893E11-E894-4466-A333-48F98B4B711B}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{DA893E11-E894-4466-A333-48F98B4B711B}.Release|Win32.ActiveCfg = Release|Win32
+		{DA893E11-E894-4466-A333-48F98B4B711B}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
