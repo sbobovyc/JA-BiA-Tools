@@ -46,7 +46,7 @@ DWORD WINAPI MapLocationThread(LPVOID)
 		wsprintf(debugStrBuf, _T("%s at 0x%x"), ProcessName, game_handle);
 		OutputDebugString(debugStrBuf);
 
-		LoadLocation = (LoadLocationReturnPtr)((uint32_t)game_handle+SOMEOFFSET);
+		LoadLocation = (LoadLocationReturnPtr)((uint32_t)game_handle+MAP_LOCATION_CONSTRUCTOR_RET_OFFSET);
 		wsprintf(debugStrBuf, _T("Return at 0x%x"), LoadLocation);
 		OutputDebugString(debugStrBuf);
 	}
@@ -85,5 +85,11 @@ void __fastcall recordMapLocation(void* instance){
 
 	sprintf(buf, "Location %s, sector id %i, at 0x%X", map_location->name, map_location->sector_id, map_location);
 	OutputDebugStringA(buf);
-	//jabia_ammo_map[ammo_ptr->ID] = ammo_ptr;
+	// temp hack
+	/*
+	if(map_location->sector_id == 35) {
+		map_location->Income = 100000000;
+		map_location->Function = SAM;
+	}
+	*/
 }

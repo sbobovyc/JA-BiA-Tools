@@ -26,7 +26,7 @@
       <Element Offset="96" Vartype="4 Bytes" Bytesize="4" Description="int32, Defenders4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="100" Vartype="4 Bytes" Bytesize="4" Description="int32, Defenders5" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="104" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="108" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="108" Vartype="4 Bytes" Bytesize="4" Description="int32, ConquestAchievement" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="112" Vartype="4 Bytes" Bytesize="4" Description="int32, Descriptions" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="116" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="120" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Hexadecimal" BackgroundColor="80000005"/>
