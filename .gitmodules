@@ -1,0 +1,3 @@
+[submodule "WinHookInject"]
+	path = WinHookInject
+	url = https://github.com/sbobovyc/WinHookInject.git
