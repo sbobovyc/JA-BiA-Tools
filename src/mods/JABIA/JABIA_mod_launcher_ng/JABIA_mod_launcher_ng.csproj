@@ -37,8 +37,9 @@
     <ApplicationIcon>explosion.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="DllInjection">
-      <HintPath>..\..\..\..\..\WinHookInject\VS12\WinHookInject\DllInjection\bin\Release\DllInjection.dll</HintPath>
+    <Reference Include="DllInjection, Version=1.0.0.0, Culture=neutral, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\WinHookInject\VS12\WinHookInject\DllInjection\bin\Release\DllInjection.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
