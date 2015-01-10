@@ -381,7 +381,9 @@ class CRF_object(object):
         data = b""
         #TODO update all data structures, then write them out
         mesh_data = self.meshfile.get_bin()
-        joint_data = self.jointmap.get_bin()
+        joint_data = None
+        if self.jointmap != None:
+            joint_data = self.jointmap.get_bin()
         
         meshfile_size = len(mesh_data)
         footer1_size = len(self.footer.entries * 32)
@@ -390,6 +392,8 @@ class CRF_object(object):
         self.header.footer_offset2 = 0x14 + meshfile_size + footer1_size
         data += self.header.get_bin()
         data += mesh_data
+        if joint_data != None:
+            data += joint_data
         data += self.footer.get_bin()
         return data
     
