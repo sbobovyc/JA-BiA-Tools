@@ -348,15 +348,23 @@ def uint2float(uint_number):
     return uint_number / 4294967295
 
 def ubyte2float(ubyte_number):
-    return ubyte_number / 255
+    return ubyte_number / 255.0
 
-def int2float(int_number):
+def byte2float(int_number):
     if int_number > 128:
-        return float(int_number / 127.0)
+        return float(int_number / 255.0)
     elif int_number < 128:
-        return float(-int_number / 128.0)
+        return float(-(128.0 - int_number) / 128.0)
     else:
-        return 0.0    
+        return 0.0
+    
+def float2uint(f_number):
+    if f_number > 0.0:
+        return int(128 + f_number * 127)
+    elif f_number < 0.0:
+        return int(128 - math.fabs(f_number) * 128)
+    else:
+        return 128
     
 class CRF_object(object):
     def __init__(self):
@@ -648,7 +656,7 @@ class CRF_mesh(object):
                 face_vert_loc_indices = [v1, v2, v3]
                 face_vert_tex_indices = [v1, v2, v3]
                 self.face_list.append((v1, v2, v3))
-                if verbose:
+                if True or verbose:
                     print("face index %s, verts (%s, %s, %s)" % (i, v1, v2, v3))
 
         print("Vertex information starts at", hex(file.tell()).strip('L'))                
@@ -666,7 +674,7 @@ class CRF_mesh(object):
                     vertex.bin2raw(file, file.tell(), i)
                     vertex.raw2blend()
                     self.vertices0.append(vertex)
-                    if verbose:
+                    if True or verbose:
                         print(vertex)
                 self.vertex_stream0_layout = [layout, stride]
             
@@ -1131,22 +1139,6 @@ class CRF_vertex(object):
         string += "\tblendweight = 0x%x 0x%x 0x%x 0x%x\n" % (self.blendweights1_x & 0xff, self.blendweights1_y & 0xff, self.blendweights1_z & 0xff, self.blendweights1_w & 0xff)       
         return string
 
-    def float2uint(self, f_number):
-        if f_number > 0.0:
-            return int(128 + f_number * 127)
-        elif f_number < 0.0:
-            return int(128 - math.fabs(f_number) * 128)
-        else:
-            return 128
-    #TODO rename to int2float and make a global function    
-    def uint2float(self, uint_number):
-        if uint_number > 128:
-            return float(uint_number / 127.0)
-        elif uint_number < 128:
-            return float(-uint_number / 128.0)
-        else:
-            return 0.0
-
     def raw2blend(self):
         """ Convert raw values to blender values """
         #TODO find out how CRF object coordinates work (global or local)
@@ -1155,10 +1147,10 @@ class CRF_vertex(object):
         self.z_blend = self.z
         self.x_blend = -self.x_blend # mirror vertex across x axis
 
-        self.normal_x_blend = self.uint2float(self.normal_x)
-        self.normal_y_blend = self.uint2float(self.normal_y) 
-        self.normal_z_blend = self.uint2float(self.normal_z) 
-        self.normal_w_blend = self.uint2float(self.normal_w)
+        self.normal_x_blend = byte2float(self.normal_x)
+        self.normal_y_blend = byte2float(self.normal_y) 
+        self.normal_z_blend = byte2float(self.normal_z) 
+        self.normal_w_blend = byte2float(self.normal_w)
 
         self.specular_blue_blend = self.specular_blue / 255
         self.specular_green_blend = self.specular_green / 255
@@ -1185,10 +1177,10 @@ class CRF_vertex(object):
         self.x = -self.x # mirror vertex across x axis
         self.z = -self.z # mirror vertex across z axis
         
-        self.normal_x = self.float2uint(self.normal_x_blend)
-        self.normal_y = self.float2uint(-self.normal_y_blend) # flip y direction
-        self.normal_z = self.float2uint(-self.normal_z_blend) # flip z direction
-        self.normal_w = self.float2uint(self.normal_w_blend)
+        self.normal_x = float2uint(self.normal_x_blend)
+        self.normal_y = float2uint(-self.normal_y_blend) # flip y direction
+        self.normal_z = float2uint(-self.normal_z_blend) # flip z direction
+        self.normal_w = float2uint(self.normal_w_blend)
         
         self.specular_blue = int(self.specular_blue_blend * 255)
         self.specular_green = int(self.specular_green_blend * 255)
