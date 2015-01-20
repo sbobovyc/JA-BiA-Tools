@@ -352,20 +352,18 @@ def ubyte2float(ubyte_number):
 
 def byte2float(int_number):
     if int_number > 128:
-        return float(int_number / 255.0)
+        return float(int_number / 128.0) - 1
     elif int_number < 128:
         return float(-(128.0 - int_number) / 128.0)
     else:
-        return 0.0
+        return 0.0 
     
 def float2uint(f_number):
-    if f_number > 0.0:
-        return int(128 + f_number * 127)
-    elif f_number < 0.0:
-        return int(128 - math.fabs(f_number) * 128)
+    if f_number <= 0:
+        return int((f_number+1.0)/2.0 * 255.0 + 1)
     else:
-        return 128
-    
+        return int((f_number+1.0)/2.0 * 256.0 - 1)
+
 class CRF_object(object):
     def __init__(self):
         self.header = CRF_header()
@@ -1137,7 +1135,7 @@ class CRF_vertex(object):
         string += "\tuv0 = %i %i, 0x%x 0x%x\n" % (self.u0, self.v0, self.u0, self.v0)
         string += "\tuv1 = %i %i, 0x%x 0x%x\n" % (self.u1, self.v1, self.u1, self.v1)        
         string += "\tblendweight = 0x%x 0x%x 0x%x 0x%x\n" % (self.blendweights1_x & 0xff, self.blendweights1_y & 0xff, self.blendweights1_z & 0xff, self.blendweights1_w & 0xff)       
-        return string
+        return string   
 
     def raw2blend(self):
         """ Convert raw values to blender values """
@@ -1176,11 +1174,11 @@ class CRF_vertex(object):
         self.z = self.y_blend
         self.x = -self.x # mirror vertex across x axis
         self.z = -self.z # mirror vertex across z axis
-        
+
         self.normal_x = float2uint(self.normal_x_blend)
-        self.normal_y = float2uint(-self.normal_y_blend) # flip y direction
-        self.normal_z = float2uint(-self.normal_z_blend) # flip z direction
-        self.normal_w = float2uint(self.normal_w_blend)
+        self.normal_y = float2uint(self.normal_y_blend) 
+        self.normal_z = float2uint(self.normal_z_blend) 
+        self.normal_w = 0#float2uint(self.normal_w_blend)
         
         self.specular_blue = int(self.specular_blue_blend * 255)
         self.specular_green = int(self.specular_green_blend * 255)
