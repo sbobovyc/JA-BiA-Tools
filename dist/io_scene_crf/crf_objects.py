@@ -1175,10 +1175,12 @@ class CRF_vertex(object):
         self.x = -self.x # mirror vertex across x axis
         self.z = -self.z # mirror vertex across z axis
 
-        self.normal_x = float2uint(self.normal_x_blend)
+        print("Blender normal %i: %f, %f, %f" % (self.index, self.normal_x_blend, self.normal_y_blend, self.normal_z_blend))
+        self.normal_x = float2uint(-1*self.normal_x_blend)
         self.normal_y = float2uint(self.normal_y_blend) 
         self.normal_z = float2uint(self.normal_z_blend) 
         self.normal_w = 0#float2uint(self.normal_w_blend)
+        print("Raw normal %i: %f, %f, %f" % (self.index, self.normal_x, self.normal_y, self.normal_z))        
         
         self.specular_blue = int(self.specular_blue_blend * 255)
         self.specular_green = int(self.specular_green_blend * 255)
