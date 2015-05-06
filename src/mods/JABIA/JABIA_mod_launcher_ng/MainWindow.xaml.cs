@@ -123,8 +123,7 @@ namespace JABIA_mod_launcher_ng
     }
 
     public class Settings
-    {
-        public String version = "1.03";
+    {        
         public List<Mod> mods = new List<Mod>();
         public List<string> modPaths;
         public int delay = 1000;
@@ -174,9 +173,10 @@ namespace JABIA_mod_launcher_ng
 
         public MainWindow()
         {
+            String launcherVersion = "1.04";
             InitializeComponent();
             settings = Load();
-            String versionString = "Version " + settings.version; 
+            String versionString = "Version " + launcherVersion; 
             LogTexBox.AppendText(versionString);
             logFile.WriteLine(versionString);
             GameVersion version = GetGameVersion();
