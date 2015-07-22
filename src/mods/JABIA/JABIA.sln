@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.22823.1
+VisualStudioVersion = 14.0.23107.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "JABIA_debug", "JABIA_debug\JABIA_debug.vcxproj", "{645C9A65-BC39-46EC-BA94-87CFBAFAEBF1}"
 EndProject
@@ -107,7 +107,6 @@ Global
 		{6F4D0DAE-2FB6-4CDF-AFF3-0F71FA2E2E68}.Debug|Win32.Build.0 = Debug|Win32
 		{6F4D0DAE-2FB6-4CDF-AFF3-0F71FA2E2E68}.Release|Any CPU.ActiveCfg = Release|Win32
 		{6F4D0DAE-2FB6-4CDF-AFF3-0F71FA2E2E68}.Release|Mixed Platforms.ActiveCfg = Release|Win32
-		{6F4D0DAE-2FB6-4CDF-AFF3-0F71FA2E2E68}.Release|Mixed Platforms.Build.0 = Release|Win32
 		{6F4D0DAE-2FB6-4CDF-AFF3-0F71FA2E2E68}.Release|Win32.ActiveCfg = Release|Win32
 		{6F4D0DAE-2FB6-4CDF-AFF3-0F71FA2E2E68}.Release|Win32.Build.0 = Release|Win32
 		{DA893E11-E894-4466-A333-48F98B4B711B}.Debug|Any CPU.ActiveCfg = Debug|Win32
