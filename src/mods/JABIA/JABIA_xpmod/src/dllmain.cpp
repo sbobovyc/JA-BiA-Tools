@@ -205,6 +205,8 @@ void changeCharacterStats(void* instance) {
 	if(! (character_ptr->total_amount_health_restored % xpmod_params.medical_modulo) ) {
 		if(character_ptr->medical != 100)
 			character_ptr->medical += calc_medical(&xpmod_params, character_ptr);
+		if (character_ptr->medical > 100)
+			character_ptr->medical = 100;
 	}
 
 	total_explosives_actions += character_ptr->grenades_thrown + 
@@ -213,23 +215,31 @@ void changeCharacterStats(void* instance) {
 	if(!(total_explosives_actions % xpmod_params.explosives_modulo && total_explosives_actions != 0) ) {
 		if(character_ptr->explosives != 100)
 			character_ptr->explosives += calc_explosives(&xpmod_params, character_ptr);
+		if (character_ptr->explosives > 100)
+			character_ptr->explosives = 100;
 	}
 
 	if(!(character_ptr->enemies_killed % xpmod_params.marksmanship_modulo) && character_ptr->enemies_killed != 0) {		
 		if(character_ptr->marksmanship != 100)
 			character_ptr->marksmanship += calc_marksmanship(&xpmod_params, character_ptr);
+		if (character_ptr->marksmanship > 100)
+			character_ptr->marksmanship = 100;
 	}	
 
 	total_stealth_actions += character_ptr->times_bleeding + character_ptr->times_wounded + character_ptr->times_rescued_from_dying + character_ptr->enemies_killed;
 	if(!(total_stealth_actions % xpmod_params.stealth_modulo) && total_stealth_actions != 0) {
 		if(character_ptr->stealth != 100)
 			character_ptr->stealth += calc_stealth(&xpmod_params, character_ptr);
+		if (character_ptr->stealth > 100)
+			character_ptr->stealth = 100;
 	}
 
 	total_mechanical_actions += character_ptr->successful_locks_picked + character_ptr->successful_doors_forced + character_ptr->successful_repair_checks;
 	if(!(total_mechanical_actions % xpmod_params.mechanical_modulo) && total_mechanical_actions != 0) {
 		if(character_ptr->mechanical != 100)
 			character_ptr->mechanical += calc_mechanical(&xpmod_params, character_ptr);
+		if (character_ptr->mechanical > 100)
+			character_ptr->mechanical = 100;
 	}
 }
 
