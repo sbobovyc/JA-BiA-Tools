@@ -71,10 +71,12 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #define JABIA_CHARACTER_INV_SLOTS  15
 
 // medical conditions
-#define JABIA_CHARACTER_MED_HEALTHY								0x0000
-#define JABIA_CHARACTER_MED_WOUNDED								0x0008
-#define JABIA_CHARACTER_MED_BEING_HEALED_BY_SMALL_MEDKIT		0x0080
-#define JABIA_CHARACTER_MED_DEAD								0x0003
+#define JABIA_CHARACTER_MED_HEALTHY								0
+#define JABIA_CHARACTER_MED_DYING								1<<1
+#define JABIA_CHARACTER_MED_DEAD								1<<2
+#define JABIA_CHARACTER_MED_WOUNDED								1<<3
+#define JABIA_CHARACTER_MED_STUNNED								1<<5
+#define JABIA_CHARACTER_MED_BEING_HEALED_BY_SMALL_MEDKIT		1<<7
 
 // inventory slot is empty
 #define EMPTY_SLOT 0xFFFf
@@ -203,11 +205,11 @@ typedef struct JABIA_Character {
 	uint32_t u1;
 	uint32_t maybe_ptr0;
 	uint32_t melee_performed;
-	uint32_t grenades_thrown;
-	uint32_t uk1;
-	uint32_t uk2;
-	uint32_t uk3;
-	uint32_t uk4;
+	uint32_t total_grenades_thrown;
+	uint32_t stun_grenades_thrown;
+	uint32_t frag_grenades_thrown;
+	uint32_t smoke_grenades_thrown;
+	uint32_t gas_grenades_thrown;
 	uint32_t rockets_fired;
 	uint32_t bullets_fired;
 	uint32_t bullets_hit;
@@ -239,7 +241,10 @@ typedef struct JABIA_Character {
 	uint32_t successful_doors_forced;
 	uint32_t unsuccessful_doors_forced;
 	uint32_t total_days_in_service;
-	uint32_t uk8[5];
+	uint32_t uk8[2];
+	uint32_t enemy_mine_kills;
+	uint32_t uk8b;
+	uint32_t explosives_blown_up;
 	uint32_t maybe_ptr;
 	char pxec[4]; // just a string "pxec"  = character experience
 	uint32_t uk9;
@@ -268,7 +273,7 @@ typedef struct JABIA_Character {
 	char merc_name[JABIA_CHARACTER_MAX_NAME_LENGTH]; // seems to be fixed length, sometimes has a null terminator
 	uint32_t name_length;
 	
-	uint32_t unknown24;
+	uint32_t unknown24; // always 15?
 
 	uint32_t faction; 
 

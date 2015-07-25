@@ -1147,7 +1147,7 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 		_itot_s(character.melee_performed, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_MELEE_ATTACKS, buf);
 
-		_itot_s(character.grenades_thrown, buf, 100, 10);
+		_itot_s(character.total_grenades_thrown, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_GRENADES_THROWN, buf);
 
 		_itot_s(character.rockets_fired, buf, 100, 10);
@@ -1231,7 +1231,7 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr) {
 	// stats
 	uint32_t days_in_service;
 	uint32_t melee_attacks;
-	uint32_t grenades_thrown;
+	uint32_t total_grenades_thrown;
 	uint32_t rockets_fired;
 	uint32_t bullets_fired;
 	uint32_t damage_dealt;
@@ -1536,8 +1536,8 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr) {
 	character_ptr->melee_performed = melee_attacks;
 
 	GetDlgItemText(hwnd, IDC_GRENADES_THROWN, buf, 100);
-	grenades_thrown = _ttoi(buf);
-	character_ptr->grenades_thrown = grenades_thrown;
+	total_grenades_thrown = _ttoi(buf);
+	character_ptr->total_grenades_thrown = total_grenades_thrown;
 
 	GetDlgItemText(hwnd, IDC_ROCKETS_FIRED, buf, 100);
 	rockets_fired = _ttoi(buf);
