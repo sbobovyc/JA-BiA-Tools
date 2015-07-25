@@ -39,7 +39,7 @@ public:
 	double medical_xoffset;
 	std::vector<double> medical_modifier;
 
-	unsigned int explosives_modulo;	// how often do we update medical (default is every 10 explosives actions)
+	unsigned int explosives_modulo;	// how often do we update explosive (default is every 10 explosives actions)
 	unsigned int explosives_norm_modulo;	// sets the bounds of computation (default is 0 to 200)
 	double explosives_a;
 	double explosives_b;
@@ -136,7 +136,7 @@ public:
 };
 
 unsigned int calc_medical(JABIA_XPMOD_parameters * params, JABIA_Character * ptr);
-unsigned int calc_explosives(JABIA_XPMOD_parameters * params, JABIA_Character * ptr);
+unsigned int calc_explosives(JABIA_XPMOD_parameters * params, JABIA_Character * ptr, unsigned int total_explosives_actions);
 unsigned int calc_marksmanship(JABIA_XPMOD_parameters * params, JABIA_Character * ptr);
 unsigned int calc_stealth(JABIA_XPMOD_parameters * params, JABIA_Character * ptr);
 unsigned int calc_mechanical(JABIA_XPMOD_parameters * params, JABIA_Character * ptr);

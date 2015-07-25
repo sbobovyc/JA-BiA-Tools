@@ -1046,10 +1046,7 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 		
 		_itot_s(character.inventory.eyewear_equiped_durability, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_EYE_EQ_DUR, buf);
-		/*
-		_itot_s(character.inventory.special_equiped, buf, 100, 10);
-		SetDlgItemText(hwnd, IDC_SPC_EQ, buf);
-		*/
+
 		_itot_s(character.inventory.special_equiped_charges, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_SPC_EQ_LEFT, buf);
 		
@@ -1125,7 +1122,6 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 		SetDlgItemText(hwnd, IDC_PER, buf);
 
 		// skills
-
 		_itot_s(character.medical, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_MED, buf);
 
@@ -1143,6 +1139,40 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 
 		_itot_s(character.bleed_rate, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_BLEED_RATE, buf);
+
+		// stats
+		_itot_s(character.total_days_in_service, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_DAYS_SERVICE, buf);
+
+		_itot_s(character.melee_performed, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_MELEE_ATTACKS, buf);
+
+		_itot_s(character.grenades_thrown, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_GRENADES_THROWN, buf);
+
+		_itot_s(character.rockets_fired, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_ROCKETS_FIRED, buf);
+
+		_itot_s(character.bullets_fired, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_BULLETS_SHOT, buf);
+
+		_itot_s(character.total_damage_dealt, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_TOTAL_DAMAGE_DEALT, buf);
+
+		_itot_s(character.enemies_killed, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_ENEMIES_KILLED, buf);
+
+		_itot_s(character.total_damage_taken, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_TOTAL_DAMAGE_TAKEN, buf);
+
+		_itot_s(character.times_bleeding, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_TIMES_BLEEDING, buf);
+
+		_itot_s(character.times_wounded, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_TIMES_WOUNDED, buf);
+
+		_itot_s(character.times_rescued_from_dying, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_TIMES_RESCUED, buf);
 	}	
 }
 
@@ -1195,8 +1225,22 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr) {
 	uint32_t stealth;
 	uint32_t mechanical;
 
+	// health
 	uint32_t bleed_rate;
 
+	// stats
+	uint32_t days_in_service;
+	uint32_t melee_attacks;
+	uint32_t grenades_thrown;
+	uint32_t rockets_fired;
+	uint32_t bullets_fired;
+	uint32_t damage_dealt;
+	uint32_t enemies_killed;
+	uint32_t damage_taken;
+	uint32_t times_bleeding;
+	uint32_t times_wounded;
+	uint32_t times_rescued;
+	
 	GetDlgItemText(hwnd, IDC_LEV, buf, 100);
 	level = _ttoi(buf);
 	character_ptr->level = level;
@@ -1481,6 +1525,52 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr) {
 	GetDlgItemText(hwnd, IDC_BLEED_RATE, buf, 100);
 	bleed_rate = _ttoi(buf);
 	character_ptr->bleed_rate = bleed_rate;
+
+	// stats
+	GetDlgItemText(hwnd, IDC_DAYS_SERVICE, buf, 100);
+	days_in_service = _ttoi(buf);
+	character_ptr->total_days_in_service = days_in_service;	
+
+	GetDlgItemText(hwnd, IDC_MELEE_ATTACKS, buf, 100);
+	melee_attacks = _ttoi(buf);
+	character_ptr->melee_performed = melee_attacks;
+
+	GetDlgItemText(hwnd, IDC_GRENADES_THROWN, buf, 100);
+	grenades_thrown = _ttoi(buf);
+	character_ptr->grenades_thrown = grenades_thrown;
+
+	GetDlgItemText(hwnd, IDC_ROCKETS_FIRED, buf, 100);
+	rockets_fired = _ttoi(buf);
+	character_ptr->rockets_fired = rockets_fired;
+
+	GetDlgItemText(hwnd, IDC_BULLETS_SHOT, buf, 100);
+	bullets_fired = _ttoi(buf);
+	character_ptr->bullets_fired = bullets_fired;
+
+	GetDlgItemText(hwnd, IDC_TOTAL_DAMAGE_DEALT, buf, 100);
+	damage_dealt = _ttoi(buf);
+	character_ptr->total_damage_dealt = damage_dealt;
+
+	GetDlgItemText(hwnd, IDC_ENEMIES_KILLED, buf, 100);
+	enemies_killed = _ttoi(buf);
+	character_ptr->enemies_killed = enemies_killed;
+
+	GetDlgItemText(hwnd, IDC_TOTAL_DAMAGE_TAKEN, buf, 100);
+	damage_taken = _ttoi(buf);
+	character_ptr->total_damage_taken = damage_taken;
+
+	GetDlgItemText(hwnd, IDC_TIMES_BLEEDING, buf, 100);
+	times_bleeding = _ttoi(buf);
+	character_ptr->times_bleeding = times_bleeding;
+
+	GetDlgItemText(hwnd, IDC_TIMES_WOUNDED, buf, 100);
+	times_wounded = _ttoi(buf);
+	character_ptr->times_wounded = times_wounded;
+
+	GetDlgItemText(hwnd, IDC_TIMES_RESCUED, buf, 100);
+	times_rescued = _ttoi(buf);
+	character_ptr->times_rescued_from_dying = times_rescued;
+
 }
 
 int getIdFromString(TCHAR * buf) {

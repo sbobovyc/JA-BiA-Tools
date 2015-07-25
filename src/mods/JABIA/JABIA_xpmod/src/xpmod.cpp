@@ -52,30 +52,21 @@ unsigned int calc_medical(JABIA_XPMOD_parameters * params, JABIA_Character * ptr
 	return unsigned int(points);
 }
 
-unsigned int calc_explosives(JABIA_XPMOD_parameters * params, JABIA_Character * ptr) {
-	// y = (-(explosives_a * (explosive actions % modulo) - explosives_xoffset)^2 + explosives_b)*explosives_modifier
+unsigned int calc_explosives(JABIA_XPMOD_parameters * params, JABIA_Character * ptr, unsigned int total_explosives_actions) {
 	double points = 0.0;
-	double explosives_modifier = 0.0;
-	unsigned int total_explosives_actions = 0;
-
-	if(ptr->intelligence > 80.0) {
-		explosives_modifier = params->explosives_modifier[0];
-	} else if(ptr->intelligence > 70.0){
-		explosives_modifier = params->explosives_modifier[1];
-	} else {
-		explosives_modifier = params->explosives_modifier[2];
-	}
-	total_explosives_actions += ptr->grenades_thrown + ptr->successful_mines_planted + ptr->successful_mines_disarmed + ptr->successful_explosives_planted + ptr->rockets_fired;
-	points = (params->explosives_a * (total_explosives_actions % params->explosives_norm_modulo)) + params->explosives_xoffset;
-	points *= points;
-	points *= -1.0;
-	points += params->explosives_b;
-	points *= explosives_modifier;
-	points = floor(points);
-	if(points > 100)
+	points = floor(sqrt((total_explosives_actions + 14)) * 100 / sqrt(200) * (ptr->intelligence / 100.) * 0.95);
+	if (points > 100.0) {
 		points = 100;
-	if(points < 0)
-		points = 0;
+	}
+	else if (points < 0.0) {
+	points = 0;
+	} else if (points < ptr->explosives) {
+		points = ptr->explosives;
+	}
+
+	char buf[100];
+	wsprintf(buf, "calc_explosvies = %i", int(points));
+	OutputDebugString(buf);
 	return unsigned int(points);
 }
 

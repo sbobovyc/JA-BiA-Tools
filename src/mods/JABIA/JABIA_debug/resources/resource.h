@@ -46,6 +46,7 @@
 #define IDM_DUMP_CHARACTER                      30004
 #define IDM_DUMP_ALL                            30005
 #define IDC_COMBO_EQUIPED_WEAPON                40000
+#define IDM_CHARACTER_LIFE_STATS                40000
 #define IDC_COMBO_INVENTORY_WEAPON              40001
 #define IDC_COMBO_INVENTORY_SLOT                40002
 #define IDC_COMBO_WEAPON_SLOT                   40003
@@ -63,3 +64,14 @@
 #define IDSUPER                                 40015
 #define IDFIXGEAR                               40016
 #define IDMASTERKEY                             40017
+#define IDC_DAYS_SERVICE                        40018
+#define IDC_MELEE_ATTACKS                       40019
+#define IDC_GRENADES_THROWN                     40020
+#define IDC_ROCKETS_FIRED                       40021
+#define IDC_BULLETS_SHOT                        40022
+#define IDC_ENEMIES_KILLED                      40023
+#define IDC_TOTAL_DAMAGE_DEALT                  40024
+#define IDC_TOTAL_DAMAGE_TAKEN                  40025
+#define IDC_TIMES_BLEEDING                      40026
+#define IDC_TIMES_WOUNDED                       40027
+#define IDC_TIMES_RESCUED                       40028

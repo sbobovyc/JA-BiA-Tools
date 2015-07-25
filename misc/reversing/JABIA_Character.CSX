@@ -35,20 +35,20 @@
       <Element Offset="120" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="124" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="128" Vartype="4 Bytes" Bytesize="4" Description="rockets_fired" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="132" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="136" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="140" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="144" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="148" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="152" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="132" Vartype="4 Bytes" Bytesize="4" Description="bullets_fired" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="136" Vartype="4 Bytes" Bytesize="4" Description="bullets_hit" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="140" Vartype="4 Bytes" Bytesize="4" Description="bullets_hit_noncritical" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="144" Vartype="4 Bytes" Bytesize="4" Description="bullets_hit_critical" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="148" Vartype="4 Bytes" Bytesize="4" Description="enemies_killed" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="152" Vartype="4 Bytes" Bytesize="4" Description="damage_dealt" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="156" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="160" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="164" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="168" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="172" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="176" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="164" Vartype="4 Bytes" Bytesize="4" Description="damage_taken" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="168" Vartype="4 Bytes" Bytesize="4" Description="times_bleeding" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="172" Vartype="4 Bytes" Bytesize="4" Description="times_wounded" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="176" Vartype="4 Bytes" Bytesize="4" Description="times_rescued" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="180" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="184" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="184" Vartype="4 Bytes" Bytesize="4" Description="successful_healing_checks" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="188" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="192" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="196" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
@@ -64,7 +64,7 @@
       <Element Offset="236" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="240" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="244" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="248" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="248" Vartype="4 Bytes" Bytesize="4" Description="days_in_service" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="252" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="256" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="260" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
@@ -74,18 +74,18 @@
       <Element Offset="276" Vartype="String" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="280" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Hexadecimal" BackgroundColor="80000005"/>
       <Element Offset="284" Vartype="4 Bytes" Bytesize="4" Description="level" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="288" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="292" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="296" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="300" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="304" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="308" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="312" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="316" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="320" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="324" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="328" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="332" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="288" Vartype="4 Bytes" Bytesize="4" Description="experience" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="292" Vartype="4 Bytes" Bytesize="4" Description="training_points" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="296" Vartype="4 Bytes" Bytesize="4" Description="agility_inc" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="300" Vartype="4 Bytes" Bytesize="4" Description="dexterity_inc" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="304" Vartype="4 Bytes" Bytesize="4" Description="strength_inc" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="308" Vartype="4 Bytes" Bytesize="4" Description="intelligence_inc" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="312" Vartype="4 Bytes" Bytesize="4" Description="perception_inc" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="316" Vartype="4 Bytes" Bytesize="4" Description="medical_inc" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="320" Vartype="4 Bytes" Bytesize="4" Description="explosives_inc" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="324" Vartype="4 Bytes" Bytesize="4" Description="marksmanship_inc" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="328" Vartype="4 Bytes" Bytesize="4" Description="stealth_inc" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="332" Vartype="4 Bytes" Bytesize="4" Description="mechanical_inc" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="336" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="340" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="344" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
@@ -103,14 +103,14 @@
       <Element Offset="392" Vartype="2 Bytes" Bytesize="2" Description="weapon_in_hand" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="394" Vartype="2 Bytes" Bytesize="2" Description="weapon_in_hand_removable" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="396" Vartype="2 Bytes" Bytesize="2" Description="weapon_in_hand_durability" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="397" Vartype="2 Bytes" Bytesize="2" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="398" Vartype="2 Bytes" Bytesize="2" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="400" Vartype="2 Bytes" Bytesize="2" Description="special_equiped" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="404" Vartype="Byte" Bytesize="1" DisplayMethod="Hexadecimal" BackgroundColor="80000005"/>
-      <Element Offset="408" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="412" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="416" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Hexadecimal" BackgroundColor="80000005"/>
-      <Element Offset="420" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="424" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="402" Vartype="2 Bytes" Bytesize="2" Description="special_equiped_status" DisplayMethod="Hexadecimal" BackgroundColor="80000005"/>
+      <Element Offset="404" Vartype="2 Bytes" Bytesize="2" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="406" Vartype="2 Bytes" Bytesize="2" Description="special_equiped_charges" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="408" Vartype="2 Bytes" Bytesize="2" Description="cap_equiped" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="410" Vartype="2 Bytes" Bytesize="2" Description="cap_equiped_removable" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="412" Vartype="2 Bytes" Bytesize="2" Description="cap_equiped_durability" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="428" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="432" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="436" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
@@ -169,14 +169,14 @@
       <Element Offset="664" Vartype="Float" Bytesize="4" Description="health" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="668" Vartype="Float" Bytesize="4" Description="stamina" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="672" Vartype="4 Bytes" Bytesize="4" Description="agility" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="676" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="680" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="684" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="688" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="692" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="696" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="700" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="704" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="676" Vartype="4 Bytes" Bytesize="4" Description="dexterity" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="680" Vartype="4 Bytes" Bytesize="4" Description="strength" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="684" Vartype="4 Bytes" Bytesize="4" Description="intelligence" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="688" Vartype="4 Bytes" Bytesize="4" Description="perception" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="692" Vartype="4 Bytes" Bytesize="4" Description="medical" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="696" Vartype="4 Bytes" Bytesize="4" Description="explosive" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="700" Vartype="4 Bytes" Bytesize="4" Description="marksmanship" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="704" Vartype="4 Bytes" Bytesize="4" Description="stealth" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="708" Vartype="4 Bytes" Bytesize="4" Description="mechanical" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="712" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="716" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>

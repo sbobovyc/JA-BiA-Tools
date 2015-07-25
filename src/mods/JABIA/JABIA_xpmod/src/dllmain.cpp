@@ -198,10 +198,10 @@ void changeCharacterStats(void* instance) {
 	char buf [100];
 	JABIA_Character * character_ptr = (JABIA_Character *)((uint32_t)instance - 0x110);
 	
-	wsprintf(buf, "Updating stats of character at 0x%X, %s", character_ptr, character_ptr->merc_name);
+	wsprintf(buf, "Updating stats of: %s (0x%x)", character_ptr->merc_name, character_ptr);
 	OutputDebugString(buf);
 
-	// do whatever i want with the character	
+	// do whatever i want with the character stats
 	if(! (character_ptr->total_amount_health_restored % xpmod_params.medical_modulo) ) {
 		if(character_ptr->medical != 100)
 			character_ptr->medical += calc_medical(&xpmod_params, character_ptr);
@@ -211,14 +211,19 @@ void changeCharacterStats(void* instance) {
 
 	total_explosives_actions += character_ptr->grenades_thrown + 
 										character_ptr->successful_mines_planted + 
-										character_ptr->successful_mines_disarmed + character_ptr->successful_explosives_planted;
-	if(!(total_explosives_actions % xpmod_params.explosives_modulo && total_explosives_actions != 0) ) {
+										character_ptr->successful_mines_disarmed + 
+										character_ptr->successful_explosives_planted +
+										character_ptr->rockets_fired;
+	wsprintf(buf, "total_explosives_actions=%i, module=%i", total_explosives_actions, total_explosives_actions % xpmod_params.explosives_modulo);
+	OutputDebugString(buf);
+	if(/*!(total_explosives_actions % xpmod_params.explosives_modulo) &&*/ total_explosives_actions != 0) {		
+		OutputDebugString("Calcing explosives");
 		if(character_ptr->explosives != 100)
-			character_ptr->explosives += calc_explosives(&xpmod_params, character_ptr);
+			character_ptr->explosives = calc_explosives(&xpmod_params, character_ptr, total_explosives_actions);
 		if (character_ptr->explosives > 100)
 			character_ptr->explosives = 100;
 	}
-
+	
 	if(!(character_ptr->enemies_killed % xpmod_params.marksmanship_modulo) && character_ptr->enemies_killed != 0) {		
 		if(character_ptr->marksmanship != 100)
 			character_ptr->marksmanship += calc_marksmanship(&xpmod_params, character_ptr);
