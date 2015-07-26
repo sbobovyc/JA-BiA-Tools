@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "JABIA-Tools mod launcher for BIA"
-#define MyAppVersion "0.1a"
+#define MyAppVersion "1.05"
 #define MyAppPublisher "JABIA-Tools Project"
 #define MyAppURL "https://github.com/sbobovyc/JA-BiA-Tools"
 #define MyAppExeName "JABIA_mod_launcher_ng.exe"

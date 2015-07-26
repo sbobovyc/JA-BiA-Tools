@@ -278,18 +278,7 @@ typedef struct JABIA_Character {
 	uint32_t faction; 
 
 	// medical condition is managed by some state machine
-	uint32_t medical_condition; // 0 or 1 = healthy, 
-								// 2 or 3 = dying, 4 = dead, 17 ?= bleeding, 27 = wounded, 128 = being bandaged
-								// 145 = being healed by large medkit while bleeding
-	// probably a bit field
-	// bit 0 = healthy? initially 1
-	// bit 1 = dying
-	// bit 2 = dead
-	// bit 3 = wounded
-	// bit 4 = unknown
-	// bit 5 = unknown
-	// bit 6 = 
-	// bit 7 = being healed by large medkit
+	uint32_t medical_condition; 
 
 	float health;
 	float stamina;

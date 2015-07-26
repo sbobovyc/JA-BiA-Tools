@@ -209,7 +209,7 @@ void changeCharacterStats(void* instance) {
 			character_ptr->medical = 100;
 	}
 
-	total_explosives_actions += character_ptr->grenades_thrown + 
+	total_explosives_actions += character_ptr->total_grenades_thrown + 
 										character_ptr->successful_mines_planted + 
 										character_ptr->successful_mines_disarmed + 
 										character_ptr->successful_explosives_planted +

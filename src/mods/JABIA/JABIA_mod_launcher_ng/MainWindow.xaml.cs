@@ -173,7 +173,7 @@ namespace JABIA_mod_launcher_ng
 
         public MainWindow()
         {
-            String launcherVersion = "1.04";
+            String launcherVersion = "1.05";
             InitializeComponent();
             settings = Load();
             String versionString = "Version " + launcherVersion; 
