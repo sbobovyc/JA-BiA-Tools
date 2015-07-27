@@ -30,37 +30,34 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #include "xpmod.h"
 
 unsigned int calc_medical(JABIA_XPMOD_parameters * params, JABIA_Character * ptr) {
-	// y = (-(medical_a * (heal points % modulo) - medical_xoffset)^2 + medical_b)*medical_modifier
 	double points = 0.0;
-	double medical_modifier = 0.0;
-
-	if(ptr->intelligence > 80.0) {
-		medical_modifier = params->medical_modifier[0];
-	} else {
-		medical_modifier = params->medical_modifier[1];
-	}
-	points = (params->medical_a * (ptr->total_amount_health_restored % params->medical_norm_modulo)) + params->medical_xoffset;
-	points *= points;
-	points *= -1.0;
-	points += params->medical_b;
-	points *= medical_modifier;
-	points = floor(points);
-	if(points > 100)
-		points = 100;
-	if(points < 0)
-		points = 0;
-	return unsigned int(points);
-}
-
-unsigned int calc_explosives(JABIA_XPMOD_parameters * params, JABIA_Character * ptr, unsigned int total_explosives_actions) {
-	double points = 0.0;
-	points = floor(sqrt((total_explosives_actions + 14)) * 100 / sqrt(200) * (ptr->intelligence / 100.) * 0.95);
+	points = floor(sqrt(ptr->total_amount_health_restored) * (100 / sqrt(7000)) * (1. + ptr->intelligence / 150.));
 	if (points > 100.0) {
 		points = 100.0;
 	}
 	else if (points < 0.0) {
 		points = 0;
-	} else if (points < ptr->explosives) {
+	}
+	else if (points < ptr->medical) {
+		points = ptr->medical;
+	}
+
+	char buf[100];
+	wsprintf(buf, "calc_medical = %i", int(points));
+	OutputDebugString(buf);
+	return unsigned int(points);
+}
+
+unsigned int calc_explosives(JABIA_XPMOD_parameters * params, JABIA_Character * ptr, unsigned int total_explosives_actions) {
+	double points = 0.0;
+	points = floor(sqrt(total_explosives_actions) * (100 / sqrt(500)) * (1. + ptr->intelligence / 150.));
+	if (points > 100.0) {
+		points = 100.0;
+	}
+	else if (points < 0.0) {
+		points = 0;
+	}
+	else if (points < ptr->explosives) {
 		points = ptr->explosives;
 	}
 
@@ -76,33 +73,19 @@ unsigned int calc_marksmanship(JABIA_XPMOD_parameters * params, JABIA_Character 
 	sprintf(buf, "Marksmanship accuracy %f", accuracy);
 	OutputDebugString(buf);
 
-	// y = (-(marksmanship_a * (kills % modulo) - marksmanship_xoffset)^2 + marksmanship_b)*accuracy_modifier
 	double points = 0.0;
-	double accuracy_modifier = 0.0;
+	points = floor(sqrt(ptr->bullets_fired) * (1. + (ptr->intelligence / 150.0)) * (1. + accuracy) * 0.8);
 
-	if(accuracy > 80.0) {
-		accuracy_modifier = params->marksmanship_accuracy_modifier[0];
-	} else {
-		accuracy_modifier = params->marksmanship_accuracy_modifier[1];
+	if (points > 100.0) {
+		points = 100.0;
 	}
-
-	sprintf(buf, "Marksmanship accuracy modifier %f", accuracy_modifier);
-	OutputDebugString(buf);
-
-	points = (params->marksmanship_a * (ptr->enemies_killed % params->marksmanship_norm_modulo)) + params->marksmanship_xoffset;
-	points *= points;
-	points *= -1.0;
-	points += params->marksmanship_b;
-	points *= accuracy_modifier;
-	sprintf(buf, "Marksmanship gain before floor %f", points);
-	OutputDebugString(buf);
-	points = floor(points);
-
-	if(points > 100)
-		points = 100;
-	if(points < 0)
+	else if (points < 0.0) {
 		points = 0;
-	sprintf(buf, "Marksmanship point gain %f", points);
+	}
+	else if (points < ptr->marksmanship) {
+		points = ptr->marksmanship;
+	}
+	sprintf(buf, "Marksmanship points %i", points);
 	OutputDebugString(buf);
 	return unsigned int(points);
 }

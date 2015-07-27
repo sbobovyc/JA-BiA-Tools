@@ -1170,6 +1170,15 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 
 		_itot_s(character.times_rescued_from_dying, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_TIMES_RESCUED, buf);
+
+		_itot_s(character.successful_healing_checks, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_SUCCESSFUL_HEALING_CHECKS, buf);
+
+		_itot_s(character.unsuccessful_healing_checks, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_UNSUCCESSFUL_HEALING_CHECKS, buf);
+
+		_itot_s(character.total_amount_health_restored, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_TOTAL_AMOUNT_HEALTH_RESTORED, buf);
 	}	
 }
 
@@ -1237,7 +1246,28 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr) {
 	uint32_t times_bleeding;
 	uint32_t times_wounded;
 	uint32_t times_rescued;
-	
+	uint32_t successful_healing_checks;
+	uint32_t unsuccessful_healing_checks;
+	uint32_t total_amount_health_restored;
+	uint32_t successful_repair_checks;
+	uint32_t unsuccessful_repair_checks;
+	uint32_t total_amount_durability_restored;
+	uint32_t successful_mines_disarmed;
+	uint32_t unsuccessful_mines_disarmed;
+	uint32_t successful_mines_planted;
+	uint32_t unsuccessful_mines_planted;
+	uint32_t successful_explosives_planted;
+	uint32_t unsuccessful_explosives_planted;
+	uint32_t successful_locks_picked;
+	uint32_t unsuccessful_locks_picked;
+	uint32_t successful_doors_forced;
+	uint32_t unsuccessful_doors_forced;
+	uint32_t total_days_in_service;
+	uint32_t hand_to_hand_kills;
+	uint32_t frag_grenade_kills;
+	uint32_t enemy_mine_kills;
+	uint32_t explosives_blown_up;
+
 	GetDlgItemText(hwnd, IDC_LEV, buf, 100);
 	level = _ttoi(buf);
 	character_ptr->level = level;
@@ -1568,6 +1598,17 @@ void setCharacter(HWND hwnd, JABIA_Character * ptr) {
 	times_rescued = _ttoi(buf);
 	character_ptr->times_rescued_from_dying = times_rescued;
 
+	GetDlgItemText(hwnd, IDC_SUCCESSFUL_HEALING_CHECKS, buf, 100);
+	successful_healing_checks = _ttoi(buf);
+	character_ptr->successful_healing_checks = successful_healing_checks;
+
+	GetDlgItemText(hwnd, IDC_UNSUCCESSFUL_HEALING_CHECKS, buf, 100);
+	unsuccessful_healing_checks = _ttoi(buf);
+	character_ptr->unsuccessful_healing_checks = unsuccessful_healing_checks;
+
+	GetDlgItemText(hwnd, IDC_TOTAL_AMOUNT_HEALTH_RESTORED, buf, 100);
+	total_amount_health_restored = _ttoi(buf);
+	character_ptr->total_amount_health_restored = total_amount_health_restored;
 }
 
 int getIdFromString(TCHAR * buf) {
