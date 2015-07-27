@@ -12,6 +12,10 @@
       <UniqueIdentifier>{0a2ad2c3-2d21-4ce0-a70a-0798f86bfb1d}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{e94da0a5-09b3-4bc1-88c2-fcd2be0a2608}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -26,6 +30,9 @@
   <ItemGroup>
     <ClInclude Include="resource\resource.h">
       <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="h\loot_drop.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

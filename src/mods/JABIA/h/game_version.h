@@ -35,6 +35,8 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #define JABIA
 //#define JAC
 
+#define DEBUG_STR_SIZE 1024
+
 #if defined(JABIA)
 static TCHAR ProcessName[] = _T("GameJABiA.exe");
 static TCHAR LauncherProcessName[] = _T("JaggedAllianceBIA.exe");

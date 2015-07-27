@@ -56,10 +56,10 @@ unsigned int calc_explosives(JABIA_XPMOD_parameters * params, JABIA_Character * 
 	double points = 0.0;
 	points = floor(sqrt((total_explosives_actions + 14)) * 100 / sqrt(200) * (ptr->intelligence / 100.) * 0.95);
 	if (points > 100.0) {
-		points = 100;
+		points = 100.0;
 	}
 	else if (points < 0.0) {
-	points = 0;
+		points = 0;
 	} else if (points < ptr->explosives) {
 		points = ptr->explosives;
 	}

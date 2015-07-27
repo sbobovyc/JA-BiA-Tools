@@ -58,7 +58,7 @@ EXPORT BOOL CALLBACK DialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
 #endif
 
 
-DWORD WINAPI MyThread(LPVOID);
+DWORD WINAPI DebugThread(LPVOID);
 // my hooks
 void* myCharacterConstReturn();
 void* myCharacterDestReturn();

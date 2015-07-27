@@ -32,16 +32,16 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #include "game_version.h"
 
 #if defined(JABIA)
+// character debugger
 #define CHARACTER_CONST_OFFSET 0x132880
 #define CHARACTER_CONST_RETN_OFFSET 0x2D8
 #define CHARACTER_DESTRUCTOR_OFFSET 0x132B60
 #define CHARACTER_DESTRUCTOR_RETN_OFFSET 0x132BB8 // pop edi 
 // modding drop loot functionality
 #define CALC_DROP_LOOT_OFFSET 0x0013A3F0
-#define WEAPON_DROP_FLD_OFFSET 0x0053A4C5 //TODO change to relative offset
-#define ITEM_DROP_FLD_OFFSET 0x0053A519	  //TODO change to relative offset
-#define ONE_FLT 0x0071E02C // 1.0 constant in .rdata segment
-#define INVENTORY_DROP_SWTCH_TABLE 0x0053A540
+#define WEAPON_DROP_FLD_OFFSET 0x0013A4C5 //TODO change to relative offset
+#define ITEM_DROP_FLD_OFFSET 0x0013A519	  //TODO change to relative offset
+#define INVENTORY_DROP_SWTCH_TABLE 0x0013A540
 // modding exp gain function
 #define UPDATE_EXP_OFFSET 0x14C470
 #elif defined(JAC)
@@ -181,11 +181,13 @@ typedef struct JABIA_Character_inventory {
 
 	uint16_t ammo_equiped;
 	uint16_t ammo_equiped_count;
-	uint32_t unknown19;
+	uint16_t unknown19;
+	uint16_t unknown20;
 
 	uint16_t weapon_attachment_removable;
 	uint16_t weapon_attachment_status; // 0 > means you can remove it, less than 0 means you can't
-	uint32_t unknown20;
+	uint16_t unknown21;
+	uint16_t unknown22;
 
 	// inventory is divided between weapons and items
 	JABIA_Character_weapon weapons[3];
@@ -203,7 +205,7 @@ typedef struct JABIA_Character {
 	char ctsc[4]; // just a string "ctsc"  = character statistics
 	uint32_t u0;
 	uint32_t u1;
-	uint32_t maybe_ptr0;
+	uint32_t uk_ptr0;
 	uint32_t melee_performed;
 	uint32_t total_grenades_thrown;
 	uint32_t stun_grenades_thrown;
@@ -241,11 +243,12 @@ typedef struct JABIA_Character {
 	uint32_t successful_doors_forced;
 	uint32_t unsuccessful_doors_forced;
 	uint32_t total_days_in_service;
-	uint32_t uk8[2];
+	uint32_t hand_to_hand_kills;
+	uint32_t frag_grenade_kills;	 // gas does not count
 	uint32_t enemy_mine_kills;
-	uint32_t uk8b;
+	uint32_t uk8;
 	uint32_t explosives_blown_up;
-	uint32_t maybe_ptr;
+	uint32_t uk_ptr1;
 	char pxec[4]; // just a string "pxec"  = character experience
 	uint32_t uk9;
 		
@@ -268,7 +271,9 @@ typedef struct JABIA_Character {
 
 	JABIA_Character_inventory inventory;
 
-	uint32_t unknown23[4]; //3 is possibly length of something
+	uint32_t unknown23[2]; 
+	uint32_t fire_mode; // single = 0, burst = 1 
+	uint32_t unknown23b;
 
 	char merc_name[JABIA_CHARACTER_MAX_NAME_LENGTH]; // seems to be fixed length, sometimes has a null terminator
 	uint32_t name_length;
@@ -308,9 +313,6 @@ typedef struct JABIA_Character {
 	uint32_t mod_perception;	// as of 1.13g this does not seem to have an affect
 
 	uint32_t bleed_rate;		// setting this to 0 stops bleeding
-
-
-
 } JABIA_Character;
 
 

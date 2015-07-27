@@ -48,8 +48,6 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #pragma comment(lib, "detours.lib")
 
-#define DEBUG_STR_SIZE 1024
-
 CharacterConstReturnPtr ParseCharacter;
 CharacterDestReturnPtr RemoveCharacter;
 CharacterDestructorPtr CharacterDestructor;
@@ -91,7 +89,7 @@ INT APIENTRY DllMain(HMODULE hDLL, DWORD Reason, LPVOID Reserved)
         g_hModule = hDLL;
 		DisableThreadLibraryCalls(hDLL);		
 		//dwCreateionFlags |= CREATE_SUSPENDED; // this is only for testing with JABIA_launch_hook
-        CreateThread(NULL, NULL, &MyThread, NULL, dwCreateionFlags, &g_threadID);
+        CreateThread(NULL, NULL, &DebugThread, NULL, dwCreateionFlags, &g_threadID);
     break;
     case DLL_THREAD_ATTACH:
     case DLL_PROCESS_DETACH:
@@ -103,9 +101,8 @@ INT APIENTRY DllMain(HMODULE hDLL, DWORD Reason, LPVOID Reserved)
 
 
 
-DWORD WINAPI MyThread(LPVOID)
+DWORD WINAPI DebugThread(LPVOID)
 {	
-	OutputDebugString(_T("In debugger MyThread"));
 	load(PATH_TO_DEBUGMOD_XML, debugmod_params);
 	TCHAR debugStrBuf [DEBUG_STR_SIZE];
 	DWORD oldProtection;

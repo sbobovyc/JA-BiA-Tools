@@ -209,14 +209,18 @@ void changeCharacterStats(void* instance) {
 			character_ptr->medical = 100;
 	}
 
-	total_explosives_actions += character_ptr->total_grenades_thrown + 
-										character_ptr->successful_mines_planted + 
-										character_ptr->successful_mines_disarmed + 
-										character_ptr->successful_explosives_planted +
-										character_ptr->rockets_fired;
-	wsprintf(buf, "total_explosives_actions=%i, module=%i", total_explosives_actions, total_explosives_actions % xpmod_params.explosives_modulo);
+	total_explosives_actions += 
+		character_ptr->successful_mines_planted +
+		character_ptr->successful_mines_disarmed +
+		character_ptr->successful_explosives_planted +
+		character_ptr->rockets_fired +
+		character_ptr->frag_grenade_kills +
+		character_ptr->enemy_mine_kills +
+		character_ptr->explosives_blown_up;
+
+	wsprintf(buf, "total_explosives_actions=%i", total_explosives_actions);
 	OutputDebugString(buf);
-	if(/*!(total_explosives_actions % xpmod_params.explosives_modulo) &&*/ total_explosives_actions != 0) {		
+	if(total_explosives_actions != 0) {		
 		OutputDebugString("Calcing explosives");
 		if(character_ptr->explosives != 100)
 			character_ptr->explosives = calc_explosives(&xpmod_params, character_ptr, total_explosives_actions);
