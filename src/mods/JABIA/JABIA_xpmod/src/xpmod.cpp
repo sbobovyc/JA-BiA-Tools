@@ -69,13 +69,108 @@ unsigned int calc_explosives(JABIA_XPMOD_parameters * params, JABIA_Character * 
 
 unsigned int calc_marksmanship(JABIA_XPMOD_parameters * params, JABIA_Character * ptr) {
 	char buf[100];
+	const double intelligence_denominator = 150.0;
+	const double scaler = 0.5;
+	const double learning_time = 0.1; // 10%
+
+
 	double accuracy = double(ptr->bullets_hit) / double(ptr->bullets_fired);
-	sprintf(buf, "Marksmanship accuracy %f", accuracy);
+	sprintf(buf, "Marksmanship accuracy %f, bullets_hit addr = 0x%x, bullets_fired = 0x%x", accuracy, &ptr->bullets_hit, &ptr->bullets_fired);
 	OutputDebugString(buf);
 
-	double points = 0.0;
-	points = floor(sqrt(ptr->bullets_fired) * (1. + (ptr->intelligence / 150.0)) * (1. + accuracy) * 0.8);
+	// init, solve for x
+	double x =  double(ptr->marksmanship) / ((1. + (ptr->intelligence / intelligence_denominator)) * (1. + accuracy) * scaler);
+	x *= x;
+	sprintf(buf, "X = %i", int(floor(x)));
+	OutputDebugString(buf);
+	if (ptr->bullets_fired < int(floor(x))) {
+		sprintf(buf, "calc_marksmanship, learning stage, %s, estimated learning time %i", ptr->merc_name, int(floor(x*learning_time)));
+		OutputDebugString(buf);
+		if (ptr->bullets_fired > x*learning_time) {
+			ptr->bullets_fired = int(floor(x));
+			ptr->bullets_hit = int(floor(x * accuracy));
+			OutputDebugString("Learning over");
+			
+		}
+		return ptr->marksmanship;		
+	}
+	// end init
 
+#define DEBUG_MARKSMANSHIP
+#ifdef DEBUG_MARKSMANSHIP
+	x = double(ptr->marksmanship+1) / ((1. + (ptr->intelligence / intelligence_denominator)) * (1. + accuracy) * scaler);
+	x *= x;
+	sprintf(buf, "calc_marksmanship, %s, estimated bullets fired till increase %i", ptr->merc_name, int(floor(x - ptr->bullets_fired)));
+	OutputDebugString(buf);
+#endif
+
+	double points = 0.0;
+	points = floor(sqrt(ptr->bullets_fired) * (1. + (ptr->intelligence / intelligence_denominator)) * (1. + accuracy) * scaler);
+
+	if (points > 100.0) {
+		points = 100.0;
+	}
+	else if (points < ptr->marksmanship) {
+		points = ptr->marksmanship;
+	}
+	else if (points < 0.0) {
+		points = 0;
+	}
+
+	sprintf(buf, "Marksmanship points %i", int(points));
+	OutputDebugString(buf);
+	return unsigned int(points);
+}
+
+unsigned int calc_stealth(JABIA_XPMOD_parameters * params, JABIA_Character * ptr) {
+	char buf[100];
+	double points = 0.0;
+	double stealth_actions = 0.0;
+	double anti_stealth_actions = 0.0;
+	double damage_ratio = 0.0;
+	
+	stealth_actions = ptr->hand_to_hand_kills + ptr->melee_performed;
+	anti_stealth_actions = ptr->times_bleeding + ptr->times_wounded + ptr->times_rescued_from_dying;
+	damage_ratio = double(ptr->total_damage_dealt) / double(ptr->total_damage_taken);
+
+	if ((stealth_actions - anti_stealth_actions) < 0.) {
+		return ptr->stealth;
+	}
+
+	double recalculated_damage_ratio = 1.0;
+	if (damage_ratio < 1 / 3.) {
+		recalculated_damage_ratio = damage_ratio;
+	}
+	else {
+		recalculated_damage_ratio = damage_ratio / 3.;
+	}
+
+	points = floor(sqrt(stealth_actions - anti_stealth_actions) * (100. / sqrt(200.0)) * recalculated_damage_ratio);
+
+	if (points > 100.0) {
+		points = 100.0;
+	}
+	else if (points < 0.0) {
+		points = 0;
+	}
+	else if (points < ptr->stealth) {
+		points = ptr->stealth;
+	}
+	sprintf(buf, "Stealth points %i", points);
+	OutputDebugString(buf);
+	return unsigned int(points);
+}
+
+
+unsigned int calc_mechanical(JABIA_XPMOD_parameters * params, JABIA_Character * ptr) {
+	char buf[255];
+	
+	double points = 0.0;
+	unsigned int total_mechanical_actions = 0;	
+	total_mechanical_actions = ptr->total_amount_durability_restored + ptr->successful_repair_checks*100 + ptr->successful_doors_forced*100 + ptr->successful_locks_picked*100;
+
+	points = floor(sqrt(total_mechanical_actions) * (100 / sqrt(70000.)) * (1. + (ptr->intelligence / 130.0)));
+	
 	if (points > 100.0) {
 		points = 100.0;
 	}
@@ -85,84 +180,7 @@ unsigned int calc_marksmanship(JABIA_XPMOD_parameters * params, JABIA_Character 
 	else if (points < ptr->marksmanship) {
 		points = ptr->marksmanship;
 	}
-	sprintf(buf, "Marksmanship points %i", points);
-	OutputDebugString(buf);
-	return unsigned int(points);
-}
-
-unsigned int calc_stealth(JABIA_XPMOD_parameters * params, JABIA_Character * ptr) {
-
-	double points = 0.0;
-	double counter_stealth_actions;
-	double damage_taken = 0.0;
-	
-	counter_stealth_actions = ptr->times_bleeding + ptr->times_wounded + ptr->times_rescued_from_dying;
-	// Watch out for divide by zero, since counter_stealth_actions and/or enemies killed could be 0.
-	// In either case, assume 1:2 ration in favor of stealth and kills. This is probably fine since this
-	// case would arise most likely only in the early game.
-	if(counter_stealth_actions == 0.0) {
-		counter_stealth_actions = ptr->enemies_killed * 0.5;
-	}
-	if(ptr->total_damage_taken == 0.0) {
-		damage_taken = ptr->total_damage_taken * 0.5;
-	} else {
-		damage_taken = ptr->total_damage_taken;
-	}
-
-	// y = modifier_1 * (enemies killed / counter stealth) + modifier_2 * (damage dealt / damage taken)
-	points = params->stealth_kills_to_counterstealth_ratio_modifier * (ptr->enemies_killed / counter_stealth_actions) + params->stealth_damage_ratio_modifier * (ptr->total_damage_dealt / damage_taken);
-
-	if(points > 100)
-		points = 100;
-	if(points < 0)
-		points = 0;
-
-	char buf[100];
-	sprintf(buf, "Stealth point gain %f", points);
-	OutputDebugString(buf);
-	return unsigned int(points);
-}
-
-
-unsigned int calc_mechanical(JABIA_XPMOD_parameters * params, JABIA_Character * ptr) {
-	char buf[255];
-	// y = (-(mechanical_a * (mechanical actions % modulo) - mechanical_xoffset)^2 + mechanical_b)*mechanical_modifier
-	double points = 0.0;
-	double mechanical_modifier = 0.0;
-	unsigned int total_mechanical_actions = 0;
-
-	if(ptr->intelligence > 80.0) {
-		mechanical_modifier = params->mechanical_modifier[0];
-	} else if(ptr->intelligence > 70.0){
-		mechanical_modifier = params->mechanical_modifier[1];
-	} else {
-		mechanical_modifier = params->mechanical_modifier[2];
-	}
-	total_mechanical_actions += ptr->successful_repair_checks + ptr->successful_doors_forced + ptr->successful_locks_picked;
-	points = (params->mechanical_a * (total_mechanical_actions % params->mechanical_norm_modulo)) + params->mechanical_xoffset;
-	points *= points;
-	points *= -1.0;
-	points += params->mechanical_b;
-	points *= mechanical_modifier;
-	sprintf(buf, "Mechanical point gain before floor %f", points);
-	OutputDebugString(buf);
-	points = floor(points);		
-
-	if(points > 100)
-		points = 100;
-	if(points < 0)
-		points = 0;
-	sprintf(buf, "(-(mechanical_a * mechanical actions + mechanical_xoffset)^2 + mechanical_b)*mechanical_modifier");
-	OutputDebugString(buf);
-	sprintf(buf, "(-(%f * %d + %f)^2 + %f)*%f", params->mechanical_a, total_mechanical_actions, params->mechanical_xoffset, params->mechanical_b, mechanical_modifier);
-	OutputDebugString(buf);
-	sprintf(buf, "Total mechanical actions %d", total_mechanical_actions);
-	OutputDebugString(buf);
-	sprintf(buf, "Mech a %f, mech b %f", params->mechanical_a, params->mechanical_b);
-	OutputDebugString(buf);
-	sprintf(buf, "Mechanical mod %f", mechanical_modifier);
-	OutputDebugString(buf);
-	sprintf(buf, "Mechanical point gain %f", points);
+	sprintf(buf, "Mechanical points %i", points);
 	OutputDebugString(buf);
 	return unsigned int(points);
 }

@@ -225,12 +225,8 @@ void changeCharacterStats(void* instance) {
 			character_ptr->explosives = 100;
 	}
 	
-	if(!(character_ptr->enemies_killed % xpmod_params.marksmanship_modulo) && character_ptr->enemies_killed != 0) {		
-		if(character_ptr->marksmanship != 100)
-			character_ptr->marksmanship = calc_marksmanship(&xpmod_params, character_ptr);
-		if (character_ptr->marksmanship > 100)
-			character_ptr->marksmanship = 100;
-	}	
+	if(character_ptr->marksmanship != 100)
+		character_ptr->marksmanship = calc_marksmanship(&xpmod_params, character_ptr);
 
 	total_stealth_actions += character_ptr->times_bleeding + character_ptr->times_wounded + character_ptr->times_rescued_from_dying + character_ptr->enemies_killed;
 	if(!(total_stealth_actions % xpmod_params.stealth_modulo) && total_stealth_actions != 0) {
