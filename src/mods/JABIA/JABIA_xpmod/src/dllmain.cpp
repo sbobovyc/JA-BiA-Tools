@@ -105,16 +105,6 @@ DWORD WINAPI XpModThread(LPVOID)
 	// end detour print xp function
 
 	
-    while(true)
-    {
-		/*
-		if(GetAsyncKeyState(VK_F8) &1) {
-			OutputDebugString("Unloading JABIA_xpmod DLL");
-            break;
-		}
-		*/
-    Sleep(100);
-    }
 	/*
 	// Since oldProtection is not saved by returnHook, don't restore hooks
 	// restore exp update hook
@@ -130,9 +120,6 @@ DWORD WINAPI XpModThread(LPVOID)
     DetourDetach(&(PVOID&)PrintCharacterXpGain, myPrintCharacterXpGain);
     DetourTransactionCommit();
 	*/
-
-
-	FreeLibraryAndExitThread(g_hModule, 0);
     return 0;
 }
 
@@ -202,12 +189,9 @@ void changeCharacterStats(void* instance) {
 	OutputDebugString(buf);
 
 	// do whatever i want with the character stats
-	if(! (character_ptr->total_amount_health_restored % xpmod_params.medical_modulo) ) {
-		if(character_ptr->medical != 100)
-			character_ptr->medical += calc_medical(&xpmod_params, character_ptr);
-		if (character_ptr->medical > 100)
-			character_ptr->medical = 100;
-	}
+	
+	if(character_ptr->medical != 100)
+		character_ptr->medical = calc_medical(&xpmod_params, character_ptr);
 
 	total_explosives_actions += 
 		character_ptr->successful_mines_planted +
@@ -228,30 +212,20 @@ void changeCharacterStats(void* instance) {
 	if(character_ptr->marksmanship != 100)
 		character_ptr->marksmanship = calc_marksmanship(&xpmod_params, character_ptr);
 
-	total_stealth_actions += character_ptr->times_bleeding + character_ptr->times_wounded + character_ptr->times_rescued_from_dying + character_ptr->enemies_killed;
-	if(!(total_stealth_actions % xpmod_params.stealth_modulo) && total_stealth_actions != 0) {
-		if(character_ptr->stealth != 100)
-			character_ptr->stealth += calc_stealth(&xpmod_params, character_ptr);
-		if (character_ptr->stealth > 100)
-			character_ptr->stealth = 100;
-	}
-
-	total_mechanical_actions += character_ptr->successful_locks_picked + character_ptr->successful_doors_forced + character_ptr->successful_repair_checks;
-	if(!(total_mechanical_actions % xpmod_params.mechanical_modulo) && total_mechanical_actions != 0) {
-		if(character_ptr->mechanical != 100)
-			character_ptr->mechanical += calc_mechanical(&xpmod_params, character_ptr);
-		if (character_ptr->mechanical > 100)
-			character_ptr->mechanical = 100;
-	}
+	if(character_ptr->stealth != 100)
+		character_ptr->stealth = calc_stealth(&xpmod_params, character_ptr);
+	
+	if (character_ptr->mechanical < 100)
+		character_ptr->mechanical = calc_mechanical(&xpmod_params, character_ptr);			
 }
 
 void myPrintCharacterXpGain(wchar_t * xp_increase, int unknown, wchar_t * xp_string) {
 	// this function possibly uses thiscall
-	//006AF52E  /$  8BFF          MOV EDI,EDI
-	wchar_t wbuf[100];
-	char buf[100];
-	wsprintf(buf, "%ls %i %ls", xp_increase, unknown, xp_string);
+	//006AF52E  /$  8BFF          MOV EDI,EDI	
+	//char buf[100];
+	//wsprintf(buf, "%ls %i %ls", xp_increase, unknown, xp_string);
 	//OutputDebugString(buf);
+	wchar_t wbuf[100];
 	swprintf(wbuf, 100, L"%ls\nXPmod", xp_string);
 	PrintCharacterXpGain(xp_increase, unknown, wbuf);
 }
