@@ -81,7 +81,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #define JABIA_CHARACTER_MED_BEING_HEALED_BY_SMALL_MEDKIT		1<<7
 
 // inventory slot is empty
-#define EMPTY_SLOT 0xFFFf
+#define EMPTY_SLOT 0xFFFF
 
 // weapon 
 extern std::map<int, JABIA_Weapon *> jabia_weapons_map;
@@ -317,6 +317,45 @@ typedef struct JABIA_Character {
 } JABIA_Character;
 
 
+enum Trait {
+	ShotgunAdept = 0,
+	ShotgunExpert = 1,
+	HandgunAdept = 2,
+	HandgunExpert = 3,
+	AssaultRifleAdept = 4,
+	AssaultRifleExpert = 5,
+	SniperRifleAdept = 6,
+	SniperRifleExpert = 7,
+	MachineGunAdept = 8,
+	MachineGunExpert = 9,
+	SubmachineGunAdept = 10,
+	SubmachineGunExpert = 11,
+	ExplosivesAdept = 12,
+	ExplosivesExpert = 13,
+	MeleeAdept = 14,
+	MeleeExpert = 15,
+	Loner = 16,
+	TeamPlayer = 17,
+	Macho = 18,
+	Amazon = 19,
+	NightOps = 20,
+	Nightblind = 21,
+	DeathWish = 22,
+	Wimp = 23,
+	Untouched = 24,
+	ShortSighted = 25,
+	Nudist = 26,
+	Tough = 27,
+	Runner = 28,
+	Overweight = 29,
+	Chameleon = 30,
+	Gunslinger = 31,
+	Bargainer = 32,
+	Scavenger = 33,
+	Scout = 34,
+	Pathfinder = 35
+};
+
 typedef struct JABIA_Character_config {
 	uint32_t agility;
 	uint32_t dexterity;
@@ -344,20 +383,29 @@ typedef struct JABIA_Character_config {
 	uint32_t head;
 	uint32_t glasses;
 	uint32_t torso;
-	uint32_t unknown8; // vest?
+	uint32_t unknown2; // vest?
 	uint32_t legs;
 	uint32_t feet;
-	uint32_t unknown9;
-	uint32_t unknown10;
+	uint32_t unknown3;
+	uint32_t unknown4;
 	uint32_t xp_for_killing;
 	uint32_t level;
-	uint32_t unknown12;
+	uint32_t unlock_trader; // 1 means unlocked
 	uint32_t trader_money;
 	uint32_t recruit_achievement; // subtract 1 from number given in main_characters.txt
-	uint32_t unknown15;
+	uint32_t unknown5;
 	char nickname[JABIA_CHARACTER_MAX_NAME_LENGTH];
 	uint32_t name_length;
-	uint32_t unknown[76];
+	uint32_t unknown6;
+	uint32_t npc_type;
+	uint32_t sex;
+	uint32_t skin_color;
+	uint32_t faction;
+	uint32_t unknown_1[44];
+	uint32_t trait_begin_ptr;
+	uint32_t trait_end1_ptr;
+	uint32_t trait_end2_ptr;
+	uint32_t unknown_2[24];
 } JABIA_Character_config;
 
 void heal_character(JABIA_Character * ptr);

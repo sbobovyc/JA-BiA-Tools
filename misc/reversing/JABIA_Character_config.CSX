@@ -35,17 +35,17 @@
       <Element Offset="120" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="124" Vartype="4 Bytes" Bytesize="4" Description="XPForKilling" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="128" Vartype="4 Bytes" Bytesize="4" Description="Level" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="132" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="132" Vartype="4 Bytes" Bytesize="4" Description="UnlockTrader" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="136" Vartype="4 Bytes" Bytesize="4" Description="TraderMoney" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="140" Vartype="4 Bytes" Bytesize="4" Description="RecruitAchievement" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="144" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Hexadecimal" BackgroundColor="80000005"/>
       <Element Offset="148" Vartype="String" Bytesize="16" Description="Nickname" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="164" Vartype="4 Bytes" Bytesize="4" Description="NameLength" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="168" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="172" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="176" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="180" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
-      <Element Offset="184" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="172" Vartype="4 Bytes" Bytesize="4" Description="NPCType" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="176" Vartype="4 Bytes" Bytesize="4" Description="Sex" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="180" Vartype="4 Bytes" Bytesize="4" Description="SkinColor" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      <Element Offset="184" Vartype="4 Bytes" Bytesize="4" Description="Faction" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
       <Element Offset="188" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Hexadecimal" BackgroundColor="80000005"/>
       <Element Offset="192" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Hexadecimal" BackgroundColor="80000005"/>
       <Element Offset="196" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Hexadecimal" BackgroundColor="80000005"/>

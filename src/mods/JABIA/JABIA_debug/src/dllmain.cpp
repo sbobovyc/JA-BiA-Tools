@@ -1727,7 +1727,7 @@ __declspec(naked) void* myCharacterConfigParserReturn() {
 
 void __fastcall recordCharacterConfig(JABIA_Character_config * ptr) {
 	char buf[100];
-	wsprintfA(buf, "Character config at %p, %s, %i", ptr, ptr->nickname, ptr->unknown9);
+	wsprintfA(buf, "Character config at %p, %s, 0x%x", ptr, ptr->nickname, ptr->unknown6);
 	OutputDebugStringA(buf);
 }
 
