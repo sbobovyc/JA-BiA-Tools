@@ -48,7 +48,8 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #pragma comment(lib, "detours.lib")
 
-CharacterConstReturnPtr ParseCharacter;
+CharacterConstReturnPtr CharacterConstReturn;
+CharacterConfigParserReturnPtr ParseCharacterConfig;
 CharacterDestReturnPtr RemoveCharacter;
 CharacterDestructorPtr CharacterDestructor;
 ParseGameInfoReturnPtr ParseGameInfoReturn;
@@ -107,6 +108,7 @@ DWORD WINAPI DebugThread(LPVOID)
 	TCHAR debugStrBuf [DEBUG_STR_SIZE];
 	DWORD oldProtection;
 	BYTE ParseCharacterSavedReturn[6]; // save retn here
+	BYTE ParseCharacterConfigSavedReturn[6]; // save retn here
 	BYTE RemoveCharacterSavedReturn[6]; // save retn here
 	BYTE ParseGameInfoSavedReturn[6]; // save retn here
 	BYTE WeaponSavedReturn[6]; // save retn here
@@ -121,12 +123,16 @@ DWORD WINAPI DebugThread(LPVOID)
 		OutputDebugString(debugStrBuf);
 	} else {
 		// find address of character constructor
-		ParseCharacter = (CharacterConstReturnPtr)((uint32_t)game_handle+CHARACTER_CONST_OFFSET);
-		wsprintf (debugStrBuf, _T("Address of CharacterConstructor 0x%x"), ParseCharacter);
+		CharacterConstReturn = (CharacterConstReturnPtr)((uint32_t)game_handle+CHARACTER_CONST_OFFSET);
+		wsprintf (debugStrBuf, _T("Address of CharacterConstructor 0x%x"), CharacterConstReturn);
 		OutputDebugString(debugStrBuf);
 		// find address of character constructor return
-		ParseCharacter = (CharacterConstReturnPtr)((uint32_t)game_handle+CHARACTER_CONST_OFFSET+CHARACTER_CONST_RETN_OFFSET);
-		wsprintf (debugStrBuf, _T("Address of retn in CharacterConstructor 0x%x"), ParseCharacter);
+		CharacterConstReturn = (CharacterConstReturnPtr)((uint32_t)game_handle+CHARACTER_CONST_OFFSET+CHARACTER_CONST_RETN_OFFSET);
+		wsprintf (debugStrBuf, _T("Address of retn in CharacterConstructor 0x%x"), CharacterConstReturn);
+		OutputDebugString(debugStrBuf);
+		// find address of character config parser return
+		ParseCharacterConfig = (CharacterConstReturnPtr)((uint32_t)game_handle + CHARACTER_CONFIG_PARSER_RETN_OFFSET);
+		wsprintf(debugStrBuf, _T("Address of retn in ParseCharacterConfig 0x%x"), ParseCharacterConfig);
 		OutputDebugString(debugStrBuf);
 		// find addres of character destructor return
 		RemoveCharacter = (CharacterDestReturnPtr)((uint32_t)game_handle+CHARACTER_DESTRUCTOR_RETN_OFFSET);
@@ -163,24 +169,17 @@ DWORD WINAPI DebugThread(LPVOID)
 		// If jabia_characters is not empty, clear it. Every time the game loads a level, character pointers change.
 		//TODO this function crashes on exit game
 		
-		/*
-		// start detour characer destructor function		
-		DetourRestoreAfterWith();
-		DetourTransactionBegin();
-		DetourUpdateThread(GetCurrentThread());
-		DetourAttach(&(PVOID&)CharacterDestructor, myCharacterDestructor);
-		DetourTransactionCommit();		
-		// end detour characer destructor function
-		*/
-
 		jabia_characters.clear();
 		
 		// hook character constructor return
-		returnHook(ParseCharacter, myCharacterConstReturn, ParseCharacterSavedReturn);
+		returnHook(CharacterConstReturn, myCharacterConstReturn, ParseCharacterSavedReturn);
 
 		// hook character destructor return
 		returnHook(RemoveCharacter, myCharacterDestReturn, RemoveCharacterSavedReturn);
-		
+
+		// hook character config parser return
+		returnHook(ParseCharacterConfig, myCharacterConfigParserReturn, ParseCharacterConfigSavedReturn);
+
 		// hook parse game info return
 		returnHook(ParseGameInfoReturn, mySaveGameParseReturn, ParseGameInfoSavedReturn);
 
@@ -200,6 +199,8 @@ DWORD WINAPI DebugThread(LPVOID)
 		returnHook(AmmoReturn, myAmmoConstReturn, AmmoSavedReturn);
 
 		wsprintf(debugStrBuf, _T("Size of JABIA_Character struct %i"), sizeof(JABIA_Character));
+		OutputDebugString(debugStrBuf);
+		wsprintf(debugStrBuf, _T("Size of JABIA_Character_config struct %i"), sizeof(JABIA_Character_config));
 		OutputDebugString(debugStrBuf);
 		wsprintf(debugStrBuf, _T("Size of JABIA_Weapon struct %i"), sizeof(JABIA_Weapon));
 		OutputDebugString(debugStrBuf);
@@ -336,10 +337,10 @@ DWORD WINAPI DebugThread(LPVOID)
 		}
 		// restore retn hook
 		// read + write
-		VirtualProtect(ParseCharacter, 6, PAGE_EXECUTE_READWRITE, &oldProtection);
-		memcpy((void *)ParseCharacter, (void *)ParseCharacterSavedReturn, 6);
+		VirtualProtect(CharacterConstReturn, 6, PAGE_EXECUTE_READWRITE, &oldProtection);
+		memcpy((void *)CharacterConstReturn, (void *)ParseCharacterSavedReturn, 6);
 		// restore protection
-		VirtualProtect((LPVOID)ParseCharacter, 6, oldProtection, NULL);
+		VirtualProtect((LPVOID)CharacterConstReturn, 6, oldProtection, NULL);
 
 		FreeLibraryAndExitThread(g_hModule, 0);
 	}
@@ -1714,6 +1715,21 @@ void __fastcall removeCharacter(JABIA_Character * ptr){
 		jabia_characters.erase(position);
 }
 
+__declspec(naked) void* myCharacterConfigParserReturn() {
+	__asm{
+		push eax;
+		mov ecx, eax;
+		call recordCharacterConfig;
+		pop eax;
+		retn 0xC;
+	}
+}
+
+void __fastcall recordCharacterConfig(JABIA_Character_config * ptr) {
+	char buf[100];
+	wsprintfA(buf, "Character config at %p, %s, %i", ptr, ptr->nickname, ptr->unknown9);
+	OutputDebugStringA(buf);
+}
 
 __declspec(naked) void* mySaveGameParseReturn(){	
 	__asm{

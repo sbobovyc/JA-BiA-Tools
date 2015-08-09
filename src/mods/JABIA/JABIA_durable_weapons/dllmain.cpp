@@ -8,7 +8,7 @@ HMODULE game_handle;
 HMODULE g_hModule;
 DWORD g_threadID;
 
-DWORD WINAPI MyThread(LPVOID);
+DWORD WINAPI DurableWeaponsThread(LPVOID);
 
 float new_max_durability_multiplier = 0.5;
 JABIA_DURABLE_WEAPONS_parameters durable_weapons_params;
@@ -21,7 +21,7 @@ INT APIENTRY DllMain(HMODULE hDLL, DWORD Reason, LPVOID Reserved)
     case DLL_PROCESS_ATTACH:
         g_hModule = hDLL;
 		DisableThreadLibraryCalls(hDLL);
-        CreateThread(NULL, NULL, &MyThread, NULL, NULL, &g_threadID);
+        CreateThread(NULL, NULL, &DurableWeaponsThread, NULL, NULL, &g_threadID);
     break;
     case DLL_THREAD_ATTACH:
     case DLL_PROCESS_DETACH:
@@ -32,7 +32,7 @@ INT APIENTRY DllMain(HMODULE hDLL, DWORD Reason, LPVOID Reserved)
 }
 
 
-DWORD WINAPI MyThread(LPVOID) {
+DWORD WINAPI DurableWeaponsThread(LPVOID) {
 	load(PATH_TO_DURABLE_WEAPONS_XML, durable_weapons_params);
 
 

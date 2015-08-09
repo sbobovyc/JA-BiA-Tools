@@ -39,6 +39,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #define FULL
 
 typedef void * (_stdcall *CharacterConstReturnPtr)();
+typedef void * (_stdcall *CharacterConfigParserReturnPtr)();
 typedef void * (_stdcall *UpdateCharacterExpPtr)();
 typedef void * (_stdcall *CharacterDestReturnPtr)();
 typedef int (_stdcall *CharacterDestructorPtr)(JABIA_Character *);
@@ -62,6 +63,7 @@ DWORD WINAPI DebugThread(LPVOID);
 // my hooks
 void* myCharacterConstReturn();
 void* myCharacterDestReturn();
+void* myCharacterConfigParserReturn();
 void* mySaveGameParseReturn();
 void* myWeaponConstReturn();
 void* myAttachmentConstReturn();
@@ -70,6 +72,7 @@ void* myItemConstReturn();
 void* myAmmoConstReturn();
 void __fastcall recordCharacters(void* instance);
 void __fastcall removeCharacter(JABIA_Character * ptr);
+void __fastcall recordCharacterConfig(JABIA_Character_config * ptr);
 void __fastcall recordWeapons(void* instance);
 void __fastcall recordAttachments(void* instance);
 void __fastcall recordCloth(void* instance);

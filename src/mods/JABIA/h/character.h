@@ -37,6 +37,8 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #define CHARACTER_CONST_RETN_OFFSET 0x2D8
 #define CHARACTER_DESTRUCTOR_OFFSET 0x132B60
 #define CHARACTER_DESTRUCTOR_RETN_OFFSET 0x132BB8 // pop edi 
+// character config parser
+#define CHARACTER_CONFIG_PARSER_RETN_OFFSET 0x167E84
 // modding drop loot functionality
 #define CALC_DROP_LOOT_OFFSET 0x0013A3F0
 #define WEAPON_DROP_FLD_OFFSET 0x0013A4C5 //TODO change to relative offset
@@ -302,10 +304,9 @@ typedef struct JABIA_Character {
 	uint32_t stealth;
 	uint32_t mechanical;
 
+	// penalty modifier
 	uint32_t mod_health;
 	uint32_t mod_stamina;
-
-	// pentalty modifier
 	uint32_t mod_agility;		// agility = base agility - penalty
 	uint32_t mod_dexterity;
 	uint32_t mod_strength;
@@ -315,6 +316,49 @@ typedef struct JABIA_Character {
 	uint32_t bleed_rate;		// setting this to 0 stops bleeding
 } JABIA_Character;
 
+
+typedef struct JABIA_Character_config {
+	uint32_t agility;
+	uint32_t dexterity;
+	uint32_t strength;
+	uint32_t wisdom;
+	uint32_t perception;
+	uint32_t medical;
+	uint32_t explosives;
+	uint32_t marksmanship;
+	uint32_t sneak;
+	uint32_t mechanics;
+	uint32_t unknown1;
+	uint32_t total_cost;
+	uint32_t equipment_cost;
+	uint32_t hiring_fee;
+	uint32_t hiring_death_rate;
+	uint32_t hiring_reputation;
+	uint32_t voice_type;
+	uint32_t portrait;
+	uint32_t facial_anim_type;
+	uint32_t text_index;
+	uint32_t eye_color;
+	uint32_t reject_answer;
+	uint32_t cap;
+	uint32_t head;
+	uint32_t glasses;
+	uint32_t torso;
+	uint32_t unknown8; // vest?
+	uint32_t legs;
+	uint32_t feet;
+	uint32_t unknown9;
+	uint32_t unknown10;
+	uint32_t xp_for_killing;
+	uint32_t level;
+	uint32_t unknown12;
+	uint32_t trader_money;
+	uint32_t recruit_achievement; // subtract 1 from number given in main_characters.txt
+	uint32_t unknown15;
+	char nickname[JABIA_CHARACTER_MAX_NAME_LENGTH];
+	uint32_t name_length;
+	uint32_t unknown[76];
+} JABIA_Character_config;
 
 void heal_character(JABIA_Character * ptr);
 void kill_character(JABIA_Character * ptr);
