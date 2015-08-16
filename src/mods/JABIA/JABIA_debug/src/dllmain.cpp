@@ -75,8 +75,7 @@ int last_character_selected_index = 0;
 int last_weaponslot_selected_index = 0;
 int last_weapon_inhand_selected_index = 0;
 int last_inventory_selected_index = 0;
-
-
+int last_trait_selected_index = 0;
 
 CTX_file ctx;
 COMBO_BOX_STATUS inventory_combo_status;
@@ -229,11 +228,11 @@ DWORD WINAPI DebugThread(LPVOID)
 		MEM_SCAN:
 		uint32_t address = NULL;
 		// TODO put memory scanner in its own function
-		// TODO if search for patter happens before ctx file is loaded in memory, crash will occur
+		// TODO if search for pattern happens before ctx file is loaded in memory, crash will occur
 		// begin mem scan function
 		int MIN_MEM = 0x00BF0000;
 		int MAX_MEM = 0x7FFFFFFF;
-		unsigned char BYTE_PATTER[] = {0xDC, 0x00, 0x10, 0x00, 0x00, 0x00, 0x63, 0x6F, 
+		unsigned char BYTE_PATTERN[] = {0xDC, 0x00, 0x10, 0x00, 0x00, 0x00, 0x63, 0x6F, 
 							0x75, 0x72, 0x69, 0x65, 0x72, 0x5F, 0x64, 0x63,
 							0x5F, 0x64, 0x6D, 0x5F, 0x30, 0x30};
 		MEMORY_BASIC_INFORMATION mbi = {0};
@@ -252,11 +251,11 @@ DWORD WINAPI DebugThread(LPVOID)
 				OutputDebugString(debugStrBuf); 							
 					for (pAddress; pAddress < pEndRegion ; pAddress++){
 					// make sure to skip the page that has BYTE_PATTER so not to have a false positive
-						if(pAddress == BYTE_PATTER)
+						if(pAddress == BYTE_PATTERN)
 							continue;
 					int diff = 0;
 					for(int j = 0; j < 22; j++) {
-						diff = BYTE_PATTER[j] - *((unsigned char *)pAddress+j);
+						diff = BYTE_PATTERN[j] - *((unsigned char *)pAddress+j);
 						if(diff != 0) break;
 					}
 					if(diff == 0) {
@@ -367,6 +366,7 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 	HWND comboControl12;
 	HWND comboControl13;
 	HWND comboControl14;
+	HWND comboControl15;
 	comboControl1=GetDlgItem(hwnd,IDC_COMBO_CHARACTER);	
 	comboControl2=GetDlgItem(hwnd,IDC_COMBO_WEAPON_SLOT);	
 	comboControl3=GetDlgItem(hwnd,IDC_COMBO_INVENTORY_SLOT);	
@@ -381,6 +381,7 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 	comboControl12=GetDlgItem(hwnd,IDC_COMBO_EYEWEAR);
 	comboControl13=GetDlgItem(hwnd,IDC_COMBO_AMMO);
 	comboControl14=GetDlgItem(hwnd,IDC_COMBO_SPECIAL);
+	comboControl15=GetDlgItem(hwnd, IDC_COMBO_TRAIT_NUMBER);
 	BOOL status = FALSE;
 	JABIA_Character * ptr = 0; // character address
 	TCHAR debugStrBuf[255];
@@ -520,6 +521,14 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 				SendMessage(comboControl14,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)debugStrBuf));
 			}
 			SendMessage(comboControl14,CB_ADDSTRING,0,reinterpret_cast<LPARAM>((LPCWSTR)_T("None")));
+
+			// add trait slots to their combo box
+			for (int i = 1; i < 4; i++) {
+				wsprintf(debugStrBuf, _T("Trait%i"), i);
+				SendMessage(comboControl15, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>((LPCTSTR)debugStrBuf));
+			}
+			// select fist item in list
+			SendMessage(comboControl15, CB_SETCURSEL, 0, 0);
 
 			break;
         case WM_COMMAND:
@@ -698,6 +707,17 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 							setCharacter(hwnd, ptr);
 							fillDialog(hwnd, ptr);
 							break;
+					}
+					break;
+				case IDC_COMBO_TRAIT_NUMBER:
+					switch (HIWORD(wParam))
+					{
+					case CBN_CLOSEUP:
+						// use combo box selected index to trait description
+						last_trait_selected_index = SendMessage(comboControl15, CB_GETCURSEL, 0, 0);
+						ptr = jabia_characters.at(last_character_selected_index);
+						fillDialog(hwnd, ptr);
+						break;
 					}
 					break;
                 case IDSET:
@@ -1022,6 +1042,30 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 		} else {
 			SendMessage(comboControl14, CB_SETCURSEL, jabia_item_map.size(), 0);
 		}
+
+		HWND comboControl15;
+		comboControl15=GetDlgItem(hwnd, IDC_COMBO_TRAIT_NUMBER);
+		SendMessage(comboControl15, CB_SETCURSEL, last_trait_selected_index, 0);		
+		//_itot_s(trait, buf, 100, 10);
+		auto search = CharacterTraitMap.find(character.character_config->trait_begin_ptr[last_trait_selected_index]);
+		if (search != CharacterTraitMap.end()) {
+			wsprintf(buf, _T("%s"), search->second);
+		}
+		else {
+			wsprintf(buf, _T("None"));
+		}
+		SetDlgItemText(hwnd, IDC_TRAIT_DESC, buf);
+		OutputDebugString(buf);
+		wsprintf(buf, _T("Address of character config 0x%x"), (uint32_t *)(character.character_config));
+		OutputDebugString(buf);
+		wsprintf(buf, _T("Address of agility 0x%x"), (uint32_t *)&(character.character_config->agility));
+		OutputDebugString(buf);
+		wsprintf(buf, _T("Address of nickname 0x%x"), (uint32_t *)&(character.character_config->nickname));
+		OutputDebugString(buf);
+		wsprintf(buf, _T("Address of faction 0x%x"), (uint32_t *)&(character.character_config->faction) );
+		OutputDebugString(buf);
+		wsprintf(buf, _T("Address of trait_begin_ptr 0x%x"), (uint32_t *)&(character.character_config->trait_begin_ptr) );
+		OutputDebugString(buf);
 
 		// address of character
 		_itot_s((uint32_t)ptr, buf, 100, 16);
@@ -1706,10 +1750,10 @@ int myCharacterDestructor(JABIA_Character * ptr) {
 
 void __fastcall removeCharacter(JABIA_Character * ptr){
 	//char buf[100];
-	//wsprintf(buf, "Removing character at 0x%X", ptr);
-	//OutputDebugString(buf);
-	//wsprintf(buf, "Character is %s", ptr->merc_name);
-	//OutputDebugString(buf);
+	//wsprintfA(buf, "Removing character at 0x%X", ptr);
+	//OutputDebugStringA(buf);
+	//wsprintfA(buf, "Character is %s", ptr->merc_name);
+	//OutputDebugStringA(buf);
 	std::vector<JABIA_Character *>::iterator position = std::find(jabia_characters.begin(), jabia_characters.end(), ptr);
 	if (position != jabia_characters.end()) // == vector.end() means the element was not found
 		jabia_characters.erase(position);

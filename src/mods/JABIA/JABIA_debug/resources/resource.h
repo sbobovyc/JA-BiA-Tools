@@ -76,5 +76,7 @@
 #define IDC_TIMES_WOUNDED                       40027
 #define IDC_TIMES_RESCUED                       40028
 #define IDC_UNSUCCESSFUL_HEALING_CHECKS         40029
+#define IDC_TRAIT_DESC                          40030
 #define IDC_TOTAL_AMOUNT_HEALTH_RESTORED        40031
 #define IDC_SUCCESSFUL_HEALING_CHECKS           40032
+#define IDC_COMBO_TRAIT_NUMBER                  40033

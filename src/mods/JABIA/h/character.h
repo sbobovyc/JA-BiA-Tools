@@ -118,6 +118,136 @@ extern std::map<int, JABIA_Ammo *> jabia_ammo_map;
 
 
 
+enum Trait {
+	ShotgunAdept = 0,
+	ShotgunExpert = 1,
+	HandgunAdept = 2,
+	HandgunExpert = 3,
+	AssaultRifleAdept = 4,
+	AssaultRifleExpert = 5,
+	SniperRifleAdept = 6,
+	SniperRifleExpert = 7,
+	MachineGunAdept = 8,
+	MachineGunExpert = 9,
+	SubmachineGunAdept = 10,
+	SubmachineGunExpert = 11,
+	ExplosivesAdept = 12,
+	ExplosivesExpert = 13,
+	MeleeAdept = 14,
+	MeleeExpert = 15,
+	Loner = 16,
+	TeamPlayer = 17,
+	Macho = 18,
+	Amazon = 19,
+	NightOps = 20,
+	Nightblind = 21,
+	DeathWish = 22,
+	Wimp = 23,
+	Untouched = 24,
+	ShortSighted = 25,
+	Nudist = 26,
+	Tough = 27,
+	Runner = 28,
+	Overweight = 29,
+	Chameleon = 30,
+	Gunslinger = 31,
+	Bargainer = 32,
+	Scavenger = 33,
+	Scout = 34,
+	Pathfinder = 35
+};
+
+const std::map<std::uint32_t, TCHAR*> CharacterTraitMap = { 
+	{ 0 , _T("ShotgunAdept") },
+	{ 1 , _T("ShotgunExpert") },
+	{ 2 , _T("HandgunAdept") },
+	{ 3 , _T("HandgunExpert") },
+	{ 4 , _T("AssaultRifleAdept") },
+	{ 5 , _T("AssaultRifleExpert") },
+	{ 6 , _T("SniperRifleAdept") },
+	{ 7 , _T("SniperRifleExpert") },
+	{ 8 , _T("MachineGunAdept") },
+	{ 9 , _T("MachineGunExpert") },
+	{ 10 , _T("SubmachineGunAdept") },
+	{ 11 , _T("SubmachineGunExpert") },
+	{ 12 , _T("ExplosivesAdept") },
+	{ 13 , _T("ExplosivesExpert") },
+	{ 14 , _T("MeleeAdept") },
+	{ 15 , _T("MeleeExpert") },
+	{ 16 , _T("Loner") },
+	{ 17 , _T("TeamPlayer") },
+	{ 18 , _T("Macho") },
+	{ 19 , _T("Amazon") },
+	{ 20 , _T("NightOps") },
+	{ 21 , _T("Nightblind") },
+	{ 22 , _T("DeathWish") },
+	{ 23 , _T("Wimp") },
+	{ 24 , _T("Untouched") },
+	{ 25 , _T("ShortSighted") },
+	{ 26 , _T("Nudist") },
+	{ 27 , _T("Tough") },
+	{ 28 , _T("Runner") },
+	{ 29 , _T("Overweight") },
+	{ 30 , _T("Chameleon") },
+	{ 31 , _T("Gunslinger") },
+	{ 32 , _T("Bargainer") },
+	{ 33 , _T("Scavenger") },
+	{ 34 , _T("Scout") },
+	{ 35 , _T("Pathfinder") }
+};
+
+typedef struct JABIA_Character_config {
+	uint32_t agility;
+	uint32_t dexterity;
+	uint32_t strength;
+	uint32_t wisdom;
+	uint32_t perception;
+	uint32_t medical;
+	uint32_t explosives;
+	uint32_t marksmanship;
+	uint32_t sneak;
+	uint32_t mechanics;
+	uint32_t unknown1;
+	uint32_t total_cost;
+	uint32_t equipment_cost;
+	uint32_t hiring_fee;
+	uint32_t hiring_death_rate;
+	uint32_t hiring_reputation;
+	uint32_t voice_type;
+	uint32_t portrait;
+	uint32_t facial_anim_type;
+	uint32_t text_index;
+	uint32_t eye_color;
+	uint32_t reject_answer;
+	uint32_t cap;
+	uint32_t head;
+	uint32_t glasses;
+	uint32_t torso;
+	uint32_t unknown2; // vest?
+	uint32_t legs;
+	uint32_t feet;
+	uint32_t unknown3;
+	uint32_t unknown4;
+	uint32_t xp_for_killing;
+	uint32_t level;
+	uint32_t unlock_trader; // 1 means unlocked
+	uint32_t trader_money;
+	uint32_t recruit_achievement; // subtract 1 from number given in main_characters.txt
+	uint32_t unknown5;
+	char nickname[JABIA_CHARACTER_MAX_NAME_LENGTH];
+	uint32_t name_length;
+	uint32_t unknown6;
+	uint32_t npc_type;
+	uint32_t sex;
+	uint32_t skin_color;
+	uint32_t faction;
+	uint32_t unknown_1[45];
+	uint32_t * trait_begin_ptr;
+	uint32_t * trait_end1_ptr;
+	uint32_t * trait_end2_ptr;
+	uint32_t unknown_2[23];
+} JABIA_Character_config;
+
 
 typedef struct JABIA_Character_weapon {
 	// all equipment, if empty is 0xFFFF and durability 0
@@ -202,7 +332,8 @@ typedef struct JABIA_Character {
 	uint32_t unknown_ptr;
 	char rahc[4]; // just a string "char"  = character 
 	uint32_t unknown_const0;
-	uint32_t uk0[19];
+	JABIA_Character_config * character_config;
+	uint32_t uk0[18];
 
 	char ctsc[4]; // just a string "ctsc"  = character statistics
 	uint32_t u0;
@@ -315,98 +446,6 @@ typedef struct JABIA_Character {
 
 	uint32_t bleed_rate;		// setting this to 0 stops bleeding
 } JABIA_Character;
-
-
-enum Trait {
-	ShotgunAdept = 0,
-	ShotgunExpert = 1,
-	HandgunAdept = 2,
-	HandgunExpert = 3,
-	AssaultRifleAdept = 4,
-	AssaultRifleExpert = 5,
-	SniperRifleAdept = 6,
-	SniperRifleExpert = 7,
-	MachineGunAdept = 8,
-	MachineGunExpert = 9,
-	SubmachineGunAdept = 10,
-	SubmachineGunExpert = 11,
-	ExplosivesAdept = 12,
-	ExplosivesExpert = 13,
-	MeleeAdept = 14,
-	MeleeExpert = 15,
-	Loner = 16,
-	TeamPlayer = 17,
-	Macho = 18,
-	Amazon = 19,
-	NightOps = 20,
-	Nightblind = 21,
-	DeathWish = 22,
-	Wimp = 23,
-	Untouched = 24,
-	ShortSighted = 25,
-	Nudist = 26,
-	Tough = 27,
-	Runner = 28,
-	Overweight = 29,
-	Chameleon = 30,
-	Gunslinger = 31,
-	Bargainer = 32,
-	Scavenger = 33,
-	Scout = 34,
-	Pathfinder = 35
-};
-
-typedef struct JABIA_Character_config {
-	uint32_t agility;
-	uint32_t dexterity;
-	uint32_t strength;
-	uint32_t wisdom;
-	uint32_t perception;
-	uint32_t medical;
-	uint32_t explosives;
-	uint32_t marksmanship;
-	uint32_t sneak;
-	uint32_t mechanics;
-	uint32_t unknown1;
-	uint32_t total_cost;
-	uint32_t equipment_cost;
-	uint32_t hiring_fee;
-	uint32_t hiring_death_rate;
-	uint32_t hiring_reputation;
-	uint32_t voice_type;
-	uint32_t portrait;
-	uint32_t facial_anim_type;
-	uint32_t text_index;
-	uint32_t eye_color;
-	uint32_t reject_answer;
-	uint32_t cap;
-	uint32_t head;
-	uint32_t glasses;
-	uint32_t torso;
-	uint32_t unknown2; // vest?
-	uint32_t legs;
-	uint32_t feet;
-	uint32_t unknown3;
-	uint32_t unknown4;
-	uint32_t xp_for_killing;
-	uint32_t level;
-	uint32_t unlock_trader; // 1 means unlocked
-	uint32_t trader_money;
-	uint32_t recruit_achievement; // subtract 1 from number given in main_characters.txt
-	uint32_t unknown5;
-	char nickname[JABIA_CHARACTER_MAX_NAME_LENGTH];
-	uint32_t name_length;
-	uint32_t unknown6;
-	uint32_t npc_type;
-	uint32_t sex;
-	uint32_t skin_color;
-	uint32_t faction;
-	uint32_t unknown_1[44];
-	uint32_t trait_begin_ptr;
-	uint32_t trait_end1_ptr;
-	uint32_t trait_end2_ptr;
-	uint32_t unknown_2[24];
-} JABIA_Character_config;
 
 void heal_character(JABIA_Character * ptr);
 void kill_character(JABIA_Character * ptr);
