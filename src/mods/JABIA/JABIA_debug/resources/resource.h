@@ -80,3 +80,4 @@
 #define IDC_TOTAL_AMOUNT_HEALTH_RESTORED        40031
 #define IDC_SUCCESSFUL_HEALING_CHECKS           40032
 #define IDC_COMBO_TRAIT_NUMBER                  40033
+#define IDC_COMBO_TRAIT_DESC                    40034

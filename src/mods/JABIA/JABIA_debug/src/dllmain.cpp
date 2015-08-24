@@ -367,6 +367,7 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 	HWND comboControl13;
 	HWND comboControl14;
 	HWND comboControl15;
+	HWND comboControl16;
 	comboControl1=GetDlgItem(hwnd,IDC_COMBO_CHARACTER);	
 	comboControl2=GetDlgItem(hwnd,IDC_COMBO_WEAPON_SLOT);	
 	comboControl3=GetDlgItem(hwnd,IDC_COMBO_INVENTORY_SLOT);	
@@ -382,6 +383,7 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 	comboControl13=GetDlgItem(hwnd,IDC_COMBO_AMMO);
 	comboControl14=GetDlgItem(hwnd,IDC_COMBO_SPECIAL);
 	comboControl15=GetDlgItem(hwnd, IDC_COMBO_TRAIT_NUMBER);
+	comboControl16 = GetDlgItem(hwnd, IDC_COMBO_TRAIT_DESC);
 	BOOL status = FALSE;
 	JABIA_Character * ptr = 0; // character address
 	TCHAR debugStrBuf[255];
@@ -529,6 +531,14 @@ BOOL CALLBACK DialogProc (HWND hwnd,
 			}
 			// select fist item in list
 			SendMessage(comboControl15, CB_SETCURSEL, 0, 0);
+
+			// fill drop list with traits
+			for (const auto &p : CharacterTraitMap) {
+				wsprintf(debugStrBuf, _T("%s"), p.second);
+				SendMessage(comboControl16, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>((LPCTSTR)debugStrBuf));
+			}
+			// select fist item in list
+			SendMessage(comboControl16, CB_SETCURSEL, 0, 0);
 
 			break;
         case WM_COMMAND:
@@ -1045,14 +1055,18 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 
 		HWND comboControl15;
 		comboControl15=GetDlgItem(hwnd, IDC_COMBO_TRAIT_NUMBER);
+		HWND comboControl16;
+		comboControl16 = GetDlgItem(hwnd, IDC_COMBO_TRAIT_DESC);
 		SendMessage(comboControl15, CB_SETCURSEL, last_trait_selected_index, 0);		
 		//_itot_s(trait, buf, 100, 10);
 		auto search = CharacterTraitMap.find(character.character_config->trait_begin_ptr[last_trait_selected_index]);
 		if (search != CharacterTraitMap.end()) {
 			wsprintf(buf, _T("%s"), search->second);
+			SendMessage(comboControl16, CB_SETCURSEL, search->first, 0);
 		}
 		else {
 			wsprintf(buf, _T("None"));
+			SendMessage(comboControl16, CB_SETCURSEL, 36, 0);
 		}
 		SetDlgItemText(hwnd, IDC_TRAIT_DESC, buf);
 		OutputDebugString(buf);

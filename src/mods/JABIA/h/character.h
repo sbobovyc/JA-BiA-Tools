@@ -193,7 +193,8 @@ const std::map<std::uint32_t, TCHAR*> CharacterTraitMap = {
 	{ 32 , _T("Bargainer") },
 	{ 33 , _T("Scavenger") },
 	{ 34 , _T("Scout") },
-	{ 35 , _T("Pathfinder") }
+	{ 35 , _T("Pathfinder") },
+	{ 36, _T("None") }
 };
 
 typedef struct JABIA_Character_config {
