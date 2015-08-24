@@ -103,6 +103,7 @@ typedef struct COMBO_BOX_STATUS {
 	bool eyewear_changed;
 	bool ammo_changed;
 	bool special_changed;
+	bool trait_changed;
 } COMBO_BOX_STATUS;
 
 class JABIA_DEBUGMOD_parameters { 
