@@ -286,7 +286,7 @@ def load(operator, context, filepath,
 
     file = open(filepath, "rb")
     CRF = CRF_object()    
-    CRF.parse_bin(file)
+    CRF.parse_bin(file, verbose=use_verbose)
     meshfile = CRF.meshfile
 
     bad_vertex_list = []
@@ -371,7 +371,7 @@ def load(operator, context, filepath,
         # add uv map
         if use_uv_map:
             uvMain = createTextureLayer("UV_Main", me, face_tex)
-
+                
         # add texture
         if use_diffuse_texture or use_normal_texture or use_specular_texture:
             # create a material to which textures can be added
@@ -417,7 +417,7 @@ def load(operator, context, filepath,
                     ob.data.materials[0].specular_color = mesh.materials.specular_constant
                 else:
                     ob.data.materials[0].specular_color = (1, 0, 0)
-                    print("Failed to find specular constnat! FIXME")
+                    print("Failed to find specular constant! FIXME")
                 print(ob.data.materials[0].specular_color)
                       
         # viz blendweights
@@ -481,11 +481,12 @@ def load(operator, context, filepath,
         bpy.ops.object.mode_set(mode='OBJECT')
         for v in bad_vertices:
             print("Deleting vertex %i in %s" % (v, ob.name))
-            ob.data.vertices[v].select = True        
-        bpy.ops.object.mode_set(mode='EDIT')        
-        bpy.ops.mesh.delete(type='VERT')
-        bpy.ops.object.mode_set(mode='OBJECT')
-
+            ob.data.vertices[v].select = True
+        # deleting vertices causes "error: EXCEPTION_ACCESS_VIOLATION"  
+        #bpy.ops.object.mode_set(mode='EDIT')        
+        #bpy.ops.mesh.delete(type='VERT')
+        #bpy.ops.object.mode_set(mode='OBJECT')
+            
     if CRF.footer.get_jointmap() != None:
         #select objects, select armature as active, parent objects to armature      
         bpy.ops.object.select_all(action='DESELECT') #deselect all object        

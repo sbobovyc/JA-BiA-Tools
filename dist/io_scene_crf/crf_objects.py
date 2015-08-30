@@ -372,10 +372,10 @@ class CRF_object(object):
         self.jointmap = None
         self.skeleton = None
         
-    def parse_bin(self, file):        
+    def parse_bin(self, file, verbose=False):        
         self.header.parse_bin(file)        
         self.footer.parse_bin(file, self.header.footer_offset1, self.header.footer_offset2, self.header.footer_entries)        
-        self.meshfile.parse_bin(file, self.footer.get_meshfile().file_offset)
+        self.meshfile.parse_bin(file, self.footer.get_meshfile().file_offset, verbose=verbose)
         
         if(self.footer.get_jointmap() != None):
             self.jointmap = CRF_jointmap(file, self.footer.get_jointmap().file_offset)
@@ -654,7 +654,7 @@ class CRF_mesh(object):
                 face_vert_loc_indices = [v1, v2, v3]
                 face_vert_tex_indices = [v1, v2, v3]
                 self.face_list.append((v1, v2, v3))
-                if True or verbose:
+                if verbose:
                     print("face index %s, verts (%s, %s, %s)" % (i, v1, v2, v3))
 
         print("Vertex information starts at", hex(file.tell()).strip('L'))                
@@ -672,7 +672,7 @@ class CRF_mesh(object):
                     vertex.bin2raw(file, file.tell(), i)
                     vertex.raw2blend()
                     self.vertices0.append(vertex)
-                    if True or verbose:
+                    if verbose:
                         print(vertex)
                 self.vertex_stream0_layout = [layout, stride]
             
@@ -680,21 +680,21 @@ class CRF_mesh(object):
                 print("Blendweight/blendindex stream at", hex(file.tell()).strip('L'))
                 for i in range(0, self.number_of_vertices):
                     vertex_blend = CRF_vertex_blend()
-                    vertex_blend.bin2raw(file, file.tell(), i, verbose=True)
+                    vertex_blend.bin2raw(file, file.tell(), i, verbose=verbose)
                     self.vertices1.append(vertex_blend)
                 self.vertex_stream1_layout = [layout, stride]
             elif layout == CRF_VERTEX_DECLRATION_TYPE2:
                 print("Unknown stream at", hex(file.tell()).strip('L'))
                 for i in range(0, self.number_of_vertices):
                     vertex_blend = CRF_vertex_unknown()
-                    vertex_blend.bin2raw(file, file.tell(), i, verbose=True)
+                    vertex_blend.bin2raw(file, file.tell(), i, verbose=verbose)
                     self.vertices2.append(vertex_blend)
                 self.vertex_stream2_layout = [layout, stride]
             elif layout == CRF_VERTEX_DECLRATION_TYPE3:
                 print("Blendindices stream at", hex(file.tell()).strip('L'))
                 for i in range(0, self.number_of_vertices):
                     vertex_blend = CRF_vertex_blend_indices_only()
-                    vertex_blend.bin2raw(file, file.tell(), i, verbose=True)
+                    vertex_blend.bin2raw(file, file.tell(), i, verbose=verbose)
                     self.vertex_blendindices_only.append(vertex_blend)                               
         print("End of vertex data at", hex(file.tell()).strip('L'))
 

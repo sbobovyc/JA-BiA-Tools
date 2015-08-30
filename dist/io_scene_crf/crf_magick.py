@@ -23,7 +23,8 @@ if __name__ == "__main__":
     parser.add_argument('-w', '--write', default=False, action='store_true', help='Write file')
     parser.add_argument('-s', '--scale', default=1.0, action='store', type=float, help='Uniform scale factor')
     parser.add_argument('-t', '--translate', nargs=3, default=[0, 0, 0], action='store', type=float, help='Translation')    
-
+    parser.add_argument('-v', '--verbose', default=False, action='store_true', help='Print verbose information.')
+    
     args = parser.parse_args()
     file = args.file
     outfile = args.outfile
@@ -33,6 +34,7 @@ if __name__ == "__main__":
     write = args.write
     scale_factor = args.scale
     translation = args.translate
+    verbose = args.verbose
     
     path = os.path.abspath(file)
     outfile = os.path.abspath(outfile)
@@ -40,7 +42,7 @@ if __name__ == "__main__":
     
     file = open(path, "rb")    
     obj = crf_objects.CRF_object()
-    obj.parse_bin(file)
+    obj.parse_bin(file, verbose)
     file.close()
 
     if scale_factor != 1.0:
