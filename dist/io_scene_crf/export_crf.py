@@ -72,12 +72,12 @@ def _write(context, filepath,
     matrix_world = ob_primary.matrix_basis # world matrix so we can transform from local to global coordinates
     
     meshfile = CRF_meshfile()
-    LoX = ob_primary.bound_box[0][0]    #TODO, put bbox into a function
-    LoY = ob_primary.bound_box[0][1]
-    LoZ = ob_primary.bound_box[0][2]
-    HiX = ob_primary.bound_box[6][0]
-    HiY = ob_primary.bound_box[6][1]
-    HiZ = ob_primary.bound_box[6][2]
+    LoX = -ob_primary.bound_box[4][0]    
+    LoY = ob_primary.bound_box[4][1]
+    LoZ = ob_primary.bound_box[4][2]
+    HiX = -ob_primary.bound_box[2][0]
+    HiY = ob_primary.bound_box[2][1]
+    HiZ = ob_primary.bound_box[2][2]
     meshfile.num_meshes = len(bpy.context.selected_objects)
     meshfile.model_bounding_box = ((LoX, LoY, LoZ), (HiX, HiY, HiZ))
     print("Bounding box (%f, %f, %f) (%f, %f, %f)" % (LoX, LoY, LoZ, HiX, HiY, HiZ))
@@ -97,12 +97,12 @@ def _write(context, filepath,
         crf_mesh.number_of_faces = len(blender_mesh.polygons)
         
         # mesh bounding box
-        LoX = ob.bound_box[0][0]
-        LoY = ob.bound_box[0][1]
-        LoZ = ob.bound_box[0][2]
-        HiX = ob.bound_box[6][0]
-        HiY = ob.bound_box[6][1]
-        HiZ = ob.bound_box[6][2]
+        LoX = -ob.bound_box[4][0]
+        LoY = ob.bound_box[4][1]
+        LoZ = ob.bound_box[4][2]
+        HiX = -ob.bound_box[2][0]
+        HiY = ob.bound_box[2][1]
+        HiZ = ob.bound_box[2][2]
         crf_mesh.bounding_box = ((LoX, LoY, LoZ), (HiX, HiY, HiZ))
 
         crf_mesh.stream_count = 2
