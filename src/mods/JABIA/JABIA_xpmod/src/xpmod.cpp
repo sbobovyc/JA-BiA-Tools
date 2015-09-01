@@ -32,18 +32,19 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 unsigned int calc_medical(JABIA_XPMOD_parameters * params, JABIA_Character * ptr) {
 	char buf[100];
 	double points = 0.0;
-	double scaler = 15000.0;
-	const double learning_time = 0.1; // 10%
+	const double scaler = params->medical_scaler;
+	const double intel_scaler = params->medical_intel_scaler;
+	const double learning_time = params->medical_learning_time; 
 
 	// init, solve for x
-	double x = double(ptr->medical) / ((100 / sqrt(scaler)) * (1. + ptr->intelligence / 150.));
+	double x = double(ptr->medical) / ((100 / sqrt(scaler)) * (1. + ptr->intelligence / intel_scaler));
 	x *= x;
 	sprintf_s(buf, "Medical X = %f, intelligence = %i", x, ptr->intelligence);
 	OutputDebugString(buf);
 
 #define DEBUG_MEDICAL
 #ifdef DEBUG_MEDICAL
-	double pred_x = double(ptr->medical + 1) / ((100 / sqrt(scaler)) * (1. + ptr->intelligence / 150.));
+	double pred_x = double(ptr->medical + 1) / ((100 / sqrt(scaler)) * (1. + ptr->intelligence / intel_scaler));
 	pred_x *= pred_x;
 	sprintf_s(buf, "Predicted health restored till update %i", int(floor(pred_x)));
 	OutputDebugString(buf);
@@ -59,7 +60,7 @@ unsigned int calc_medical(JABIA_XPMOD_parameters * params, JABIA_Character * ptr
 	}
 	// end init
 
-	points = floor(sqrt(ptr->total_amount_health_restored) * (100 / sqrt(scaler)) * (1. + ptr->intelligence / 150.));
+	points = floor(sqrt(ptr->total_amount_health_restored) * (100 / sqrt(scaler)) * (1. + ptr->intelligence / intel_scaler));
 	sprintf_s(buf, "Calculated medical points %f", points);
 	OutputDebugString(buf);
 
@@ -81,23 +82,24 @@ unsigned int calc_medical(JABIA_XPMOD_parameters * params, JABIA_Character * ptr
 unsigned int calc_explosives(JABIA_XPMOD_parameters * params, JABIA_Character * ptr, unsigned int total_explosives_actions) {
 	char buf[100];
 	double points = 0.0;
-	double scaler = 500.0;
+	double scaler = params->explosives_scaler;
+	double intel_scaler = params->explosives_intel_scaler;
 
 	// init, solve for x
-	double x = ptr->explosives / ((100 / sqrt(scaler)) * (1. + ptr->intelligence / 150.));
+	double x = ptr->explosives / ((100 / sqrt(scaler)) * (1. + ptr->intelligence / intel_scaler));
 	x *= x;
 	sprintf_s(buf, "Explosive X = %f", x);
 	OutputDebugString(buf);
 
 #define DEBUG_EXPLOSIVE
 #ifdef DEBUG_EXPLOSIVE
-	double pred_x = ptr->explosives / ((100 / sqrt(scaler)) * (1. + ptr->intelligence / 150.));
+	double pred_x = ptr->explosives / ((100 / sqrt(scaler)) * (1. + ptr->intelligence / intel_scaler));
 	pred_x *= pred_x;
 	sprintf_s(buf, "Predicted explosives actions till update %f", pred_x);
 	OutputDebugString(buf);
 #endif
 
-	points = floor(sqrt(total_explosives_actions) * (100 / sqrt(scaler)) * (1. + ptr->intelligence / 150.));
+	points = floor(sqrt(total_explosives_actions) * (100 / sqrt(scaler)) * (1. + ptr->intelligence / intel_scaler));
 	
 	if (points > 100.0) {
 		points = 100.0;
@@ -116,9 +118,9 @@ unsigned int calc_explosives(JABIA_XPMOD_parameters * params, JABIA_Character * 
 
 unsigned int calc_marksmanship(JABIA_XPMOD_parameters * params, JABIA_Character * ptr) {
 	char buf[100];
-	const double intelligence_denominator = 150.0;
-	const double scaler = 0.5;
-	const double learning_time = 0.1; // 10%
+	const double scaler = params->marksmanship_scaler;
+	const double intel_scaler = params->marksmanship_intel_scaler;	
+	const double learning_time = params->marksmanship_learning_time;
 
 	if (ptr->bullets_fired == 0) { // prevent divide by zero
 		return ptr->marksmanship;
@@ -129,7 +131,7 @@ unsigned int calc_marksmanship(JABIA_XPMOD_parameters * params, JABIA_Character 
 	OutputDebugString(buf);
 
 	// init, solve for x
-	double x =  double(ptr->marksmanship) / ((1. + (ptr->intelligence / intelligence_denominator)) * (1. + accuracy) * scaler);
+	double x =  double(ptr->marksmanship) / ((1. + (ptr->intelligence / intel_scaler)) * (1. + accuracy) * scaler);
 	x *= x;
 	sprintf_s(buf, "Marksmanship X = %i", int(floor(x)));
 	OutputDebugString(buf);
@@ -148,14 +150,14 @@ unsigned int calc_marksmanship(JABIA_XPMOD_parameters * params, JABIA_Character 
 
 #define DEBUG_MARKSMANSHIP
 #ifdef DEBUG_MARKSMANSHIP
-	x = double(ptr->marksmanship+1) / ((1. + (ptr->intelligence / intelligence_denominator)) * (1. + accuracy) * scaler);
+	x = double(ptr->marksmanship+1) / ((1. + (ptr->intelligence / intel_scaler)) * (1. + accuracy) * scaler);
 	x *= x;
 	sprintf_s(buf, "calc_marksmanship, %s, estimated bullets fired till increase %i", ptr->merc_name, int(floor(x - ptr->bullets_fired)));
 	OutputDebugString(buf);
 #endif
 
 	double points = 0.0;
-	points = floor(sqrt(ptr->bullets_fired) * (1. + (ptr->intelligence / intelligence_denominator)) * (1. + accuracy) * scaler);
+	points = floor(sqrt(ptr->bullets_fired) * (1. + (ptr->intelligence / intel_scaler)) * (1. + accuracy) * scaler);
 
 	if (points > 100.0) {
 		points = 100.0;
@@ -261,12 +263,14 @@ unsigned int calc_stealth(JABIA_XPMOD_parameters * params, JABIA_Character * ptr
 
 unsigned int calc_mechanical(JABIA_XPMOD_parameters * params, JABIA_Character * ptr) {
 	char buf[255];
-	int multiplier = 100;
 	double points = 0.0;
-	unsigned int total_mechanical_actions = 0;	
+	const double scaler = params->mechanical_scaler;
+	const double intel_scaler = params->mechanical_intel_scaler;
+	const double multiplier = params->mechanical_multiplier;	
+	double total_mechanical_actions = 0;	
 	total_mechanical_actions = ptr->total_amount_durability_restored + ptr->successful_locks_picked*multiplier + ptr->successful_doors_forced*multiplier + ptr->successful_repair_checks*multiplier;
 
-	points = floor(sqrt(total_mechanical_actions) * (100 / sqrt(70000.)) * (1. + (ptr->intelligence / 130.0)));
+	points = floor(sqrt(total_mechanical_actions) * (100 / sqrt(scaler)) * (1. + (ptr->intelligence / intel_scaler)));
 	
 	if (points > 100.0) {
 		points = 100.0;

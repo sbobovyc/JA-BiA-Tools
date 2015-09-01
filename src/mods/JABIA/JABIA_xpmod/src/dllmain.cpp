@@ -211,9 +211,10 @@ void changeCharacterStats(void* instance) {
 	
 	if(character_ptr->marksmanship != 100)
 		character_ptr->marksmanship = calc_marksmanship(&xpmod_params, character_ptr);
-
-	if(character_ptr->stealth != 100)
-		character_ptr->stealth = calc_stealth(&xpmod_params, character_ptr);
+	
+	//TODO stealth needs a lot of work
+	//if(character_ptr->stealth != 100)
+	//	character_ptr->stealth = calc_stealth(&xpmod_params, character_ptr);
 	
 	if (character_ptr->mechanical < 100)
 		character_ptr->mechanical = calc_mechanical(&xpmod_params, character_ptr);			
