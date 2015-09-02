@@ -1,9 +1,10 @@
+#!/usr/bin/env python
 """
 Created on February 2, 2012
 
 @author: sbobovyc
 """
-"""   
+"""
     Copyright (C) 2012 Stanislav Bobovych
 
     This program is free software: you can redistribute it and/or modify
@@ -26,13 +27,11 @@ import sys
 import multiprocessing
 from pak_file import PAK_file
 
-
-    
-if __name__ == '__main__':    
+if __name__ == '__main__':
     # On Windows calling this function is necessary.
     if sys.platform.startswith('win'):
         multiprocessing.freeze_support()
-        
+
     parser = argparse.ArgumentParser(description='Tool that can unpack Jagged Alliance: BiA pak/pak.crypt files.')
 
     parser.add_argument('file', nargs='?', help='Input file')
@@ -41,7 +40,6 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--debug', default=False, action='store_true', help='Show debug messages.')
     parser.add_argument('-p', '--parallel', default=False, action='store_true', help='Use multiple workers (This feature is experimental and will fail if not used from Python script)')
 
-
     args = parser.parse_args()
     file = args.file
     outdir = args.outdir
@@ -49,29 +47,27 @@ if __name__ == '__main__':
     debug = args.debug
     parallel = args.parallel
 
-    if file != None and info != False:
+    if file is not None and info is not False:
         info_filepath = os.path.abspath(file)
         print "Not implemented yet."
-            
-    elif file != None:      
+
+    elif file is not None:
         extension = os.path.splitext(file)[1][1:].strip()
         pak_filepath = os.path.abspath(file)
-        
+
         print "Unpacking %s" % pak_filepath
-        
+
         if extension == "pak":
             pak_file = PAK_file(filepath=pak_filepath, encrypted=False)
         elif extension == "crypt":
             pak_file = PAK_file(filepath=pak_filepath, encrypted=True)
         else:
-            print "File not pak or pak.crypt" 
+            print "File not pak or pak.crypt"
 
         output_filepath = os.path.abspath('.')
-        if outdir != None:
-            output_filepath = os.path.abspath(outdir)    
+        if outdir is not None:
+            output_filepath = os.path.abspath(outdir)
         pak_file.dump(dest_filepath=output_filepath, verbose=debug, parallel=parallel)
-                
     else:
         print "Nothing happened"
         parser.print_help()
-            

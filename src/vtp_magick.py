@@ -1,9 +1,10 @@
+#!/usr/bin/env python
 """
 Created on May 9, 2012
 
 @author: sbobovyc
 """
-"""   
+"""
     Copyright (C) 2012 Stanislav Bobovych
 
     This program is free software: you can redistribute it and/or modify
@@ -24,13 +25,17 @@ import argparse
 import os
 from vtp_file import VTP_file
 
-parser = argparse.ArgumentParser(description='Tool that can unpack/pack Jagged Alliance: BiA vtp files.', \
-                                epilog='')
+parser = argparse.ArgumentParser(
+    description='Tool that can unpack/pack Jagged Alliance: BiA vtp files.',
+    epilog='')
 
 parser.add_argument('file', nargs='?', help='Input file')
-parser.add_argument('outdir', nargs='?', default=os.getcwd(), help='Output directory')
-parser.add_argument('-i', '--info', default=False, action='store_true', help='Output information about vtp file')
-parser.add_argument('-d', '--debug', default=False, action='store_true', help='Show debug messages.')
+parser.add_argument('outdir', nargs='?',
+                    default=os.getcwd(), help='Output directory')
+parser.add_argument('-i', '--info', default=False,
+                    action='store_true', help='Output information about vtp file')
+parser.add_argument('-d', '--debug', default=False,
+                    action='store_true', help='Show debug messages.')
 
 
 args = parser.parse_args()
@@ -39,7 +44,7 @@ outdir = args.outdir
 info = args.info
 debug = args.debug
 
-if file != None and os.path.splitext(file)[1][1:].strip() == "vtp":            
+if file is not None and os.path.splitext(file)[1][1:].strip() == "vtp":
     vtp_filepath = os.path.abspath(file)
     print "Unpacking %s" % vtp_filepath
     vtp_file = VTP_file(filepath=vtp_filepath)
@@ -49,12 +54,12 @@ if file != None and os.path.splitext(file)[1][1:].strip() == "vtp":
     if not info:
         output_filepath = os.path.abspath(outdir)
         vtp_file.dump2yaml(outdir)
-    
-elif file != None and os.path.splitext(file)[1][1:].strip() == "txt":    
+
+elif file is not None and os.path.splitext(file)[1][1:].strip() == "txt":
     yaml_vtp_filepath = os.path.abspath(file)
-    vtp_file_name = os.path.basename(file).split('.')[0] + ".vtp"    
+    vtp_file_name = os.path.basename(file).split('.')[0] + ".vtp"
     vtp_filepath = os.path.join(os.path.abspath(outdir), vtp_file_name)
-        
+
     print "Packing %s" % yaml_vtp_filepath
     vtp_file = VTP_file(filepath=vtp_filepath)
     vtp_file.yaml2bin(yaml_vtp_filepath)
@@ -62,4 +67,3 @@ elif file != None and os.path.splitext(file)[1][1:].strip() == "txt":
 else:
     print "Nothing happened"
     parser.print_help()
-        

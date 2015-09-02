@@ -1,9 +1,10 @@
+#!/usr/bin/env python
 """
 Created on February 18, 2012
 
 @author: sbobovyc
 """
-"""   
+"""
     Copyright (C) 2012 Stanislav Bobovych
 
     This program is free software: you can redistribute it and/or modify
@@ -24,8 +25,7 @@ import argparse
 import os
 from deg_file import DEG_file
 
-parser = argparse.ArgumentParser(description='Tool that can unpack/pack Jagged Alliance: BiA deg files.', \
-                                epilog='')
+parser = argparse.ArgumentParser(description='Tool that can unpack/pack Jagged Alliance: BiA deg files.', epilog='')
 
 parser.add_argument('file', nargs='?', help='Input file')
 parser.add_argument('outdir', nargs='?', default=os.getcwd(), help='Output directory')
@@ -39,7 +39,7 @@ outdir = args.outdir
 info = args.info
 debug = args.debug
 
-if file != None and os.path.splitext(file)[1][1:].strip() == "deg":            
+if file is not None and os.path.splitext(file)[1][1:].strip() == "deg":
     deg_filepath = os.path.abspath(file)
     print "Unpacking %s" % deg_filepath
     deg_file = DEG_file(filepath=deg_filepath)
@@ -49,17 +49,14 @@ if file != None and os.path.splitext(file)[1][1:].strip() == "deg":
     if not info:
         output_filepath = os.path.abspath(outdir)
         deg_file.dump2yaml(outdir)
-    
-elif file != None and os.path.splitext(file)[1][1:].strip() == "txt":            
+elif file is not None and os.path.splitext(file)[1][1:].strip() == "txt":
     yaml_deg_filepath = os.path.abspath(file)
-    deg_file_name = os.path.basename(file).split('.')[0] + ".deg"    
+    deg_file_name = os.path.basename(file).split('.')[0] + ".deg"
     deg_filepath = os.path.join(os.path.abspath(outdir), deg_file_name)
-        
+
     print "Packing %s" % yaml_deg_filepath
     deg_file = DEG_file(filepath=deg_filepath)
     deg_file.yaml2bin(yaml_deg_filepath)
-
 else:
     print "Nothing happened"
     parser.print_help()
-        

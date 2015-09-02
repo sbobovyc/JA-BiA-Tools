@@ -1,9 +1,10 @@
+#!/usr/bin/env python
 """
 Created on February 18, 2012
 
 @author: sbobovyc
 """
-"""   
+"""
     Copyright (C) 2012 Stanislav Bobovych
 
     This program is free software: you can redistribute it and/or modify
@@ -24,8 +25,7 @@ import argparse
 import os
 from cui_file import CUI_file
 
-parser = argparse.ArgumentParser(description='Tool that can unpack/pack Jagged Alliance: BiA cui files.', \
-                                epilog='')
+parser = argparse.ArgumentParser(description='Tool that can unpack/pack Jagged Alliance: BiA cui files.', epilog='')
 
 parser.add_argument('file', nargs='?', help='Input file')
 parser.add_argument('outdir', nargs='?', default=os.getcwd(), help='Output directory')
@@ -34,13 +34,13 @@ parser.add_argument('-d', '--debug', default=False, action='store_true', help='S
 
 
 args = parser.parse_args()
-file = args.file
+infile = args.file
 outdir = args.outdir
 info = args.info
 debug = args.debug
 
-if file != None and os.path.splitext(file)[1][1:].strip() == "cui":            
-    cui_filepath = os.path.abspath(file)
+if infile is not None and os.path.splitext(infile)[1][1:].strip() == "cui":
+    cui_filepath = os.path.abspath(infile)
     print "Unpacking %s" % cui_filepath
     cui_file = CUI_file(filepath=cui_filepath)
     cui_file.open()
@@ -49,12 +49,12 @@ if file != None and os.path.splitext(file)[1][1:].strip() == "cui":
     if not info:
         output_filepath = os.path.abspath(outdir)
         cui_file.dump2yaml(outdir)
-    
-elif file != None and os.path.splitext(file)[1][1:].strip() == "txt":       
-    yaml_cui_filepath = os.path.abspath(file)
-    cui_file_name = os.path.basename(file).split('.')[0] + ".cui"    
+
+elif infile is not None and os.path.splitext(infile)[1][1:].strip() == "txt":
+    yaml_cui_filepath = os.path.abspath(infile)
+    cui_file_name = os.path.basename(infile).split('.')[0] + ".cui"
     cui_filepath = os.path.join(os.path.abspath(outdir), cui_file_name)
-        
+
     print "Packing %s" % yaml_cui_filepath
     cui_file = CUI_file(filepath=cui_filepath)
     cui_file.yaml2bin(yaml_cui_filepath)
@@ -62,4 +62,3 @@ elif file != None and os.path.splitext(file)[1][1:].strip() == "txt":
 else:
     print "Nothing happened"
     parser.print_help()
-        
