@@ -39,13 +39,13 @@ parser.add_argument('-d', '--debug', default=False,
 
 
 args = parser.parse_args()
-file = args.file
+infile = args.file
 outdir = args.outdir
 info = args.info
 debug = args.debug
 
-if file is not None and os.path.splitext(file)[1][1:].strip() == "vtp":
-    vtp_filepath = os.path.abspath(file)
+if infile is not None and os.path.splitext(infile)[1][1:].strip() == "vtp":
+    vtp_filepath = os.path.abspath(infile)
     print "Unpacking %s" % vtp_filepath
     vtp_file = VTP_file(filepath=vtp_filepath)
     vtp_file.open()
@@ -55,9 +55,9 @@ if file is not None and os.path.splitext(file)[1][1:].strip() == "vtp":
         output_filepath = os.path.abspath(outdir)
         vtp_file.dump2yaml(outdir)
 
-elif file is not None and os.path.splitext(file)[1][1:].strip() == "txt":
-    yaml_vtp_filepath = os.path.abspath(file)
-    vtp_file_name = os.path.basename(file).split('.')[0] + ".vtp"
+elif infile is not None and os.path.splitext(infile)[1][1:].strip() == "txt":
+    yaml_vtp_filepath = os.path.abspath(infile)
+    vtp_file_name = os.path.basename(infile).split('.')[0] + ".vtp"
     vtp_filepath = os.path.join(os.path.abspath(outdir), vtp_file_name)
 
     print "Packing %s" % yaml_vtp_filepath

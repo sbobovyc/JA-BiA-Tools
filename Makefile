@@ -8,6 +8,9 @@ ICON3=./misc/vtp_icon.ico
 ICON4=./misc/deg_icon.ico
 ICON5=./misc/cui_icon.ico
 
+TEMP=./tmp
+
+.PHONY: all
 all: pak ctx vtp deg cui wizard
 
 pak:
@@ -23,3 +26,17 @@ cui:
 wizard:
 	python $(PIP)/pyinstaller.py --upx-dir=$(UPX_PATH) --onefile --console --name jabia_wizard -p src/ src/experimental/jabia_wizard.py
 
+
+.PHONY: test
+test:
+	mkdir -p $(TEMP)
+	python src/pak_magick.py data_win32.pak $(TEMP)
+	python src/pak_magick.py configs_win32.pak.crypt $(TEMP)
+	python src/pak_magick.py interface_win32.pak.crypt $(TEMP)
+	python src/ctx_magick.py $(TEMP)/bin_win32/interface/main.ctx $(TEMP)
+	python src/ctx_magick.py $(TEMP)/main.ctx.txt $(TEMP) 
+	python src/deg_magick.py $(TEMP)/bin_win32/configs/main.deg $(TEMP)
+	python src/deg_magick.py $(TEMP)/main.deg.txt $(TEMP)
+	python src/cui_magick.py $(TEMP)/bin_win32/interface/interface.cui $(TEMP)
+	python src/cui_magick.py $(TEMP)/interface.cui.txt $(TEMP)
+	rm -rf $(TEMP)

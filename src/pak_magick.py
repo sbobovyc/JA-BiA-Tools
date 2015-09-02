@@ -41,19 +41,19 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--parallel', default=False, action='store_true', help='Use multiple workers (This feature is experimental and will fail if not used from Python script)')
 
     args = parser.parse_args()
-    file = args.file
+    infile = args.file
     outdir = args.outdir
     info = args.info
     debug = args.debug
     parallel = args.parallel
 
-    if file is not None and info is not False:
-        info_filepath = os.path.abspath(file)
+    if infile is not None and info is not False:
+        info_filepath = os.path.abspath(infile)
         print "Not implemented yet."
 
-    elif file is not None:
-        extension = os.path.splitext(file)[1][1:].strip()
-        pak_filepath = os.path.abspath(file)
+    elif infile is not None:
+        extension = os.path.splitext(infile)[1][1:].strip()
+        pak_filepath = os.path.abspath(infile)
 
         print "Unpacking %s" % pak_filepath
 

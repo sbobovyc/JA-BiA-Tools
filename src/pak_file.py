@@ -110,6 +110,8 @@ class PAK_dir:
 
         # strip the null and remove leading slash
         self.dir_name = self.dir_name.replace("\00", "").strip()[1:]
+        # make path os independent
+        self.dir_name = os.path.join(*self.dir_name.split("\\"))
         if self.dir_number_files != 0:
             for i in range(0, self.dir_number_files):
                 pF = PAK_data()

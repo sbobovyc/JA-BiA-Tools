@@ -34,13 +34,13 @@ parser.add_argument('-d', '--debug', default=False, action='store_true', help='S
 
 
 args = parser.parse_args()
-file = args.file
+infile = args.file
 outdir = args.outdir
 info = args.info
 debug = args.debug
 
-if file is not None and os.path.splitext(file)[1][1:].strip() == "deg":
-    deg_filepath = os.path.abspath(file)
+if infile is not None and os.path.splitext(infile)[1][1:].strip() == "deg":
+    deg_filepath = os.path.abspath(infile)
     print "Unpacking %s" % deg_filepath
     deg_file = DEG_file(filepath=deg_filepath)
     deg_file.open()
@@ -49,9 +49,9 @@ if file is not None and os.path.splitext(file)[1][1:].strip() == "deg":
     if not info:
         output_filepath = os.path.abspath(outdir)
         deg_file.dump2yaml(outdir)
-elif file is not None and os.path.splitext(file)[1][1:].strip() == "txt":
-    yaml_deg_filepath = os.path.abspath(file)
-    deg_file_name = os.path.basename(file).split('.')[0] + ".deg"
+elif infile is not None and os.path.splitext(infile)[1][1:].strip() == "txt":
+    yaml_deg_filepath = os.path.abspath(infile)
+    deg_file_name = os.path.basename(infile).split('.')[0] + ".deg"
     deg_filepath = os.path.join(os.path.abspath(outdir), deg_file_name)
 
     print "Packing %s" % yaml_deg_filepath

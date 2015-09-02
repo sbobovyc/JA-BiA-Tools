@@ -9,7 +9,7 @@
     %BIN%\pak_magick.exe %ROOT%\interface_win32.pak.crypt %BIA%
     %BIN%\pak_magick.exe %ROOT%\data_win32.pak %BIA%
     %BIN%\pak_magick.exe %ROOT%\data1_win32.pak %BIA%
-    %BIN%\pak_magick.exe %ROOT\data2_win32.pak %BIA%
+    %BIN%\pak_magick.exe %ROOT%\data2_win32.pak %BIA%
     %BIN%\pak_magick.exe %ROOT%\data3_win32.pak %BIA%
     %BIN%\pak_magick.exe %ROOT%\data4_win32.pak %BIA%
 
