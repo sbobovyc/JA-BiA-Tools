@@ -1133,8 +1133,8 @@ class CRF_vertex(object):
                                                                      hex(self.normal_x), hex(self.normal_y), hex(self.normal_z), hex(self.normal_w))
         string += "\tspecular BGRA  = %i %i %i %i, %s %s %s %s\n" % (self.normal_x, self.normal_y, self.normal_z, self.normal_w,
                                                                      hex(self.specular_blue), hex(self.specular_green), hex(self.specular_red), hex(self.specular_alpha))
-        string += "\tuv0 = %i %i, 0x%x 0x%x\n" % (self.u0, self.v0, self.u0, self.v0)
-        string += "\tuv1 = %i %i, 0x%x 0x%x\n" % (self.u1, self.v1, self.u1, self.v1)        
+        string += "\tuv0 = %i %i, %s %s\n" % (self.u0, self.v0, hex(self.u0 & 0xffff), hex(self.v0 & 0xffff))
+        string += "\tuv1 = %i %i, %s %s\n" % (self.u1, self.v1, hex(self.u1 & 0xffff), hex(self.v1 & 0xffff))        
         string += "\tblendweight = 0x%x 0x%x 0x%x 0x%x\n" % (self.blendweights1_x & 0xff, self.blendweights1_y & 0xff, self.blendweights1_z & 0xff, self.blendweights1_w & 0xff)       
         return string   
 
