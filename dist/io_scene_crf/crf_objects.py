@@ -1,4 +1,5 @@
-from __future__ import print_function    
+from __future__ import print_function
+from __future__ import division
     
 import math
 import struct
@@ -345,7 +346,7 @@ def float2uint32(number):
     return int(number * 4294967295)    # 2^32 - 1
 
 def uint2float(uint_number):
-    return uint_number / 4294967295
+    return uint_number / 4294967295.
 
 def ubyte2float(ubyte_number):
     return ubyte_number / 255.0
@@ -1150,20 +1151,20 @@ class CRF_vertex(object):
         self.normal_z_blend = byte2float(self.normal_z) 
         self.normal_w_blend = byte2float(self.normal_w)
 
-        self.specular_blue_blend = self.specular_blue / 255
-        self.specular_green_blend = self.specular_green / 255
-        self.specular_red_blend = self.specular_red / 255
-        self.specular_alpha_blend = self.specular_alpha / 255
-
-        self.u0_blend = 0.5+(self.u0 / 32768)/2.0
-        self.v0_blend = 0.5-(self.v0 / 32768)/2.0
-        self.u1_blend = 0.5+(self.u1 / 32768)/2.0
-        self.v1_blend = 0.5-(self.v1 / 32768)/2.0
+        self.specular_blue_blend = self.specular_blue / 255.
+        self.specular_green_blend = self.specular_green / 255.
+        self.specular_red_blend = self.specular_red / 255.
+        self.specular_alpha_blend = self.specular_alpha / 255.
         
-        self.blendweights1_x_blend = self.blendweights1_x / 255
-        self.blendweights1_y_blend = self.blendweights1_y / 255
-        self.blendweights1_z_blend = self.blendweights1_z / 255
-        self.blendweights1_w_blend = self.blendweights1_w / 255        
+        self.u0_blend = 0.5+(self.u0 / 32768.)/2.0
+        self.v0_blend = 0.5-(self.v0 / 32768.)/2.0
+        self.u1_blend = 0.5+(self.u1 / 32768.)/2.0
+        self.v1_blend = 0.5-(self.v1 / 32768.)/2.0
+        
+        self.blendweights1_x_blend = self.blendweights1_x / 255.
+        self.blendweights1_y_blend = self.blendweights1_y / 255.
+        self.blendweights1_z_blend = self.blendweights1_z / 255.
+        self.blendweights1_w_blend = self.blendweights1_w / 255.        
         
         
     def blend2raw(self):
@@ -1231,7 +1232,7 @@ class CRF_vertex(object):
                                                          self.specular_blue, self.specular_green, self.specular_red, self.specular_alpha,
                                                          self.u0, self.v0, self.u1, self.v1,
                                                          self.blendweights1_x, self.blendweights1_y,
-                                                        self.blendweights1_z, self.blendweights1_w)                                                
+                                                         self.blendweights1_z, self.blendweights1_w)                                              
         return data
     
 
