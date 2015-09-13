@@ -299,7 +299,7 @@ def load(operator, context, filepath,
         faces = []  # tuples of the faces
         face_tex = [] # tuples of uv coordinates for faces
         vertex_normals = []
-        vertex_specular = []
+        vertex_tangent = []
         vertex_blendweights1 = []        
         
         mesh = meshfile.meshes[i]
@@ -325,7 +325,7 @@ def load(operator, context, filepath,
             verts_tex0.append( (vertex.u0_blend, vertex.v0_blend) )        
 
             vertex_normals.append( (vertex.normal_x_blend, vertex.normal_y_blend, vertex.normal_z_blend, vertex.normal_w_blend) )
-            vertex_specular.append( (vertex.specular_red_blend, vertex.specular_green_blend, vertex.specular_blue_blend, vertex.specular_alpha_blend) )
+            vertex_tangent.append( (vertex.tangent_x_blend, vertex.tangent_y_blend, vertex.tangent_z_blend, vertex.tangent_w_blend) )
             vertex_blendweights1.append( (vertex.blendweights1_x_blend, vertex.blendweights1_y_blend, vertex.blendweights1_z_blend, vertex.blendweights1_w_blend) )
         
         # deselect all
@@ -358,7 +358,7 @@ def load(operator, context, filepath,
                 for vert in verts_in_face:  
                     print("vert", vert, " vert co", ob.data.vertices[vert].co)
                     print("Normal X:%s Y:%s Z:%s " % (vertex_normals[vert][0], vertex_normals[vert][1], vertex_normals[vert][2]))
-                    print("specular R:%s G:%s B:%s " % (vertex_specular[vert][0], vertex_specular[vert][1], vertex_specular[vert][2]))
+                    print("Tangnet X:%s Y:%s Z:%s " % (vertex_tangent[vert][0], vertex_tangent[vert][1], vertex_tangent[vert][2]))
                     print("UV0: ", verts_tex0[vert])
                     print()
             i = face.index
@@ -402,11 +402,11 @@ def load(operator, context, filepath,
                 
         # add specular constant
         if use_specular:
-            vertex_specular = []
+            vertex_tangent = []
             for vertex in mesh.vertices0:
-                vertex_specular.append((vertex.specular_red_blend, vertex.specular_green_blend, vertex.specular_blue_blend, vertex.specular_alpha_blend))
+                vertex_tangent.append((vertex.tangent_x_blend, vertex.tangent_y_blend, vertex.tangent_z_blend, vertex.tangent_w_blend))
                 
-            setVertexSpecularColors(me, ob.data.tessfaces, vertex_specular)
+            setVertexSpecularColors(me, ob.data.tessfaces, vertex_tangent)
             # if no materials exist, create one+
             if len(ob.data.materials) == 0:
                 mat = createMaterial('Specular', use_shadeless, viz_normals)

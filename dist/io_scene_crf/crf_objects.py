@@ -1080,10 +1080,10 @@ class CRF_vertex(object):
         self.normal_y = 0
         self.normal_z = 0
         self.normal_w = 0
-        self.specular_blue = 0
-        self.specular_green = 0
-        self.specular_red = 0
-        self.specular_alpha = 0
+        self.tangent_x = 0
+        self.tangent_y = 0
+        self.tangent_z = 0
+        self.tangent_w = 0
         self.u0 = 0
         self.v0 = 0
         self.u1 = 0
@@ -1101,10 +1101,10 @@ class CRF_vertex(object):
         self.normal_y_blend = 0
         self.normal_z_blend = 0
         self.normal_w_blend = 0
-        self.specular_blue_blend = 0
-        self.specular_green_blend = 0
-        self.specular_red_blend = 0
-        self.specular_alpha_blend = 0 #Not iplemented      
+        self.tangent_x_blend = 0
+        self.tangent_y_blend = 0
+        self.tangent_z_blend = 0
+        self.tangent_w_blend = 0 #Not iplemented      
         self.u0_blend = 0
         self.v0_blend = 0
         self.u1_blend = 0
@@ -1122,7 +1122,7 @@ class CRF_vertex(object):
         string += "Blender values:\n"
         string += "xyz = %f %f %f\n" % (self.x_blend, self.y_blend, self.z_blend)
         string += "\tvertex normal XYZW  = %f %f %f %f\n" % (self.normal_x_blend, self.normal_y_blend, self.normal_z_blend, self.normal_w_blend)                                                                    
-        string += "\tspecular BGRA  = %f %f %f %f\n" % (self.normal_x_blend, self.normal_y_blend, self.normal_z_blend, self.normal_w_blend)                                                 
+        string += "\tvertex tangent XYZW  = %f %f %f %f\n" % (self.tangent_x_blend, self.tangent_y_blend, self.tangent_z_blend, self.tangent_w_blend)                                                 
         string += "\tuv0 = %f %f\n" % (self.u0_blend, self.v0_blend)
         string += "\tuv1 = %f %f\n" % (self.u1_blend, self.v1_blend)
         string += "\tblendeweight = %f %f %f %f\n" % (self.blendweights1_x_blend, self.blendweights1_y_blend, self.blendweights1_z_blend, self.blendweights1_w_blend)     
@@ -1131,8 +1131,8 @@ class CRF_vertex(object):
         string += "xyz = %f %f %f\n" % (self.x, self.y, self.z)        
         string += "\tvertex normal XYZW  = %i %i %i %i, %s %s %s %s\n" % (self.normal_x, self.normal_y, self.normal_z, self.normal_w,
                                                                      hex(self.normal_x), hex(self.normal_y), hex(self.normal_z), hex(self.normal_w))
-        string += "\tspecular BGRA  = %i %i %i %i, %s %s %s %s\n" % (self.normal_x, self.normal_y, self.normal_z, self.normal_w,
-                                                                     hex(self.specular_blue), hex(self.specular_green), hex(self.specular_red), hex(self.specular_alpha))
+        string += "\tvertex tangent XYZW  = %i %i %i %i, %s %s %s %s\n" % (self.tangent_x, self.tangent_y, self.tangent_z, self.tangent_w,
+                                                                     hex(self.tangent_x), hex(self.tangent_y), hex(self.tangent_z), hex(self.tangent_w))
         string += "\tuv0 = %i %i, %s %s\n" % (self.u0, self.v0, hex(self.u0 & 0xffff), hex(self.v0 & 0xffff))
         string += "\tuv1 = %i %i, %s %s\n" % (self.u1, self.v1, hex(self.u1 & 0xffff), hex(self.v1 & 0xffff))        
         string += "\tblendweight = 0x%x 0x%x 0x%x 0x%x\n" % (self.blendweights1_x & 0xff, self.blendweights1_y & 0xff, self.blendweights1_z & 0xff, self.blendweights1_w & 0xff)       
@@ -1142,19 +1142,19 @@ class CRF_vertex(object):
         """ Convert raw values to blender values """
         #TODO find out how CRF object coordinates work (global or local)
         self.x_blend = self.x
+        self.x_blend = -self.x_blend # mirror vertex across x axis        
         self.y_blend = self.y
-        self.z_blend = self.z
-        self.x_blend = -self.x_blend # mirror vertex across x axis
+        self.z_blend = self.z        
 
         self.normal_x_blend = byte2float(self.normal_x)
         self.normal_y_blend = byte2float(self.normal_y) 
         self.normal_z_blend = byte2float(self.normal_z) 
         self.normal_w_blend = byte2float(self.normal_w)
 
-        self.specular_blue_blend = self.specular_blue / 255.
-        self.specular_green_blend = self.specular_green / 255.
-        self.specular_red_blend = self.specular_red / 255.
-        self.specular_alpha_blend = self.specular_alpha / 255.
+        self.tangent_x_blend = byte2float(self.tangent_x)
+        self.tangent_y_blend = byte2float(self.tangent_y)
+        self.tangent_z_blend = byte2float(self.tangent_z)
+        self.tangent_w_blend = byte2float(self.tangent_w)
         
         self.u0_blend = 0.5+(self.u0 / 32768.)/2.0
         self.v0_blend = 0.5-(self.v0 / 32768.)/2.0
@@ -1183,10 +1183,10 @@ class CRF_vertex(object):
         self.normal_w = 0#float2uint(self.normal_w_blend)
         print("Raw normal %i: %f, %f, %f" % (self.index, self.normal_x, self.normal_y, self.normal_z))        
         
-        self.specular_blue = int(self.specular_blue_blend * 255)
-        self.specular_green = int(self.specular_green_blend * 255)
-        self.specular_red = int(self.specular_red_blend * 255)
-        self.specular_alpha = int(self.specular_alpha_blend * 255)
+        self.tangent_x = float2uint(self.tangent_x_blend)
+        self.tangent_y = float2uint(self.tangent_y_blend)
+        self.tangent_z = float2uint(self.tangent_z_blend)
+        self.tangent_w = 0xff # matches what's in the orignal binary files
         
         self.u0 = int(((self.u0_blend - 0.5) * 2) * 32768)
         self.v0 = int(((self.v0_blend - 0.5) * -2) * 32768)
@@ -1220,7 +1220,7 @@ class CRF_vertex(object):
             self.index = index
             self.x, self.y, self.z, \
                 self.normal_x, self.normal_y, self.normal_z, self.normal_w, \
-                self.specular_blue, self.specular_green, self.specular_red, self.specular_alpha, \
+                self.tangent_x, self.tangent_y, self.tangent_z, self.tangent_w, \
                 self.u0, self.v0, self.u1, self.v1, \
                 self.blendweights1_x, self.blendweights1_y, \
                 self.blendweights1_z, self.blendweights1_w = struct.unpack("<fffBBBBBBBBhhhhBBBB", file.read(32))
@@ -1228,11 +1228,11 @@ class CRF_vertex(object):
         
     def get_bin(self):        
         data = struct.pack("<fffBBBBBBBBhhhhBBBB", self.x, self.y, self.z,
-                                                         self.normal_x, self.normal_y, self.normal_z, self.normal_w,
-                                                         self.specular_blue, self.specular_green, self.specular_red, self.specular_alpha,
-                                                         self.u0, self.v0, self.u1, self.v1,
-                                                         self.blendweights1_x, self.blendweights1_y,
-                                                         self.blendweights1_z, self.blendweights1_w)                                              
+                                                        self.normal_x, self.normal_y, self.normal_z, self.normal_w,
+                                                        self.tangent_x, self.tangent_y, self.tangent_z, self.tangent_w,
+                                                        self.u0, self.v0, self.u1, self.v1,
+                                                        self.blendweights1_x, self.blendweights1_y,
+                                                        self.blendweights1_z, self.blendweights1_w)                          
         return data
     
 
