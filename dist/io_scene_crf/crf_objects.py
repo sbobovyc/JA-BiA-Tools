@@ -351,19 +351,25 @@ def uint2float(uint_number):
 def ubyte2float(ubyte_number):
     return ubyte_number / 255.0
 
-def byte2float(int_number):
-    if int_number > 128:
-        return float(int_number / 128.0) - 1
-    elif int_number < 128:
-        return float(-(128.0 - int_number) / 128.0)
-    else:
-        return 0.0 
+def byte2float(int_number, old_way=False):
+    if old_way:
+        if int_number > 128:
+            return float(int_number / 128.0) - 1
+        elif int_number < 128:
+            return float(-(128.0 - int_number) / 128.0)
+        else:
+            return 0.0
+    else:    
+        return (int_number/127.5) - 1.0
     
-def float2uint(f_number):
-    if f_number <= 0:
-        return int((f_number+1.0)/2.0 * 255.0 + 1)
+def float2uint(f_number, old_way=False):
+    if old_way:
+        if f_number <= 0:
+            return int((f_number+1.0)/2.0 * 255.0 + 1)
+        else:
+            return int((f_number+1.0)/2.0 * 256.0 - 1)
     else:
-        return int((f_number+1.0)/2.0 * 256.0 - 1)
+        return int(math.floor((f_number + 1.0)*127.5))
 
 class CRF_object(object):
     def __init__(self):
