@@ -1127,7 +1127,8 @@ class CRF_vertex(object):
         string = "Vertex index = %s\n" % (self.index)
         string += "Blender values:\n"
         string += "xyz = %f %f %f\n" % (self.x_blend, self.y_blend, self.z_blend)
-        string += "\tvertex normal XYZW  = %f %f %f %f\n" % (self.normal_x_blend, self.normal_y_blend, self.normal_z_blend, self.normal_w_blend)                                                                    
+        string += "\tvertex normal XYZW  = %f %f %f %f\n" % (self.normal_x_blend, self.normal_y_blend, self.normal_z_blend, self.normal_w_blend)
+        #string += "\tvertex normal length = %s\n" % (math.sqrt(self.normal_x_blend*self.normal_x_blend + self.normal_y_blend*self.normal_y_blend + self.normal_z_blend*self.normal_z_blend))
         string += "\tvertex tangent XYZW  = %f %f %f %f\n" % (self.tangent_x_blend, self.tangent_y_blend, self.tangent_z_blend, self.tangent_w_blend)                                                 
         string += "\tuv0 = %f %f\n" % (self.u0_blend, self.v0_blend)
         string += "\tuv1 = %f %f\n" % (self.u1_blend, self.v1_blend)
@@ -1136,7 +1137,7 @@ class CRF_vertex(object):
         string += "CRF values:\n"
         string += "xyz = %f %f %f\n" % (self.x, self.y, self.z)        
         string += "\tvertex normal XYZW  = %i %i %i %i, %s %s %s %s\n" % (self.normal_x, self.normal_y, self.normal_z, self.normal_w,
-                                                                     hex(self.normal_x), hex(self.normal_y), hex(self.normal_z), hex(self.normal_w))
+                                                                     hex(self.normal_x), hex(self.normal_y), hex(self.normal_z), hex(self.normal_w))        
         string += "\tvertex tangent XYZW  = %i %i %i %i, %s %s %s %s\n" % (self.tangent_x, self.tangent_y, self.tangent_z, self.tangent_w,
                                                                      hex(self.tangent_x), hex(self.tangent_y), hex(self.tangent_z), hex(self.tangent_w))
         string += "\tuv0 = %i %i, %s %s\n" % (self.u0, self.v0, hex(self.u0 & 0xffff), hex(self.v0 & 0xffff))

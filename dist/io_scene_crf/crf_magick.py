@@ -1,3 +1,4 @@
+from __future__ import print_function
 import argparse
 import sys
 import os
@@ -6,7 +7,7 @@ with_graph = True
 try:
     import pydot
 except ImportError, err:
-    print "Pydot not installed, will not create graph."
+    print("Pydot not installed, will not create graph.")
     with_graph = False
     
 
@@ -19,6 +20,7 @@ if __name__ == "__main__":
     parser.add_argument('outfile', nargs='?', default='dump.crf', help='Output file')
     parser.add_argument('outdir', nargs='?', default=os.getcwd(), help='Output directory')
     parser.add_argument('-i', '--info', default=False, action='store_true', help='Print information about file')
+    parser.add_argument('-d', '--diff', default=False, action='store_true', help='Diff two files')
     parser.add_argument('-b', '--boneinfo', default=False, action='store_true', help='Print information about bones and if pydot/graphiz are installed create graph.')
     parser.add_argument('-w', '--write', default=False, action='store_true', help='Write file')
     parser.add_argument('-s', '--scale', default=1.0, action='store', type=float, help='Uniform scale factor')
@@ -26,24 +28,25 @@ if __name__ == "__main__":
     parser.add_argument('-v', '--verbose', default=False, action='store_true', help='Print verbose information.')
     
     args = parser.parse_args()
-    file = args.file
+    infile1 = args.file
     outfile = args.outfile
     outdir = args.outdir
     info = args.info
+    diff = args.diff
     boneinfo = args.boneinfo
     write = args.write
     scale_factor = args.scale
     translation = args.translate
     verbose = args.verbose
     
-    path = os.path.abspath(file)
+    path = os.path.abspath(infile1)
     outfile = os.path.abspath(outfile)
     print(path)
     
-    file = open(path, "rb")    
+    fp = open(path, "rb")    
     obj = crf_objects.CRF_object()
-    obj.parse_bin(file, verbose)
-    file.close()
+    obj.parse_bin(fp, verbose)
+    fp.close()
 
     if scale_factor != 1.0:
         obj.meshfile.scale(scale_factor)
@@ -53,6 +56,19 @@ if __name__ == "__main__":
 
     if info:
         print(obj.meshfile)
+
+    if diff:
+	fp = open(outfile, "rb")
+	obj2 = crf_objects.CRF_object()
+	obj2.parse_bin(fp, verbose)
+	fp.close()
+
+        for mesh1, mesh2 in zip(obj.meshfile.meshes, obj2.meshfile.meshes):
+            for v_ob1,v_ob2 in zip(mesh1.vertices0, mesh2.vertices0):
+		string = ""
+		string += "index\tnx_delta\tny_delta\tnz_delta\n"
+		string += "%i\t\t%i\t\t%i\t\t%i\n" % (v_ob1.index, v_ob1.normal_x - v_ob2.normal_x, v_ob1.normal_y - v_ob2.normal_y, v_ob1.normal_z - v_ob2.normal_z)
+		print(string)
         
     if boneinfo:
         if with_graph and obj.skeleton != None:
@@ -68,6 +84,6 @@ if __name__ == "__main__":
             graph.write_png('crf_bonegraph.png')
 
     if write:
-        file = open(outfile, "wb")
-        file.write(obj.get_bin())
-        file.close()
+        fp = open(outfile, "wb")
+        fp.write(obj.get_bin())
+        fp.close()
