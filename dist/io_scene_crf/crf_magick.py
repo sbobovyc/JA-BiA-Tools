@@ -48,6 +48,23 @@ if __name__ == "__main__":
     obj.parse_bin(fp, verbose)
     fp.close()
 
+    if diff:
+    	fp = open(outfile, "rb")
+    	obj2 = crf_objects.CRF_object()
+    	obj2.parse_bin(fp, verbose)
+    	fp.close()
+    
+        for mesh1, mesh2 in zip(obj.meshfile.meshes, obj2.meshfile.meshes):
+            formatter_header = "{0:<10s} {1:<10s} {2:<10s} {3:<10s} {4:<10s} {5:<10s} {6:<10s}\n"
+            formatter = "{0:<10s} {1:<10f} {2:<10f} {3:<10f} {4:<10s} {5:<10s} {6:<10s}\n"
+            for v_ob1,v_ob2 in zip(mesh1.vertices0, mesh2.vertices0):
+    	        string = ""
+    	        string += formatter_header.format("index", "x_delta", "y_delta", "z_delta", "nx_delta","ny_delta", "nz_delta")
+    	        string += formatter.format(str(v_ob1.index), v_ob1.x - v_ob2.x, v_ob1.y - v_ob2.y, v_ob1.z - v_ob2.z,
+                                            str(v_ob1.normal_x - v_ob2.normal_x), str(v_ob1.normal_y - v_ob2.normal_y), str(v_ob1.normal_z - v_ob2.normal_z))
+    	        print(string)
+        sys.exit()
+
     if scale_factor != 1.0:
         obj.meshfile.scale(scale_factor)
 
@@ -57,18 +74,6 @@ if __name__ == "__main__":
     if info:
         print(obj.meshfile)
 
-    if diff:
-	fp = open(outfile, "rb")
-	obj2 = crf_objects.CRF_object()
-	obj2.parse_bin(fp, verbose)
-	fp.close()
-
-        for mesh1, mesh2 in zip(obj.meshfile.meshes, obj2.meshfile.meshes):
-            for v_ob1,v_ob2 in zip(mesh1.vertices0, mesh2.vertices0):
-		string = ""
-		string += "index\tnx_delta\tny_delta\tnz_delta\n"
-		string += "%i\t\t%i\t\t%i\t\t%i\n" % (v_ob1.index, v_ob1.normal_x - v_ob2.normal_x, v_ob1.normal_y - v_ob2.normal_y, v_ob1.normal_z - v_ob2.normal_z)
-		print(string)
         
     if boneinfo:
         if with_graph and obj.skeleton != None:
