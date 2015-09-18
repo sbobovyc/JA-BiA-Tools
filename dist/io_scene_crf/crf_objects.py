@@ -1168,10 +1168,10 @@ class CRF_vertex(object):
         self.u1_blend = 0.5+(self.u1 / 32768.)/2.0
         self.v1_blend = 0.5-(self.v1 / 32768.)/2.0
         
-        self.blendweights1_x_blend = self.blendweights1_x / 255.
-        self.blendweights1_y_blend = self.blendweights1_y / 255.
-        self.blendweights1_z_blend = self.blendweights1_z / 255.
-        self.blendweights1_w_blend = self.blendweights1_w / 255.        
+        self.blendweights1_x_blend = byte2float(self.blendweights1_x)
+        self.blendweights1_y_blend = byte2float(self.blendweights1_y)
+        self.blendweights1_z_blend = byte2float(self.blendweights1_z)
+        self.blendweights1_w_blend = byte2float(self.blendweights1_w)   
         
         
     def blend2raw(self):
@@ -1200,10 +1200,10 @@ class CRF_vertex(object):
         self.u1 = int(((self.u1_blend - 0.5) * 2) * 32768)
         self.v1 = int(((self.v1_blend - 0.5) * -2) * 32768)
 
-        self.blendweights1_x = int(self.blendweights1_x_blend * 255)
-        self.blendweights1_y = int(self.blendweights1_y_blend * 255)
-        self.blendweights1_z = int(self.blendweights1_z_blend * 255)
-        self.blendweights1_w = int(self.blendweights1_w_blend * 255)
+        self.blendweights1_x = float2uint(self.blendweights1_x_blend)
+        self.blendweights1_y = float2uint(self.blendweights1_y_blend)
+        self.blendweights1_z = float2uint(self.blendweights1_z_blend)
+        self.blendweights1_w = float2uint(self.blendweights1_w_blend)
 
         # clamp uv values to be <= 32768 and >=-32768
         if self.u0 >= 32768:
