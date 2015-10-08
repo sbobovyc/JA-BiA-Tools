@@ -86,7 +86,7 @@ if __name__ == "__main__":
                 children = map(lambda x: "%s : %s" % (obj.jointmap.bone_dict[x].bone_name, x), child_ids)
                 for child in children:                    
                     graph.add_edge(pydot.Edge(parent, child))
-            graph.write_png('crf_bonegraph.png')
+            graph.write_png(os.path.basename(infile1).split('.')[0] + "_bonegraph.png")
 
     if write:
         fp = open(outfile, "wb")
