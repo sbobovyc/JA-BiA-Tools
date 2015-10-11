@@ -225,27 +225,29 @@ def make_skel(amt, crf_jointmap, parent_id):
         bone = amt.edit_bones.new(crf_bone.bone_name.decode('UTF-8'))
         bone.head = m_head * mathutils.Vector((0,0,0))
         bone.tail = bone.head + amt.edit_bones[parent].vector
+        print("Created terminal bone %i, %s" % (parent_id, bone.name))
         print("Parent of %i is %s" % (parent_id, parent))
         bone.parent = amt.edit_bones[parent]        
-        
-    for child_id in crf_bone.child_list:
-        if child_id == crf_bone.child_list[0]:
-            #print("Parent %i, child %i" % (parent_id, child_id))
-            crf_child_joint = crf_jointmap.joint_list[child_id]
-            m_tail =  bone_transform(crf_child_joint.matrix)        
-            #print("Positions ", m_head, m_tail)
-            bone = amt.edit_bones.new(crf_bone.bone_name.decode('UTF-8'))        
-            bone.head = m_head * mathutils.Vector((0,0,0))
-            bone.tail = m_tail * mathutils.Vector((0,0,0))
-            #bone.use_connect = True
-            for b in amt.edit_bones:
-                print(b)
-            if parent_id != 0:
-                parent = crf_jointmap.bone_dict[crf_joint.parent_id].bone_name.decode('UTF-8')
-                print("Parent of %i is %s" % (parent_id, parent))
-                bone.parent = amt.edit_bones[parent]
-                
-        make_skel(amt, crf_jointmap, child_id)        
+    else:        
+        for child_id in crf_bone.child_list:
+            if child_id == crf_bone.child_list[0]:
+                #print("Parent %i, child %i" % (parent_id, child_id))
+                crf_child_joint = crf_jointmap.joint_list[child_id]
+                m_tail =  bone_transform(crf_child_joint.matrix)        
+                #print("Positions ", m_head, m_tail)
+                bone = amt.edit_bones.new(crf_bone.bone_name.decode('UTF-8'))        
+                bone.head = m_head * mathutils.Vector((0,0,0))
+                bone.tail = m_tail * mathutils.Vector((0,0,0))
+                #bone.use_connect = True
+                #for b in amt.edit_bones:
+                #    print(b)
+                print("Created bone %i, %s" % (parent_id, bone.name))
+                if parent_id != 0:
+                    parent = crf_jointmap.bone_dict[crf_joint.parent_id].bone_name.decode('UTF-8')
+                    print("Parent of %i is %s" % (parent_id, parent))
+                    bone.parent = amt.edit_bones[parent]
+                    
+            make_skel(amt, crf_jointmap, child_id)        
         
     return 
 
@@ -393,7 +395,7 @@ def load(operator, context, filepath,
             if use_specular_texture:
                 specular_texture = mesh.materials.specular_texture            
                 specular_texture_filepath = findTextureFile(os.fsdecode(filepath),  specular_texture.decode(sys.stdout.encoding))
-                print("Adding normals texture ", specular_texture_filepath)        
+                print("Adding specular texture ", specular_texture_filepath)        
                 if specular_texture_filepath != None and specular_texture_filepath != "":
                     addSpecularTexture(specular_texture_filepath, mat)                            
             ob.data.materials.append(mat)
