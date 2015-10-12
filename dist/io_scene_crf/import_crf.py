@@ -228,9 +228,25 @@ def make_skel(amt, crf_jointmap, parent_id):
         print("Created terminal bone %i, %s" % (parent_id, bone.name))
         print("Parent of %i is %s" % (parent_id, parent))
         bone.parent = amt.edit_bones[parent]        
-    else:        
+    else:
+        # Search for child joints that don't themselves had children.
+        # If all joints have children, use the first child to create a bone.
+        terminal_child = crf_bone.child_list[0]
         for child_id in crf_bone.child_list:
-            if child_id == crf_bone.child_list[0]:
+            crf_child_bone = crf_jointmap.bone_dict[child_id]
+            if len(crf_child_bone.child_list) == 0:
+                print("Child bone %i has no children" % child_id)
+                terminal_child = child_id
+
+        if len(crf_bone.child_list) > 1:
+            # Reorder children so that the childless child is first
+            index = crf_bone.child_list.index(terminal_child)
+            print("index", index)
+            crf_bone.child_list = [terminal_child] + crf_bone.child_list[:index] + crf_bone.child_list[index+1:]
+            print("New child list", crf_bone.child_list)
+            
+        for child_id in crf_bone.child_list:            
+            if child_id == terminal_child:
                 #print("Parent %i, child %i" % (parent_id, child_id))
                 crf_child_joint = crf_jointmap.joint_list[child_id]
                 m_tail =  bone_transform(crf_child_joint.matrix)        
