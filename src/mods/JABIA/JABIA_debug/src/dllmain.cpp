@@ -1255,12 +1255,24 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 		_itot_s(character.total_amount_health_restored, buf, 100, 10);
 		SetDlgItemText(hwnd, IDC_TOTAL_AMOUNT_HEALTH_RESTORED, buf);
 
-		wsprintf(buf, _T("successful_repair_checks %i"), character.successful_repair_checks);
-		OutputDebugString(buf);
-		wsprintf(buf, _T("unsuccessful_repair_checks %i"), character.unsuccessful_repair_checks);
-		OutputDebugString(buf);
-		wsprintf(buf, _T("total_amount_durability_restored %i"), character.total_amount_durability_restored);
-		OutputDebugString(buf);
+		_itot_s(character.successful_repair_checks, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_GOOD_REPAIR_CHECKS, buf);
+
+		_itot_s(character.unsuccessful_repair_checks, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_BAD_REPAIR_CHECKS, buf);
+
+		_itot_s(character.total_amount_durability_restored, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_TOTAL_AMOUNT_DURABILITY_RESTORED, buf);
+		
+		_itot_s(character.hand_to_hand_kills, buf, 100, 10);
+		SetDlgItemText(hwnd, IDC_HAND_TO_HAND_KILLS, buf);
+
+		//wsprintf(buf, _T("successful_repair_checks %i"), character.successful_repair_checks);
+		//OutputDebugString(buf);
+		//wsprintf(buf, _T("unsuccessful_repair_checks %i"), character.unsuccessful_repair_checks);
+		//OutputDebugString(buf);
+		//wsprintf(buf, _T("total_amount_durability_restored %i"), character.total_amount_durability_restored);
+		//OutputDebugString(buf);
 
 		wsprintf(buf, _T("successful_locks_picked %i"), character.successful_locks_picked);
 		OutputDebugString(buf);

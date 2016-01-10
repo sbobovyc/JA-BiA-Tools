@@ -272,7 +272,7 @@ namespace JABIA_mod_launcher_ng
                 System.Diagnostics.Process.Start(JAC_LAUNCHER);
             }
 
-            String waitForProcess = "\nWaiting for proces to start: ";
+            String waitForProcess = "\nWaiting for process to start: ";
             if (version == GameVersion.JABIA)
             {
                 waitForProcess += JABIA_PROCESS;
