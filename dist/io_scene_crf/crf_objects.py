@@ -1026,7 +1026,7 @@ class CRF_vertex_blend(object):
     def __init__(self):
         self.index = 0
         self.blendweights = (0, 0, 0, 0)
-        self.blendindices = (0, 0, 0, 0)        
+        self.blendindices = (0, 0, 0, 0) # This refers to index in CRF_skeleton.skeleton_list, not the bone directly      
         self.blendweights_blend = (0, 0, 0, 0)
         
     def raw2blend(self):
@@ -1048,7 +1048,6 @@ class CRF_vertex_blend(object):
 class CRF_vertex_blend_indices_only(object):
     def bin2raw(self, file, file_offset, index, verbose=False):
         self.index = index
-        self.blendindices = None
         self.blendindices = struct.unpack("<bbbb", file.read(4))
         if verbose:
             print("vert index=%s, blendindices: %s" % (self.index, self.blendindices))
@@ -1298,7 +1297,7 @@ class CRF_jointmap(object):
         self.joint_list = []
         self.bone_count = 0
         self.i1 = 0 # unknown
-        self.bone_dict = {}
+        self.bone_dict = {}  # map bone id to CRF_bone object
         self.bone_name_id_dict = {} # map bone name to bone id, helper for Blender
         
         if file != None:
@@ -1389,7 +1388,7 @@ class CRF_jointmap(object):
 class CRF_skeleton(object):
     def __init__(self, file=None, file_offset=0):
         self.skeleton_count = 0
-        self.skeleton_list = [] # [ (bone, bone bone), (bone, bone) ... ]
+        self.skeleton_list = [] # [ (bone, bone bone), (bone, bone) ... ] with each tuple representing one sub model
         
         if file != None:
             file.seek(file_offset)
@@ -1404,7 +1403,10 @@ class CRF_skeleton(object):
 
     def __str__(self):
         string = ""
-        string += "Skeleton groups: %s, %s" % (self.skeleton_count, self.skeleton_list)
+        idx = 0
+        for bones in self.skeleton_list:            
+            string += "Mesh: %s, map of bones to blendindices %s\n" % (idx, bones)
+            idx += 1
         return string
 
 

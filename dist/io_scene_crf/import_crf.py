@@ -447,16 +447,24 @@ def load(operator, context, filepath,
     # end loop for importing meshes
     
     # import bones, create armature    
-    if CRF.footer.get_jointmap() != None:                
-        amt = bpy.data.armatures.new("Armature")
-        amt_ob = bpy.data.objects.new("Armature", amt)
+    if CRF.footer.get_jointmap() != None:
         scn = bpy.context.scene
-        scn.objects.link(amt_ob)
+        build_armature = False
+        if "Armature" not in bpy.data.objects:
+            amt = bpy.data.armatures.new("Armature")
+            amt_ob = bpy.data.objects.new("Armature", amt)
+            scn.objects.link(amt_ob)
+            build_armature = True
+        else:
+            amt = bpy.data.armatures["Armature"]
+            amt_ob = bpy.data.objects["Armature"]            
+        
         scn.objects.active = amt_ob
         amt_ob.select = True
         
         bpy.ops.object.mode_set(mode='EDIT')        
-        make_skel(amt, CRF.jointmap, 0)
+        if build_armature:
+            make_skel(amt, CRF.jointmap, 0)
 
         if use_debug_bones:
             for key,value in CRF.jointmap.bone_dict.items():
@@ -469,7 +477,7 @@ def load(operator, context, filepath,
                
         bpy.ops.object.mode_set(mode='OBJECT')
         amt_ob.select = False
-        
+    
             
     time_new = time.time()
     print("%.4f sec" % (time_new - time_sub))
@@ -505,7 +513,7 @@ def load(operator, context, filepath,
         #bpy.ops.mesh.delete(type='VERT')
         #bpy.ops.object.mode_set(mode='OBJECT')
             
-    if CRF.footer.get_jointmap() != None:
+    if CRF.footer.get_jointmap() != None:        
         #select objects, select armature as active, parent objects to armature      
         bpy.ops.object.select_all(action='DESELECT') #deselect all object        
         for ob in new_objects:
@@ -513,35 +521,24 @@ def load(operator, context, filepath,
             ob.select = True
         bpy.context.scene.objects.active = amt_ob    #the active object will be the parent of all selected object
         bpy.ops.object.parent_set(type='ARMATURE_NAME')
-
-        # print all vertex groups for each object
-        #for ob in new_objects:
-        #    print(ob.vertex_groups.keys())
-        #for ob in new_objects:
-        #    for v in ob.data.vertices:
-        #        print("number of groups", len(v.groups))
-
+            
         obj_id = 0
-        for ob in new_objects:
-            if len(CRF.meshfile.meshes[obj_id].vertices1) != 0:
-                for v in ob.data.vertices:                
-                    CRF.meshfile.meshes[obj_id].vertices1[v.index].raw2blend() # convert 
-                    blendindices = CRF.meshfile.meshes[obj_id].vertices1[v.index].blendindices
-                    blendweights = CRF.meshfile.meshes[obj_id].vertices1[v.index].blendweights_blend
-                    """
-                    try:
-                        pos  = blendindices.index(CRF.jointmap.bone_name_id_dict[b"Bone01_L_Forearm"])
-                        blendindices = [blendindices[pos]+1]
-                        blendweights = [1.0]
-                    except ValueError:
-                        blendindices = []
-                        blendindices = []
-                    """
-                    
-                    #print(blendindices, blendweights)
+        for ob in new_objects:            
+            if len(CRF.meshfile.meshes[obj_id].vertices1) != 0 or len(CRF.meshfile.meshes[obj_id].vertex_blendindices_only) != 0:
+                for v in ob.data.vertices:                                        
+                    if len(CRF.meshfile.meshes[obj_id].vertices1) != 0:
+                        CRF.meshfile.meshes[obj_id].vertices1[v.index].raw2blend() # convert
+                        blendindices = CRF.meshfile.meshes[obj_id].vertices1[v.index].blendindices
+                        blendweights = CRF.meshfile.meshes[obj_id].vertices1[v.index].blendweights_blend
+                    elif len(CRF.meshfile.meshes[obj_id].vertex_blendindices_only) != 0:
+                        blendindices = CRF.meshfile.meshes[obj_id].vertex_blendindices_only[v.index].blendindices
+                        blendweights = [1]*4 #TODO is this always the case?
+                 
                     for bi,bw in zip(blendindices, blendweights):
-                        #print("Assign vertex %s group %s with weight %s" % (v.index, bi, bw))
-                        new_objects[obj_id].vertex_groups[bi].add([v.index], bw, 'ADD')
+                        # convert blendindex into crf bone id                        
+                        vg = CRF.skeleton.skeleton_list[obj_id][bi]                                                
+                        print("Assign vertex %s to vertex group %s (%s) with weight %s" % (v.index, vg, CRF.jointmap.bone_dict[vg].bone_name, bw))                    
+                        new_objects[obj_id].vertex_groups[vg].add([v.index], bw, 'ADD')
             obj_id+=1                    
  
     scene.update()
