@@ -719,7 +719,7 @@ class CRF_mesh(object):
 
     def __str__(self):
         string = ""
-        string += "Mesh number: %s, vertices= %s, faces = %s\n" % (self.mesh_number, self.number_of_vertices, self.number_of_faces)
+        string += "Mesh number: %s, vertices = %s, faces = %s\n" % (self.mesh_number, self.number_of_vertices, self.number_of_faces)
         return string
         
     def get_bin(self):
@@ -1375,13 +1375,13 @@ class CRF_jointmap(object):
         string = ""
         string += "Jointmap (Bone name: bone id):\n"
         for key in self.bone_name_id_dict:
-            string += "%s: %s\n" % (key,self.bone_name_id_dict[key])
-        string += "\nBone relationships (parent: children)\n"
+            string += "\t%s: %s\n" % (key,self.bone_name_id_dict[key])
+        string += "\nBone relationships (parent: [children])\n"
         for key in self.bone_dict:
             parent = self.bone_dict[key].bone_name
             child_ids = self.bone_dict[key].child_list
             children = map(lambda x: self.bone_dict[x].bone_name, child_ids)
-            string += "%s: %s\n" % (parent, children)
+            string += "\t%s: %s\n" % (parent, children)
             
         return string
     
@@ -1396,16 +1396,18 @@ class CRF_skeleton(object):
 
     def parse(self, file):
         self.skeleton_count, = struct.unpack("<I", file.read(4))
+        print("===Parsing skeleton===")
         for i in range(0, self.skeleton_count):
             bone_count, = struct.unpack("<I", file.read(4))
             bones = struct.unpack("<%sH" % bone_count, file.read(bone_count*2))
             self.skeleton_list.append(bones)
+        print("===End parsing skeleton===")
 
     def __str__(self):
-        string = ""
+        string = "Skeleton:\n"
         idx = 0
         for bones in self.skeleton_list:            
-            string += "Mesh: %s, map of bones to blendindices %s\n" % (idx, bones)
+            string += "\tMesh: %s, map of blendindices to bones %s\n" % (idx, bones)
             idx += 1
         return string
 

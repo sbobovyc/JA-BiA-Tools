@@ -76,17 +76,18 @@ if __name__ == "__main__":
 
         
     if boneinfo:
-        if with_graph and obj.skeleton != None:
+        if obj.skeleton != None:
             print(obj.jointmap)
             print(obj.skeleton)
-            graph = pydot.Dot(graph_type='digraph')
-            for key in obj.jointmap.bone_dict:
-                parent = "%s : %s" % (obj.jointmap.bone_dict[key].bone_name, key)
-                child_ids = obj.jointmap.bone_dict[key].child_list
-                children = map(lambda x: "%s : %s" % (obj.jointmap.bone_dict[x].bone_name, x), child_ids)
-                for child in children:                    
-                    graph.add_edge(pydot.Edge(parent, child))
-            graph.write_png(os.path.basename(infile1).split('.')[0] + "_bonegraph.png")
+            if with_graph:
+                graph = pydot.Dot(graph_type='digraph')
+                for key in obj.jointmap.bone_dict:
+                    parent = "%s : %s" % (obj.jointmap.bone_dict[key].bone_name, key)
+                    child_ids = obj.jointmap.bone_dict[key].child_list
+                    children = map(lambda x: "%s : %s" % (obj.jointmap.bone_dict[x].bone_name, x), child_ids)
+                    for child in children:                    
+                        graph.add_edge(pydot.Edge(parent, child))
+                graph.write_png(os.path.basename(infile1).split('.')[0] + "_bonegraph.png")
 
     if write:
         fp = open(outfile, "wb")
