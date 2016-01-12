@@ -329,13 +329,11 @@ def load(operator, context, filepath,
             v1,v2,v3 = faces[i]
             # if there are duplicated vertices in triangle, delete that face by making all vertices the same
             if v1 == v2 or v1 == v3 or v2 == v3:
-                print("Found a bad face %i, eliminating %i,%i,%i" % (i,v1,v2,v3))
-                faces[i] = (v3,v3,v3)
+                print("Found a bad face %i, eliminating %i,%i,%i" % (i,v1,v2,v3))                
                 bad_mesh_vertex_list.append(v1)
                 bad_mesh_vertex_list.append(v2)
                 bad_mesh_vertex_list.append(v3)
-            else:
-                faces[i] = (v3,v2,v1)
+            faces[i] = (v3,v2,v1)
         bad_vertex_list.append(bad_mesh_vertex_list)
         
         for vertex in mesh.vertices0:
@@ -505,13 +503,13 @@ def load(operator, context, filepath,
         bpy.ops.object.mode_set(mode='EDIT')
         bpy.ops.mesh.select_all(action='DESELECT')
         bpy.ops.object.mode_set(mode='OBJECT')
-        for v in bad_vertices:
+        bad_vertices_set = set(bad_vertices)
+        for v in bad_vertices_set:
             print("Deleting vertex %i in %s" % (v, ob.name))
-            ob.data.vertices[v].select = True
-        # deleting vertices causes "error: EXCEPTION_ACCESS_VIOLATION"  
-        #bpy.ops.object.mode_set(mode='EDIT')        
-        #bpy.ops.mesh.delete(type='VERT')
-        #bpy.ops.object.mode_set(mode='OBJECT')
+            ob.data.vertices[v].select = True        
+        bpy.ops.object.mode_set(mode='EDIT')        
+        bpy.ops.mesh.delete(type='VERT')
+        bpy.ops.object.mode_set(mode='OBJECT')
             
     if CRF.footer.get_jointmap() != None:        
         #select objects, select armature as active, parent objects to armature      
