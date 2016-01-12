@@ -371,7 +371,7 @@ def float2uint(f_number, old_way=False):
     else:
         return int(math.floor((f_number + 1.0)*127.5))
 
-class CRF_object(object):
+class CRF_object:
     def __init__(self):
         self.header = CRF_header()
         self.footer = CRF_footer()
@@ -380,8 +380,8 @@ class CRF_object(object):
         self.skeleton = None
         
     def parse_bin(self, file, verbose=False):        
-        self.header.parse_bin(file)        
-        self.footer.parse_bin(file, self.header.footer_offset1, self.header.footer_offset2, self.header.footer_entries)        
+        self.header.parse_bin(file, verbose)        
+        self.footer.parse_bin(file, self.header.footer_offset1, self.header.footer_offset2, self.header.footer_entries, verbose)
         self.meshfile.parse_bin(file, self.footer.get_meshfile().file_offset, verbose=verbose)
         
         if(self.footer.get_jointmap() != None):
@@ -410,7 +410,7 @@ class CRF_object(object):
         data += self.footer.get_bin()
         return data
     
-class CRF_header(object):
+class CRF_header:
     def __init__(self):
         self.crf_magick = b"fknc"
         self.version = 1
@@ -418,17 +418,21 @@ class CRF_header(object):
         self.footer_offset2 = 0
         self.footer_entries = 2 #TODO This only supports static objects. For animated objects, more complex footer has to be supported.
 		
-    def parse_bin(self,file):
-        print("===Parsing header===")
+    def parse_bin(self, file, verbose=False):
+        if verbose:
+            print("===Parsing header===")
         self.crf_magick, self.version = struct.unpack("<4sI", file.read(8))    
         if self.crf_magick != b"fknc":
             print("Not a CRF file!")
             return 
         self.footer_offset1,self.footer_offset2 = struct.unpack("<II", file.read(8))
         self.footer_entries, = struct.unpack("<I", file.read(4))
-        print("Footer offset 1: %s, footer offset 2: %s" % (hex(self.footer_offset1).strip('L'), hex(self.footer_offset2).strip('L')))
-        print("Footer entries", self.footer_entries)
-        print("===End of parsing header===")
+        if verbose:
+            print("Footer offset 1: %s" % hex(self.footer_offset1).strip('L'))
+            print("Footer offset 2: %s" % hex(self.footer_offset2).strip('L'))
+            print("Footer entries:", self.footer_entries)
+            print("===End of parsing header===")
+            print()
         
     def get_bin(self):
         data = b""
@@ -440,24 +444,27 @@ class CRF_header(object):
         data += struct.pack("<I", self.footer_entries)     
         return data
         
-class CRF_footer(object):
+class CRF_footer:
     def __init__(self):
         self.entries = []
         self.entry_descriptors = []
 
-    def parse_bin(self, file, footer_offset1, footer_offset2, footer_entries): 
-        print("===Parsing footer===")
+    def parse_bin(self, file, footer_offset1, footer_offset2, footer_entries, verbose=True):
+        if verbose: 
+            print("===Parsing footer===")
         file.seek(footer_offset1)
         for i in range(0, footer_entries):
             entry = CRF_entry()            
-            entry.parse_bin(file)
+            entry.parse_bin(file, verbose)
             self.entries.append(entry)
                 
         for entry in self.entries:
             entry_description = CRF_entry_descriptor()
-            entry_description.parse_bin(file, entry.type)
+            entry_description.parse_bin(file, entry.type, verbose)
             self.entry_descriptors.append(entry_description)
-        print("===End of parsing footer===")
+        if verbose:
+            print("===End of parsing footer===")
+            print()
 
     def get_meshfile(self):
         for entry in self.entries:
@@ -491,7 +498,7 @@ class CRF_footer(object):
             data += entry.get_bin()
         return data
         
-class CRF_entry(object):
+class CRF_entry:
     def __init__(self):
         self.type = None
         self.entry_id = None
@@ -499,11 +506,13 @@ class CRF_entry(object):
         self.size = None
         self.const = None #(a, b, c, d) unknown
         
-    def parse_bin(self, file):
+    def parse_bin(self, file, verbose=False):
         self.type, self.entry_id, self.file_offset, self.size = struct.unpack("<IIII", file.read(16))
-        print("Type: %s (%s) \n Entry: %s \n File offset: %s \n Size: %s" % (CRF_FOOTER_ENTRY_CONSTANTS[self.type], hex(self.type), self.entry_id, hex(self.file_offset), self.size) )
+        if verbose:
+            print("Type: %s (%s) \n Entry: %s \n File offset: %s \n Size: %s" % (CRF_FOOTER_ENTRY_CONSTANTS[self.type], hex(self.type), self.entry_id, hex(self.file_offset), self.size) )
         self.const = struct.unpack("<IIII", file.read(16))
-        print(" Unknown constants:", self.const)
+        if verbose:
+            print(" Unknown constants:", self.const)
         
     def create_rootnode(self):        
         self.type = CRF_ROOT_NODE
@@ -524,7 +533,7 @@ class CRF_entry(object):
         data = struct.pack("<IIIIIIII", self.type, self.entry_id, self.file_offset, self.size, *self.const)
         return data
         
-class CRF_entry_descriptor(object):        
+class CRF_entry_descriptor:        
     def __init__(self):
         self.type = None
         self.entry_id = None
@@ -543,7 +552,7 @@ class CRF_entry_descriptor(object):
         self.name_length = 8
         self.name = b"meshfile"
         
-    def parse_bin(self, file, CRF_TYPE):
+    def parse_bin(self, file, CRF_TYPE, verbose=False):
         self.type = CRF_TYPE
         if(self.type == CRF_ROOT_NODE):
             file.read(4)
@@ -555,7 +564,8 @@ class CRF_entry_descriptor(object):
             self.name_length, = struct.unpack("<I", file.read(4))
             self.name, = struct.unpack("%ss" % self.name_length, file.read(self.name_length))
             file.read(4)
-        print("Entry id: %i, entry name: %s, entry type: %s" %(self.entry_id, self.name, CRF_FOOTER_ENTRY_CONSTANTS[self.type]))
+        if verbose:
+            print("Entry id: %i, entry name: \"%s\", entry type: %s" %(self.entry_id, self.name, CRF_FOOTER_ENTRY_CONSTANTS[self.type]))
 
     def get_bin(self):
         if(self.type == CRF_ROOT_NODE):
@@ -564,7 +574,7 @@ class CRF_entry_descriptor(object):
             data = struct.pack("<II%ssxxxx" % self.name_length, self.entry_id, self.name_length, self.name)
         return data
 
-class CRF_meshfile(object):
+class CRF_meshfile:
     def __init__(self):
         self.num_meshes = None
         self.model_bounding_box = None # ((LoX, LoY, LoZ), (HiX, HiY, HZ))
@@ -579,6 +589,7 @@ class CRF_meshfile(object):
         self.model_bounding_box = ((LoX, LoY, LoZ), (HiX, HiY, HiZ))
         print("Number of meshes:", self.num_meshes)        
         print("Bounding box of entire model: ", self.model_bounding_box)
+        print()
 
         for i in range(0, self.num_meshes):
             mesh = CRF_mesh()
@@ -631,7 +642,7 @@ class CRF_meshfile(object):
                 data += struct.pack("<I%sx" % 0x10, 2)
         return data
 
-class CRF_mesh(object):
+class CRF_mesh:
     def __init__(self):
         self.mesh_number = 0
         self.number_of_vertices = None
@@ -650,10 +661,10 @@ class CRF_mesh(object):
 
     def parse_bin(self, file, file_offset, mesh_number, verbose=False):
         self.mesh_number = mesh_number
-        print("Mesh %i, face/vertex list at %s" % (self.mesh_number, hex(file.tell()).strip('L')))
+        print("Mesh %i\nFace/vertex list at %s" % (self.mesh_number, hex(file.tell()).strip('L')))
         self.number_of_vertices, = struct.unpack("<I", file.read(4))
         self.number_of_faces, = struct.unpack("<I", file.read(4))
-        print("Model vertices: %i, faces: %i" % (self.number_of_vertices, self.number_of_faces))
+        print("Mesh vertices: %i, faces: %i" % (self.number_of_vertices, self.number_of_faces))
         
         # read in face/vertex index list
         for i in range(0, self.number_of_faces):
@@ -709,13 +720,14 @@ class CRF_mesh(object):
         LoX, LoY, LoZ = struct.unpack("<fff", file.read(12)) #bounding box       
         HiX, HiY, HiZ = struct.unpack("<fff", file.read(12)) #bounding box
         self.bounding_box = ((LoX, LoY, LoZ), (HiX, HiY, HiZ))        
-        print("Bounding box of model %i: %s" % (self.mesh_number, self.bounding_box))
+        print("Bounding box of mesh %i: %s" % (self.mesh_number, self.bounding_box))
 
         #material info comes next
         print("==Parsing meshfile materials==")
         self.materials = CRF_materials()
         self.materials.parse_bin(file, file.tell(), verbose)
         print("==End of parsing meshfile materials==")
+        print()
 
     def __str__(self):
         string = ""
@@ -763,7 +775,7 @@ class CRF_mesh(object):
         
         return data
     
-class CRF_materials(object):
+class CRF_materials:
     def __init__(self):
         self.material_type = b''
         self.material_subtype = b''
@@ -911,11 +923,11 @@ class CRF_materials(object):
                     data_type, = struct.unpack("4s", file.read(4))
                     print("Type:", data_type)
                     R,G,B = struct.unpack("<fff", file.read(12))                    
-                    print(R,G,B)
+                    print("RGB:",R,G,B)
                     self.specular_constant = (R, G, B)                    
                     if self.custom_data_count == 1:
                         A, = struct.unpack("f", file.read(4))
-                        print(A)
+                        print("A:",A)
                         self.specular_constant_alpha = A
                 elif current_state == "read_unknown_texture":
                     data_type, = struct.unpack("4s", file.read(4))
@@ -1022,7 +1034,7 @@ class CRF_materials(object):
                         data += struct.pack("<I", self.custom1_2)                                                                    
         return data
         
-class CRF_vertex_blend(object):
+class CRF_vertex_blend:
     def __init__(self):
         self.index = 0
         self.blendweights = (0, 0, 0, 0)
@@ -1045,7 +1057,7 @@ class CRF_vertex_blend(object):
         data += struct.pack("<BBBB", *self.blendindices)
         return data
                                 
-class CRF_vertex_blend_indices_only(object):
+class CRF_vertex_blend_indices_only:
     def bin2raw(self, file, file_offset, index, verbose=False):
         self.index = index
         self.blendindices = struct.unpack("<bbbb", file.read(4))
@@ -1057,7 +1069,7 @@ class CRF_vertex_blend_indices_only(object):
         data += struct.pack("<bbbb", *self.blendindices)
         return data
 
-class CRF_vertex_unknown(object):
+class CRF_vertex_unknown:
     def __init__(self):
         self.index = 0
         self.unknown = (0, 0)
@@ -1073,7 +1085,7 @@ class CRF_vertex_unknown(object):
         data += struct.pack("<ff", *self.unknown)
         return data    
     
-class CRF_vertex(object):
+class CRF_vertex:
     def __init__(self):
         self.index = 0
         
@@ -1242,7 +1254,7 @@ class CRF_vertex(object):
         return data
     
 
-class CRF_joint(object):
+class CRF_joint:
     def __init__(self):
         self.joint_id = 0
         self.matrix = [ (0,0,0,0), (0,0,0,0), (0,0,0,0), (0,0,0,1) ]
@@ -1265,7 +1277,7 @@ class CRF_joint(object):
         string += "Unknown: %s, %s\n" % (self.i1, self.i2)
         return string
     
-class CRF_bone(object): #TODO better name since CRF does not use bones
+class CRF_bone: #TODO better name since CRF does not use bones
     def __init__(self):
         self.bone_id = 0
         self.bone_name = b""
@@ -1290,7 +1302,7 @@ class CRF_bone(object): #TODO better name since CRF does not use bones
         string += " Unknown (as float): %s" % struct.unpack("<f", byte)
         return string
     
-class CRF_jointmap(object):
+class CRF_jointmap:
     def __init__(self, file=None, file_offset=0):
         self.magick = 0x1
         self.joint_count = 0
@@ -1385,8 +1397,9 @@ class CRF_jointmap(object):
             
         return string
     
-class CRF_skeleton(object):
+class CRF_skeleton:
     def __init__(self, file=None, file_offset=0):
+        """ This maps blend indices to bones/joints """
         self.skeleton_count = 0
         self.skeleton_list = [] # [ (bone, bone bone), (bone, bone) ... ] with each tuple representing one sub model
         

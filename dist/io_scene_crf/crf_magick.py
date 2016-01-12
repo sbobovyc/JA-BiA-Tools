@@ -41,7 +41,7 @@ if __name__ == "__main__":
     
     path = os.path.abspath(infile1)
     outfile = os.path.abspath(outfile)
-    print(path)
+    print("File:",path)
     
     fp = open(path, "rb")    
     obj = crf_objects.CRF_object()
@@ -73,7 +73,7 @@ if __name__ == "__main__":
 
     if info:
         print(obj.meshfile)
-
+        sys.exit(0)
         
     if boneinfo:
         if obj.skeleton != None:
