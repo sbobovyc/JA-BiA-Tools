@@ -379,10 +379,10 @@ class CRF_object:
         self.jointmap = None
         self.skeleton = None
         
-    def parse_bin(self, file, verbose=False):        
+    def parse_bin(self, file, verbose=False, debug=False):        
         self.header.parse_bin(file, verbose)        
-        self.footer.parse_bin(file, self.header.footer_offset1, self.header.footer_offset2, self.header.footer_entries, verbose)
-        self.meshfile.parse_bin(file, self.footer.get_meshfile().file_offset, verbose=verbose)
+        self.footer.parse_bin(file, self.header.footer_offset1, self.header.footer_offset2, self.header.footer_entries, verbose=verbose, debug=debug)
+        self.meshfile.parse_bin(file, self.footer.get_meshfile().file_offset, verbose=verbose, debug=debug)
         
         if(self.footer.get_jointmap() != None):
             self.jointmap = CRF_jointmap(file, self.footer.get_jointmap().file_offset)
@@ -418,7 +418,7 @@ class CRF_header:
         self.footer_offset2 = 0
         self.footer_entries = 2 #TODO This only supports static objects. For animated objects, more complex footer has to be supported.
 		
-    def parse_bin(self, file, verbose=False):
+    def parse_bin(self, file, verbose=False, debug=False):
         if verbose:
             print("===Parsing header===")
         self.crf_magick, self.version = struct.unpack("<4sI", file.read(8))    
@@ -449,18 +449,18 @@ class CRF_footer:
         self.entries = []
         self.entry_descriptors = []
 
-    def parse_bin(self, file, footer_offset1, footer_offset2, footer_entries, verbose=True):
+    def parse_bin(self, file, footer_offset1, footer_offset2, footer_entries, verbose=False, debug=False):
         if verbose: 
             print("===Parsing footer===")
         file.seek(footer_offset1)
         for i in range(0, footer_entries):
             entry = CRF_entry()            
-            entry.parse_bin(file, verbose)
+            entry.parse_bin(file, verbose=verbose)
             self.entries.append(entry)
                 
         for entry in self.entries:
             entry_description = CRF_entry_descriptor()
-            entry_description.parse_bin(file, entry.type, verbose)
+            entry_description.parse_bin(file, entry.type, verbose=verbose)
             self.entry_descriptors.append(entry_description)
         if verbose:
             print("===End of parsing footer===")
@@ -506,7 +506,7 @@ class CRF_entry:
         self.size = None
         self.const = None #(a, b, c, d) unknown
         
-    def parse_bin(self, file, verbose=False):
+    def parse_bin(self, file, verbose=False, debug=False):
         self.type, self.entry_id, self.file_offset, self.size = struct.unpack("<IIII", file.read(16))
         if verbose:
             print("Type: %s (%s) \n Entry: %s \n File offset: %s \n Size: %s" % (CRF_FOOTER_ENTRY_CONSTANTS[self.type], hex(self.type), self.entry_id, hex(self.file_offset), self.size) )
@@ -552,7 +552,7 @@ class CRF_entry_descriptor:
         self.name_length = 8
         self.name = b"meshfile"
         
-    def parse_bin(self, file, CRF_TYPE, verbose=False):
+    def parse_bin(self, file, CRF_TYPE, verbose=False, debug=False):
         self.type = CRF_TYPE
         if(self.type == CRF_ROOT_NODE):
             file.read(4)
@@ -580,23 +580,25 @@ class CRF_meshfile:
         self.model_bounding_box = None # ((LoX, LoY, LoZ), (HiX, HiY, HZ))
         self.meshes = []
 
-    def parse_bin(self, file, file_offset, verbose=False):
-        print("===Parsing meshfile===")
+    def parse_bin(self, file, file_offset, verbose=False, debug=False):
+        if verbose:
+            print("===Parsing meshfile===")
         file.seek(file_offset)
         magick, self.num_meshes = struct.unpack("<II", file.read(8))
         LoX, LoY, LoZ = struct.unpack("<fff", file.read(12)) #bounding box       
         HiX, HiY, HiZ = struct.unpack("<fff", file.read(12)) #bounding box
         self.model_bounding_box = ((LoX, LoY, LoZ), (HiX, HiY, HiZ))
-        print("Number of meshes:", self.num_meshes)        
-        print("Bounding box of entire model: ", self.model_bounding_box)
-        print()
+        if verbose:
+            print("Number of meshes:", self.num_meshes)        
+            print("Bounding box of entire model: ", self.model_bounding_box)
+            print()
 
         for i in range(0, self.num_meshes):
             mesh = CRF_mesh()
-            mesh.parse_bin(file, file.tell(), i, verbose)
+            mesh.parse_bin(file, file.tell(), i, verbose=verbose, debug=debug)
             self.meshes.append(mesh)
-
-        print("===End of parsing meshfile===")
+        if verbose:
+            print("===End of parsing meshfile===")
 
     def scale(self, scale_factor):
         #TODO need to scale the bounding box
@@ -636,7 +638,8 @@ class CRF_meshfile:
         # loop through all meshes
         for mesh in self.meshes:
             data += mesh.get_bin()
-            print("Writing mesh", mesh.mesh_number)
+            if verbose:
+                print("Writing mesh", mesh.mesh_number)
             # write separator, unknown format
             if self.num_meshes > 1:
                 data += struct.pack("<I%sx" % 0x10, 2)
@@ -659,12 +662,14 @@ class CRF_mesh:
         self.bounding_box = None # ((LoX, LoY, LoZ), (HiX, HiY, HZ))
         self.materials = None
 
-    def parse_bin(self, file, file_offset, mesh_number, verbose=False):
+    def parse_bin(self, file, file_offset, mesh_number, verbose=False, debug=False):
         self.mesh_number = mesh_number
-        print("Mesh %i\nFace/vertex list at %s" % (self.mesh_number, hex(file.tell()).strip('L')))
+        if verbose:
+            print("Mesh %i\nFace/vertex list at %s" % (self.mesh_number, hex(file.tell()).strip('L')))
         self.number_of_vertices, = struct.unpack("<I", file.read(4))
         self.number_of_faces, = struct.unpack("<I", file.read(4))
-        print("Mesh vertices: %i, faces: %i" % (self.number_of_vertices, self.number_of_faces))
+        if verbose:
+            print("Mesh vertices: %i, faces: %i" % (self.number_of_vertices, self.number_of_faces))
         
         # read in face/vertex index list
         for i in range(0, self.number_of_faces):
@@ -672,62 +677,72 @@ class CRF_mesh:
                 face_vert_loc_indices = [v1, v2, v3]
                 face_vert_tex_indices = [v1, v2, v3]
                 self.face_list.append((v1, v2, v3))
-                if verbose:
+                if debug:
                     print("face index %s, verts (%s, %s, %s)" % (i, v1, v2, v3))
-
-        print("Vertex information starts at", hex(file.tell()).strip('L'))                
+        if verbose:
+            print("Vertex information starts at", hex(file.tell()).strip('L'))                
         self.stream_count, = struct.unpack("<B", file.read(1))
-        print("Number of streams:", self.stream_count)
+        if verbose:
+            print("Number of streams:", self.stream_count)
         for stream in range(0, self.stream_count):
         # then the vertex declaration
             layout, stride = struct.unpack("<II", file.read(8))
-            print("Stream%i declaration: %s, stride: %i bytes" % (stream, hex(layout).strip('L'), stride))
+            if verbose:
+                print("Stream%i declaration: %s, stride: %i bytes" % (stream, hex(layout).strip('L'), stride))
             if layout == CRF_VERTEX_DECLRATION_TYPE0:
-                print("Vertex stream at", hex(file.tell()).strip('L'))
+                if verbose:
+                    print("Vertex stream at", hex(file.tell()).strip('L'))
                 # read in vertices, vertex normals, ks, and UVs
                 for i in range(0, self.number_of_vertices):
                     vertex = CRF_vertex()
                     vertex.bin2raw(file, file.tell(), i)
                     vertex.raw2blend()
                     self.vertices0.append(vertex)
-                    if verbose:
+                    if debug:
                         print(vertex)
                 self.vertex_stream0_layout = [layout, stride]
             
             elif layout == CRF_VERTEX_DECLRATION_TYPE1:
-                print("Blendweight/blendindex stream at", hex(file.tell()).strip('L'))
+                if verbose:
+                    print("Blendweight/blendindex stream at", hex(file.tell()).strip('L'))
                 for i in range(0, self.number_of_vertices):
                     vertex_blend = CRF_vertex_blend()
-                    vertex_blend.bin2raw(file, file.tell(), i, verbose=verbose)
+                    vertex_blend.bin2raw(file, file.tell(), i, verbose=verbose, debug=debug)
                     self.vertices1.append(vertex_blend)
                 self.vertex_stream1_layout = [layout, stride]
             elif layout == CRF_VERTEX_DECLRATION_TYPE2:
-                print("Unknown stream at", hex(file.tell()).strip('L'))
+                if verbose:
+                    print("Unknown stream at", hex(file.tell()).strip('L'))
                 for i in range(0, self.number_of_vertices):
                     vertex_blend = CRF_vertex_unknown()
-                    vertex_blend.bin2raw(file, file.tell(), i, verbose=verbose)
+                    vertex_blend.bin2raw(file, file.tell(), i, verbose=verbose, debug=debug)
                     self.vertices2.append(vertex_blend)
                 self.vertex_stream2_layout = [layout, stride]
             elif layout == CRF_VERTEX_DECLRATION_TYPE3:
-                print("Blendindices stream at", hex(file.tell()).strip('L'))
+                if verbose:
+                    print("Blendindices stream at", hex(file.tell()).strip('L'))
                 for i in range(0, self.number_of_vertices):
                     vertex_blend = CRF_vertex_blend_indices_only()
-                    vertex_blend.bin2raw(file, file.tell(), i, verbose=verbose)
+                    vertex_blend.bin2raw(file, file.tell(), i, verbose=verbose, debug=debug)
                     self.vertex_blendindices_only.append(vertex_blend)                               
-        print("End of vertex data at", hex(file.tell()).strip('L'))
+        if verbose:
+            print("End of vertex data at", hex(file.tell()).strip('L'))
 
         #read in mesh bounding box
         LoX, LoY, LoZ = struct.unpack("<fff", file.read(12)) #bounding box       
         HiX, HiY, HiZ = struct.unpack("<fff", file.read(12)) #bounding box
-        self.bounding_box = ((LoX, LoY, LoZ), (HiX, HiY, HiZ))        
-        print("Bounding box of mesh %i: %s" % (self.mesh_number, self.bounding_box))
+        self.bounding_box = ((LoX, LoY, LoZ), (HiX, HiY, HiZ))
+        if verbose:
+            print("Bounding box of mesh %i: %s" % (self.mesh_number, self.bounding_box))
 
         #material info comes next
-        print("==Parsing meshfile materials==")
+        if verbose:
+            print("==Parsing meshfile materials==")
         self.materials = CRF_materials()
-        self.materials.parse_bin(file, file.tell(), verbose)
-        print("==End of parsing meshfile materials==")
-        print()
+        self.materials.parse_bin(file, file.tell(), verbose=verbose, debug=debug)
+        if verbose:
+            print("==End of parsing meshfile materials==")
+            print()
 
     def __str__(self):
         string = ""
@@ -791,12 +806,15 @@ class CRF_materials:
         self.custom1_2 = 0
         self.custom_array = [(0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0)] #TODO change into a map or an object
 
-    def parse_bin(self, file, file_offset, verbose=False):
-        print("Materials at:", hex(file.tell()).strip('L'))
+    def parse_bin(self, file, file_offset, verbose=False, debug=False):
+        if verbose:
+            print("Materials at:", hex(file.tell()).strip('L'))
         self.material_type, = struct.unpack("2s", file.read(2))
-        print("Material type:", self.material_type)
+        if verbose:
+            print("Material type:", self.material_type)
         self.material_subtype, = struct.unpack(">Q", file.read(8))
-        print("Material subtype:", hex(self.material_subtype))
+        if verbose:
+            print("Material subtype:", hex(self.material_subtype))
 
         reading_materials = True
         current_state = "start"
@@ -822,7 +840,8 @@ class CRF_materials:
                             current_state = "read_unknown_texture"
                         else:
                             self.custom_data_count, = struct.unpack("<I", file.read(4))
-                            print("Custom data count", self.custom_data_count)                            
+                            if verbose:
+                                print("Custom data count", self.custom_data_count)                            
                             current_state = "read_specular_const"
                     elif self.material_subtype == 0x100000004000000:
                         current_state = "read_specular"
@@ -835,7 +854,8 @@ class CRF_materials:
                         current_state = "read_normal"
                     else:
                         self.custom_data_count, = struct.unpack("<I", file.read(4))
-                        print("Custom data count", self.custom_data_count)
+                        if verbose:
+                            print("Custom data count", self.custom_data_count)
                         current_state = "read_specular_const"
                 elif current_state == "read_specular_const":
                     if self.material_subtype == 0x100000003000000:
@@ -846,32 +866,37 @@ class CRF_materials:
                         current_state = "read_custom"
                 elif current_state == "read_unknown_texture":
                     self.custom_data_count, = struct.unpack("<I", file.read(4))
-                    print("Custom data count", self.custom_data_count)
+                    if verbose:
+                        print("Custom data count", self.custom_data_count)
                     current_state = "read_custom"
                 elif current_state == "read_custom":
                     import binascii                    
                     # read in unknown                    
                     if self.material_type == b"ts":
                         trailer = file.read(0x10)
-                        print(binascii.hexlify(trailer))
+                        if verbose:
+                            print(binascii.hexlify(trailer))
                     else:
                         trailer = file.read(0x14)
-                        print(binascii.hexlify(trailer))
+                        if verbose:
+                            print(binascii.hexlify(trailer))
                     current_state = "done"
                 elif current_state == "done":
                     reading_materials = False
 
-                        
-                print("Current state =", current_state)
+                if verbose:
+                    print("Current state =", current_state)
                 # state logic
                 if current_state == "read_diffuse":
                     # read diffuse texture
                     data_type, = struct.unpack("4s", file.read(4))
-                    print("Type:", data_type)
+                    if verbose:
+                        print("Type:", data_type)
                     if(data_type == CRF_Diffuse):
                         length, = struct.unpack("<I", file.read(4))
                         texture, = struct.unpack("%ss" % length, file.read(length))
-                        print("Texture:", texture)
+                        if verbose:
+                            print("Texture:", texture)
                         self.diffuse_texture = texture
                         # read in some 0s
                         file.read(4)
@@ -880,11 +905,13 @@ class CRF_materials:
                         reading_materials = False                    
                 elif current_state == "read_normal":
                     data_type, = struct.unpack("4s", file.read(4))
-                    print("Type:", data_type)
+                    if verbose:
+                        print("Type:", data_type)
                     if(data_type == CRF_Normals):
                         length, = struct.unpack("<I", file.read(4))
                         texture, = struct.unpack("%ss" % length, file.read(length))
-                        print("Texture:", texture)
+                        if verbose:
+                            print("Texture:", texture)
                         self.normal_texture = texture
                         # read in some 0s
                         file.read(4)
@@ -894,11 +921,13 @@ class CRF_materials:
                 elif current_state == "read_overlay":
                     # read overlay
                     data_type, = struct.unpack("4s", file.read(4))
-                    print("Type:", data_type)
+                    if verbose:
+                        print("Type:", data_type)
                     if(data_type == CRF_Custom1):
                         length, = struct.unpack("<I", file.read(4))
                         texture, = struct.unpack("%ss" % length, file.read(length))
-                        print("Texture:", texture)
+                        if verbose:
+                            print("Texture:", texture)
                         self.overlay_texture = texture
                         # read in some 0s
                         file.read(4)
@@ -907,11 +936,13 @@ class CRF_materials:
                         reading_materials = False
                 elif current_state == "read_specular":
                     data_type, = struct.unpack("4s", file.read(4))
-                    print("Type:", data_type)
+                    if verbose:
+                        print("Type:", data_type)
                     if(data_type == CRF_Specular):
                         length, = struct.unpack("<I", file.read(4))
                         texture, = struct.unpack("%ss" % length, file.read(length))
-                        print("Texture:", texture)
+                        if verbose:
+                            print("Texture:", texture)
                         self.specular_texture = texture
                         # read in some 0s
                         file.read(4)
@@ -921,21 +952,26 @@ class CRF_materials:
                 elif current_state == "read_specular_const":
                     # read specular constant
                     data_type, = struct.unpack("4s", file.read(4))
-                    print("Type:", data_type)
+                    if verbose:
+                        print("Type:", data_type)
                     R,G,B = struct.unpack("<fff", file.read(12))                    
-                    print("RGB:",R,G,B)
+                    if verbose:
+                        print("RGB:",R,G,B)
                     self.specular_constant = (R, G, B)                    
                     if self.custom_data_count == 1:
                         A, = struct.unpack("f", file.read(4))
-                        print("A:",A)
+                        if verbose:
+                            print("A:",A)
                         self.specular_constant_alpha = A
                 elif current_state == "read_unknown_texture":
                     data_type, = struct.unpack("4s", file.read(4))
-                    print("Type:", data_type)
+                    if verbose:
+                        print("Type:", data_type)
                     if(data_type == CRF_Custom2):
                         length, = struct.unpack("<I", file.read(4))
                         texture, = struct.unpack("%ss" % length, file.read(length))
-                        print("Texture:", texture)
+                        if verbose:
+                            print("Texture:", texture)
                         self.unknown_texture = texture
                         # read in some 0s
                         file.read(4)
@@ -946,22 +982,29 @@ class CRF_materials:
                     if self.material_type == b"ts":
                         for i in range(0, self.custom_data_count):
                             data_type, = struct.unpack("4s", file.read(4))
-                            print("Type:", data_type)                            
+                            if verbose:
+                                print("Type:", data_type)                            
                             unknown = struct.unpack("<III", file.read(12))
-                            print(unknown)
+                            if verbose:
+                                print("Unknown:",unknown)
                             self.custom_array.append(unknown)                         
                     elif self.custom_data_count == 2:
                         data_type, = struct.unpack("4s", file.read(4))
-                        print("Type:", data_type)
+                        if verbose:
+                            print("Type:", data_type)
                         self.custom1_1 = struct.unpack("<IIII", file.read(16))
-                        print("custom1_1 =",self.custom1_1)
+                        if verbose:
+                            print("custom1_1 =",self.custom1_1)
                         data_type, = struct.unpack("4s", file.read(4))
-                        print("Type:", data_type)
+                        if verbose:
+                            print("Type:", data_type)
                         self.custom1_2, = struct.unpack("<I", file.read(4))
-                        print("custom1_2 =",self.custom1_2)                        
+                        if verbose:
+                            print("custom1_2 =",self.custom1_2)                        
         else:
             print("Material type is not supported")
-        print("Materials end at:", hex(file.tell()).strip('L'))
+        if verbose:
+            print("Materials end at:", hex(file.tell()).strip('L'))
 
     def get_bin(self):
         data = b""
@@ -995,7 +1038,8 @@ class CRF_materials:
                 elif current_state == "done":
                     writing_materials = False
                     
-                print(current_state)
+                if verbose:
+                    print("Current state:", current_state)
                 if current_state == "write_diffuse":                
                     data += struct.pack("4s", b"sffd")
                     data += struct.pack("<I", len(self.diffuse_texture))            
@@ -1044,11 +1088,11 @@ class CRF_vertex_blend:
     def raw2blend(self):
         self.blendweights_blend = (ubyte2float(self.blendweights[0]), ubyte2float(self.blendweights[1]), ubyte2float(self.blendweights[2]), ubyte2float(self.blendweights[3]))
         
-    def bin2raw(self, file, file_offset, index, verbose=False):
+    def bin2raw(self, file, file_offset, index, verbose=False, debug=False):
         self.index = index
         self.blendweights = struct.unpack("<BBBB", file.read(4))
         self.blendindices = struct.unpack("<BBBB", file.read(4))
-        if verbose:
+        if debug:
             print("vert index=%s, blendweights: %s, blendindices: %s" % (self.index, self.blendweights, self.blendindices))
 
     def get_bin(self):
@@ -1058,10 +1102,10 @@ class CRF_vertex_blend:
         return data
                                 
 class CRF_vertex_blend_indices_only:
-    def bin2raw(self, file, file_offset, index, verbose=False):
+    def bin2raw(self, file, file_offset, index, verbose=False, debug=False):
         self.index = index
         self.blendindices = struct.unpack("<bbbb", file.read(4))
-        if verbose:
+        if debug:
             print("vert index=%s, blendindices: %s" % (self.index, self.blendindices))
             
     def get_bin(self):
@@ -1074,10 +1118,10 @@ class CRF_vertex_unknown:
         self.index = 0
         self.unknown = (0, 0)
             
-    def bin2raw(self, file, file_offset, index, verbose=False):
+    def bin2raw(self, file, file_offset, index, verbose=False, debug=False):
         self.index = index
         self.unknown = struct.unpack("<ff", file.read(8))
-        if verbose:
+        if debug:
             print("vert index=%s, unknown: %s" % (self.index, self.unknown))
 
     def get_bin(self):
