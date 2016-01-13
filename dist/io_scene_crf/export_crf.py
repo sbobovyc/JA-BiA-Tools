@@ -263,13 +263,13 @@ def _write(context, filepath,
         normals_texture_file = None
         specular_texture_file = None
                 
-        print(blender_mesh.materials[0].texture_slots[0])
-        print(blender_mesh.materials[0].texture_slots[1])        
         if blender_mesh.materials[0].texture_slots[0] == None and blender_mesh.materials[0].texture_slots[1] == None:
                raise Exception("Missing a diffuse or normal texture")
         else:
             diffuse_texture_file = blender_mesh.materials[0].texture_slots[0].texture.image.name
             normals_texture_file = blender_mesh.materials[0].texture_slots[1].texture.image.name
+        print("Diffuse texture file", diffuse_texture_file, blender_mesh.materials[0].texture_slots[0])
+        print("Normals texture file", normals_texture_file, blender_mesh.materials[0].texture_slots[1])
             
         if blender_mesh.materials[0].texture_slots[2] == None:
             print("Using a constant specular value")
@@ -278,15 +278,15 @@ def _write(context, filepath,
 
 
         # strip extension from filenames
-        diffuse_texture_file = os.path.splitext(diffuse_texture_file)[0]
-        normals_texture_file = os.path.splitext(normals_texture_file)[0]
+        diffuse_texture_file = os.path.splitext(os.path.splitext(diffuse_texture_file)[0])[0]
+        normals_texture_file = os.path.splitext(os.path.splitext(normals_texture_file)[0])[0]
         if specular_texture_file != None:
-            specular_texture_file = os.path.splitext(specular_texture_file)[0]
+            specular_texture_file = os.path.splitext(os.path.splitext(specular_texture_file)[0])[0]
+        print("Textures:", diffuse_texture_file, normals_texture_file, specular_texture_file)
 
         # get diffuse and specular material color
         diffuse_material_color = blender_mesh.materials[0].diffuse_color
         specular_material_color = blender_mesh.materials[0].specular_color
-        print("Textures:", diffuse_texture_file, normals_texture_file, specular_texture_file)
 
         materials = CRF_materials()
         materials.material_type = b'nm' #TODO magic number

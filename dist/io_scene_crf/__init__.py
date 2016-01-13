@@ -19,8 +19,8 @@
 bl_info = {
     "name": "JABIA CRF format",
     "author": "Stanislav Bobovych",
-    "version": (0, 9),
-    "blender": (2, 6, 9),
+    "version": (1, 0),
+    "blender": (2, 7, 6),
     "location": "File > Import-Export",
     "description": "Import-Export CRF, Import CRF mesh, UV's, "
                    "materials and textures",

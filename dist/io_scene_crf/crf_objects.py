@@ -626,7 +626,7 @@ class CRF_meshfile:
         return string
 
         
-    def get_bin(self):
+    def get_bin(self, verbose=False):
         data = b""
         # some unknown magick number
         data += struct.pack("<I", 0xFFFF0006)        
@@ -1006,7 +1006,7 @@ class CRF_materials:
         if verbose:
             print("Materials end at:", hex(file.tell()).strip('L'))
 
-    def get_bin(self):
+    def get_bin(self, verbose=False):
         data = b""
         writing_materials = True
         current_state = "start"
@@ -1229,7 +1229,7 @@ class CRF_vertex:
         self.blendweights1_w_blend = byte2float(self.blendweights1_w)   
         
         
-    def blend2raw(self):
+    def blend2raw(self, verbose=False, debug=False):
         """ Convert blender values to raw values """
         #TODO find out how CRF object coordinates work (global or local)
         self.x = self.x_blend
@@ -1238,12 +1238,14 @@ class CRF_vertex:
         self.x = -self.x # mirror vertex across x axis
         self.z = -self.z # mirror vertex across z axis
 
-        print("Blender normal %i: %f, %f, %f" % (self.index, self.normal_x_blend, self.normal_y_blend, self.normal_z_blend))
+        if verbose:
+            print("Blender normal %i: %f, %f, %f" % (self.index, self.normal_x_blend, self.normal_y_blend, self.normal_z_blend))
         self.normal_x = float2uint(-1*self.normal_x_blend)
         self.normal_y = float2uint(self.normal_y_blend) 
         self.normal_z = float2uint(self.normal_z_blend) 
         self.normal_w = 0#float2uint(self.normal_w_blend)
-        print("Raw normal %i: %f, %f, %f" % (self.index, self.normal_x, self.normal_y, self.normal_z))        
+        if verbose:
+            print("Raw normal %i: %f, %f, %f" % (self.index, self.normal_x, self.normal_y, self.normal_z))        
         
         self.tangent_x = float2uint(self.tangent_x_blend)
         self.tangent_y = float2uint(self.tangent_y_blend)

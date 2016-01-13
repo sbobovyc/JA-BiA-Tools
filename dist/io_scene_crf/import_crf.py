@@ -393,7 +393,7 @@ def load(operator, context, filepath,
             # create a material to which textures can be added
             mat = createMaterial('TexMat', use_shadeless, viz_normals)
             if use_diffuse_texture:
-                diffuse_texture = mesh.materials.diffuse_texture            
+                diffuse_texture = mesh.materials.diffuse_texture
                 diffuse_texture_filepath = findTextureFile(os.fsdecode(filepath),  diffuse_texture.decode(sys.stdout.encoding))
                 print("Adding diffuse texture ", diffuse_texture_filepath)        
                 if diffuse_texture_filepath != None and diffuse_texture_filepath != "":
