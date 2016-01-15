@@ -1,4 +1,4 @@
-    set PIP=C:\Python27\pyinstaller-2.1\
+    set PIP=C:\Python27\pyinstaller-3.1\
     set UPX_PATH=C:\upx391w
     set ICON=.\misc\jabia_icon.ico
     set ICON1=.\misc\pak_icon.ico

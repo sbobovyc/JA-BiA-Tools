@@ -1,6 +1,6 @@
     @echo off
-    set ROOT="C:\Program Files (x86)\Steam\steamapps\common\jabia"
-    set BIA=C:\Users\sbobovyc\Desktop\bia\1.11
+    set ROOT="C:\Steam\steamapps\common\jabia"
+    set BIA=C:\Users\sbobovyc\Desktop\bia\1.13
     set BIN=.\dist
     set TEMP=%BIA%\temp
 

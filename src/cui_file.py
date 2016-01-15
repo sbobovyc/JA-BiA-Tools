@@ -92,21 +92,21 @@ class CUI_ui_element_vertex:
 
 class CUI_ui_element:
 
-    def __init__(self, element_id, name, unknown0, unknown1, verteces, trailer):
+    def __init__(self, element_id, name, unknown0, unknown1, vertices, trailer):
         self.element_id = element_id
         self.name = name
         self.unknown0 = unknown0
         self.unknown1 = unknown1
-        self.verteces = verteces    # list of CUI_ui_element_verteces
+        self.vertices = vertices    # list of CUI_ui_element_vertices
         self.trailer = trailer      #
 
     def get_packed_data(self):
         data_buffer = struct.pack("<II%isI" % (len(self.name)),
                                   self.element_id, len(self.name), self.name, self.unknown0)
         data_buffer += struct.pack("<7Hx", *self.unknown1)
-        data_buffer += struct.pack("<H", len(self.verteces))
+        data_buffer += struct.pack("<H", len(self.vertices))
 
-        for vertex in self.verteces:
+        for vertex in self.vertices:
             data_buffer += vertex.get_packed_data()
 
         if self.trailer == "magick1":
@@ -131,7 +131,7 @@ class CUI_ui_element:
             self.element_id, self.name, hex(self.unknown0))
         string += "unknown data: (" + ', '.join(
             map(str, self.unknown1)) + ")\n"
-        for vertex in self.verteces:
+        for vertex in self.vertices:
             string += vertex.__str__() + "\n"
         return string
         # return "UI icon ID: %s, resource %s, (%s,%s)(%s,%s)" % (self.icon_id,
@@ -303,14 +303,14 @@ class CUI_data:
             unknown0, = struct.unpack("<I", file_pointer.read(4))
             unknown1 = struct.unpack("<7Hx", file_pointer.read(15))
 
-            num_verteces, = struct.unpack("<H", file_pointer.read(2))
+            num_vertices, = struct.unpack("<H", file_pointer.read(2))
 
-            verteces = []
-            for j in range(0, num_verteces):
+            vertices = []
+            for j in range(0, num_vertices):
                 vertex_id, = struct.unpack("<I", file_pointer.read(4))
                 color, = struct.unpack("<I", file_pointer.read(4))
                 data = struct.unpack("<IB", file_pointer.read(5))
-                verteces.append(CUI_ui_element_vertex(vertex_id, color, data))
+                vertices.append(CUI_ui_element_vertex(vertex_id, color, data))
             # this hack is here because I still don't know why some UI elements
             # have traling data and some don't
             saved_position = file_pointer.tell()
@@ -347,7 +347,7 @@ class CUI_data:
 
             # construct object
             cui_ui_element = CUI_ui_element(
-                ui_element_id, name, unknown0, unknown1, verteces, trailer_type)
+                ui_element_id, name, unknown0, unknown1, vertices, trailer_type)
             self.ui_element_dict[ui_element_id] = cui_ui_element
             if verbose:
                 print cui_ui_element
