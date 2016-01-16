@@ -293,6 +293,8 @@ DWORD WINAPI DebugThread(LPVOID)
 				OutputDebugString(debugStrBuf); 
 				wsprintf (debugStrBuf, _T("Current money %i"), CurrentSaveGamePtr->money);
 				OutputDebugString(debugStrBuf); 
+				wsprintf(debugStrBuf, _T("Seconds in country %i"), CurrentSaveGamePtr->seconds_in_country);
+				OutputDebugString(debugStrBuf);
 
 				if(jabia_characters.at(last_character_selected_index) == NULL) {
 					MessageBox (0, debugStrBuf, _T("Memory error"), MB_ICONEXCLAMATION | MB_OK | MB_SYSTEMMODAL);
@@ -1758,14 +1760,14 @@ __declspec(naked) void* myCharacterConstReturn(){
 }
 
 void __fastcall recordCharacters(void* instance){
-	//char buf [100];
 	JABIA_Character * character_ptr;
-	//OutputDebugString("Parsing character!");
-
+	TCHAR debugStrBuf[DEBUG_STR_SIZE];
+	wchar_t name_w[JABIA_CHARACTER_MAX_NAME_LENGTH];	
 	character_ptr = (JABIA_Character *)instance;
-
-	//wsprintf(buf, "Character at 0x%X", character_ptr);
-	//OutputDebugString(buf);
+	size_t convertedChars = 0;
+	mbstowcs_s(&convertedChars, name_w, JABIA_CHARACTER_MAX_NAME_LENGTH, (char *)&character_ptr->merc_name, _TRUNCATE);
+	wsprintf(debugStrBuf, _T("Character %s at 0x%X"), name_w, character_ptr);
+	OutputDebugString(debugStrBuf);
 	jabia_characters.push_back(character_ptr);
 	//wsprintf(buf, "Size %i", jabia_characters.size());
 	//OutputDebugString(buf);

@@ -33,7 +33,8 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 typedef void * (_stdcall *ParseGameInfoReturnPtr)();
 
 typedef struct SaveGame {
-	int unknown[8];
+	int unknown[7];
+	int seconds_in_country;
 	int money;
 } GameInfo;
 
