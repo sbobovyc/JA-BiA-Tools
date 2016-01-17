@@ -871,7 +871,7 @@ BOOL dump_all_characters(HWND hwnd) {
 	
 }
 
-void fillDialog(HWND hwnd, JABIA_Character * ptr) {
+void fillDialog(HWND hwnd, JABIA_Character * ptr) {	
 	TCHAR buf[100];
 	char nameBuf[100];
 	JABIA_Character character;
@@ -1075,17 +1075,25 @@ void fillDialog(HWND hwnd, JABIA_Character * ptr) {
 		SendMessage(comboControl15, CB_SETCURSEL, last_trait_selected_index, 0);	
 
 		HWND comboControl16;
-		comboControl16 = GetDlgItem(hwnd, IDC_COMBO_TRAIT_DESC);
-		auto search = CharacterTraitMap.find(character.character_config->trait_begin_ptr[last_trait_selected_index]);
-		if (search != CharacterTraitMap.end()) {
-			wsprintf(buf, _T("%s"), search->second);
-			SendMessage(comboControl16, CB_SETCURSEL, search->first, 0);
-			EnableWindow(comboControl16, true);
+		comboControl16 = GetDlgItem(hwnd, IDC_COMBO_TRAIT_DESC);		
+
+		if (character.character_config->trait_begin_ptr == NULL) {
+			goto TRAIT_NONE;
+
 		}
 		else {
-			wsprintf(buf, _T("None"));
-			SendMessage(comboControl16, CB_SETCURSEL, 36, 0);
-			EnableWindow(comboControl16, false);
+			auto search = CharacterTraitMap.find(character.character_config->trait_begin_ptr[last_trait_selected_index]);
+			if (search != CharacterTraitMap.end()) {
+				wsprintf(buf, _T("%s"), search->second);				
+				SendMessage(comboControl16, CB_SETCURSEL, search->first, 0);
+				EnableWindow(comboControl16, true);
+			}
+			else {
+				TRAIT_NONE:
+				wsprintf(buf, _T("None"));				
+				SendMessage(comboControl16, CB_SETCURSEL, 36, 0);
+				EnableWindow(comboControl16, false);
+			}
 		}
 		OutputDebugString(buf);
 		wsprintf(buf, _T("Address of character config 0x%x"), (uint32_t *)(character.character_config));
