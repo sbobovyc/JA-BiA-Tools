@@ -80,27 +80,16 @@ def uint2float(uint_number):
     return uint_number / 4294967295.
 
 def ubyte2float(ubyte_number):
+    """ Convert unsigned byte to [0, 1] """
     return ubyte_number / 255.0
 
-def byte2float(int_number, old_way=False):
-    if old_way:
-        if int_number > 128:
-            return float(int_number / 128.0) - 1
-        elif int_number < 128:
-            return float(-(128.0 - int_number) / 128.0)
-        else:
-            return 0.0
-    else:    
-        return (int_number/127.5) - 1.0
+def byte2signed_float(int_number):
+    """ Convert unsigned byte to [-1, 1] """
+    return (int_number/255.0) * 2.0 - 1.0
     
-def float2uint(f_number, old_way=False):
-    if old_way:
-        if f_number <= 0:
-            return int((f_number+1.0)/2.0 * 255.0 + 1)
-        else:
-            return int((f_number+1.0)/2.0 * 256.0 - 1)
-    else:
-        return int(math.floor((f_number + 1.0)*127.5))
+def float2byte(f_number):
+    """ Convert float [-1, 1] to [0, 255] """
+    return int(math.floor((f_number + 1.0)/2.0 * 255.0))
 
 class CRF_object:
     def __init__(self):
@@ -939,25 +928,25 @@ class CRF_vertex:
         self.y_blend = self.y
         self.z_blend = self.z        
 
-        self.normal_x_blend = byte2float(self.normal_x)
-        self.normal_y_blend = byte2float(self.normal_y) 
-        self.normal_z_blend = byte2float(self.normal_z) 
-        self.normal_w_blend = byte2float(self.normal_w)
+        self.normal_x_blend = byte2signed_float(self.normal_x)
+        self.normal_y_blend = byte2signed_float(self.normal_y) 
+        self.normal_z_blend = byte2signed_float(self.normal_z) 
+        self.normal_w_blend = byte2signed_float(self.normal_w)
 
-        self.tangent_x_blend = byte2float(self.tangent_x)
-        self.tangent_y_blend = byte2float(self.tangent_y)
-        self.tangent_z_blend = byte2float(self.tangent_z)
-        self.tangent_w_blend = byte2float(self.tangent_w)
+        self.tangent_x_blend = byte2signed_float(self.tangent_x)
+        self.tangent_y_blend = byte2signed_float(self.tangent_y)
+        self.tangent_z_blend = byte2signed_float(self.tangent_z)
+        self.tangent_w_blend = byte2signed_float(self.tangent_w)
         
         self.u0_blend = (self.u0 / 32768.) *  0.5 + 0.5
         self.v0_blend = (self.v0 / 32768.) * -0.5 + 0.5
         self.u1_blend = (self.u1 / 32768.) *  0.5 + 0.5
         self.v1_blend = (self.v1 / 32768.) * -0.5 + 0.5
         
-        self.blendweights1_x_blend = byte2float(self.blendweights1_x)
-        self.blendweights1_y_blend = byte2float(self.blendweights1_y)
-        self.blendweights1_z_blend = byte2float(self.blendweights1_z)
-        self.blendweights1_w_blend = byte2float(self.blendweights1_w)   
+        self.blendweights1_x_blend = byte2signed_float(self.blendweights1_x)
+        self.blendweights1_y_blend = byte2signed_float(self.blendweights1_y)
+        self.blendweights1_z_blend = byte2signed_float(self.blendweights1_z)
+        self.blendweights1_w_blend = byte2signed_float(self.blendweights1_w)   
         
         
     def blend2raw(self, verbose=False, debug=False):
@@ -971,17 +960,17 @@ class CRF_vertex:
 
         if verbose:
             print("Blender normal %i: %f, %f, %f" % (self.index, self.normal_x_blend, self.normal_y_blend, self.normal_z_blend))
-        self.normal_x = float2uint(-1*self.normal_x_blend)
-        self.normal_y = float2uint(self.normal_y_blend) 
-        self.normal_z = float2uint(self.normal_z_blend)
-##        self.normal_w = float2uint(self.normal_w_blend)        
+        self.normal_x = float2byte(-1*self.normal_x_blend)
+        self.normal_y = float2byte(self.normal_y_blend)
+        self.normal_z = float2byte(self.normal_z_blend)
+##        self.normal_w = float2byte(self.normal_w_blend)
         self.normal_w = 0
         if verbose:
-            print("Raw normal %i: %f, %f, %f" % (self.index, self.normal_x, self.normal_y, self.normal_z))        
+            print("Raw normal %i: %f, %f, %f" % (self.index, self.normal_x, self.normal_y, self.normal_z))
         
-        self.tangent_x = float2uint(self.tangent_x_blend)
-        self.tangent_y = float2uint(self.tangent_y_blend)
-        self.tangent_z = float2uint(self.tangent_z_blend)
+        self.tangent_x = float2byte(self.tangent_x_blend)
+        self.tangent_y = float2byte(self.tangent_y_blend)
+        self.tangent_z = float2byte(self.tangent_z_blend)
         self.tangent_w = 0xff # matches what's in the orignal binary files
         
         self.u0 = int(((self.u0_blend - 0.5) *  2) * 32768)
@@ -989,10 +978,10 @@ class CRF_vertex:
         self.u1 = int(((self.u1_blend - 0.5) *  2) * 32768)
         self.v1 = int(((self.v1_blend - 0.5) * -2) * 32768)
 
-        self.blendweights1_x = float2uint(self.blendweights1_x_blend)
-        self.blendweights1_y = float2uint(self.blendweights1_y_blend)
-        self.blendweights1_z = float2uint(self.blendweights1_z_blend)
-        self.blendweights1_w = float2uint(self.blendweights1_w_blend)
+        self.blendweights1_x = float2byte(self.blendweights1_x_blend)
+        self.blendweights1_y = float2byte(self.blendweights1_y_blend)
+        self.blendweights1_z = float2byte(self.blendweights1_z_blend)
+        self.blendweights1_w = float2byte(self.blendweights1_w_blend)
 
          
     def bin2raw(self, file, file_offset, index):
