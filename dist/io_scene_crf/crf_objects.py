@@ -1183,7 +1183,7 @@ class CRF_vertex:
         string += "Blender values:\n"
         string += "xyz = %f %f %f\n" % (self.x_blend, self.y_blend, self.z_blend)
         string += "\tvertex normal XYZW  = %f %f %f %f\n" % (self.normal_x_blend, self.normal_y_blend, self.normal_z_blend, self.normal_w_blend)
-        #string += "\tvertex normal length = %s\n" % (math.sqrt(self.normal_x_blend*self.normal_x_blend + self.normal_y_blend*self.normal_y_blend + self.normal_z_blend*self.normal_z_blend))
+##        string += "\tvertex normal length = %s\n" % (math.sqrt(self.normal_x_blend*self.normal_x_blend + self.normal_y_blend*self.normal_y_blend + self.normal_z_blend*self.normal_z_blend))
         string += "\tvertex tangent XYZW  = %f %f %f %f\n" % (self.tangent_x_blend, self.tangent_y_blend, self.tangent_z_blend, self.tangent_w_blend)                                                 
         string += "\tuv0 = %f %f\n" % (self.u0_blend, self.v0_blend)
         string += "\tuv1 = %f %f\n" % (self.u1_blend, self.v1_blend)
@@ -1218,10 +1218,10 @@ class CRF_vertex:
         self.tangent_z_blend = byte2float(self.tangent_z)
         self.tangent_w_blend = byte2float(self.tangent_w)
         
-        self.u0_blend = 0.5+(self.u0 / 32768.)/2.0
-        self.v0_blend = 0.5-(self.v0 / 32768.)/2.0
-        self.u1_blend = 0.5+(self.u1 / 32768.)/2.0
-        self.v1_blend = 0.5-(self.v1 / 32768.)/2.0
+        self.u0_blend = (self.u0 / 32768.) *  0.5 + 0.5
+        self.v0_blend = (self.v0 / 32768.) * -0.5 + 0.5
+        self.u1_blend = (self.u1 / 32768.) *  0.5 + 0.5
+        self.v1_blend = (self.v1 / 32768.) * -0.5 + 0.5
         
         self.blendweights1_x_blend = byte2float(self.blendweights1_x)
         self.blendweights1_y_blend = byte2float(self.blendweights1_y)
@@ -1242,8 +1242,9 @@ class CRF_vertex:
             print("Blender normal %i: %f, %f, %f" % (self.index, self.normal_x_blend, self.normal_y_blend, self.normal_z_blend))
         self.normal_x = float2uint(-1*self.normal_x_blend)
         self.normal_y = float2uint(self.normal_y_blend) 
-        self.normal_z = float2uint(self.normal_z_blend) 
-        self.normal_w = 0#float2uint(self.normal_w_blend)
+        self.normal_z = float2uint(self.normal_z_blend)
+##        self.normal_w = float2uint(self.normal_w_blend)        
+        self.normal_w = 0
         if verbose:
             print("Raw normal %i: %f, %f, %f" % (self.index, self.normal_x, self.normal_y, self.normal_z))        
         
@@ -1252,9 +1253,9 @@ class CRF_vertex:
         self.tangent_z = float2uint(self.tangent_z_blend)
         self.tangent_w = 0xff # matches what's in the orignal binary files
         
-        self.u0 = int(((self.u0_blend - 0.5) * 2) * 32768)
+        self.u0 = int(((self.u0_blend - 0.5) *  2) * 32768)
         self.v0 = int(((self.v0_blend - 0.5) * -2) * 32768)
-        self.u1 = int(((self.u1_blend - 0.5) * 2) * 32768)
+        self.u1 = int(((self.u1_blend - 0.5) *  2) * 32768)
         self.v1 = int(((self.v1_blend - 0.5) * -2) * 32768)
 
         self.blendweights1_x = float2uint(self.blendweights1_x_blend)
@@ -1262,24 +1263,7 @@ class CRF_vertex:
         self.blendweights1_z = float2uint(self.blendweights1_z_blend)
         self.blendweights1_w = float2uint(self.blendweights1_w_blend)
 
-        # clamp uv values to be <= 32768 and >=-32768
-        if self.u0 >= 32768:
-            self.u0 = 32767
-        if self.v0 >= 32767:
-            self.v0 = 32767
-        if self.u1 >= 32768:
-            self.u1 = 32767
-        if self.v1 >= 32768:
-            self.v1 = 32767
-        if self.u0 <= -32768:
-            self.u0 = -32767
-        if self.v0 <= -32768:
-            self.v0 = -32767
-        if self.u1 <= -32768:
-            self.u1 = -32767
-        if self.v1 <= -32768:
-            self.v1 = -32767               
-
+         
     def bin2raw(self, file, file_offset, index):
             self.index = index
             self.x, self.y, self.z, \
