@@ -46,8 +46,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>..\h;C:\Program Files %28x86%29\boost_1_58_0;C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\JABIA_mod_launcher\resources;C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\JABIA_mod_launcher\h;C:\Users\sbobovyc\workspace\WinHookInject\VS12\WinHookInject\injector;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Program Files %28x86%29\boost_1_58_0\stage\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>..\h;..\JABIA\external\boost;C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\JABIA_mod_launcher\resources;C:\Users\sbobovyc\workspace\JA-BiA-Tools\src\experimental\vs12\JABIA\JABIA_mod_launcher\h;C:\Users\sbobovyc\workspace\WinHookInject\VS12\WinHookInject\injector;$(IncludePath)</IncludePath>
+    <LibraryPath>..\external\boost\stage\lib;$(LibraryPath)</LibraryPath>
     <PreBuildEventUseInBuild>true</PreBuildEventUseInBuild>
     <PreLinkEventUseInBuild>true</PreLinkEventUseInBuild>
     <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>

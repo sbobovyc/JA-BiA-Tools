@@ -65,7 +65,10 @@ DWORD WINAPI DurableWeaponsThread(LPVOID) {
 	memcpy((void *)opcode_address, (void *)instruction, 8);
 
 	// restore protection
-    VirtualProtect((LPVOID)opcode_address, 6, oldProtection, NULL);
+	OutputDebugString("Will try to restore protection");
+    //boolean result = VirtualProtect((LPVOID)opcode_address, 6, oldProtection, NULL);
+	//wsprintf(buf, "Protection restoration succeeded? %s", result? "true" : "false");
+	//OutputDebugString(buf);
 
     return 0;
 }
