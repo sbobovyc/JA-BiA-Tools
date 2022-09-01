@@ -1,4 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+import argparse
+import os
+import sys
+import multiprocessing
+from pak_file import PAK_file
+
 """
 Created on February 2, 2012
 
@@ -21,12 +27,6 @@ Created on February 2, 2012
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import argparse
-import os
-import sys
-import multiprocessing
-from pak_file import PAK_file
-
 if __name__ == '__main__':
     # On Windows calling this function is necessary.
     if sys.platform.startswith('win'):
@@ -36,9 +36,12 @@ if __name__ == '__main__':
 
     parser.add_argument('file', nargs='?', help='Input file')
     parser.add_argument('outdir', nargs='?', help='Output directory')
-    parser.add_argument('-i', '--info', default=False, action='store_true', help='Output information about pak file')
-    parser.add_argument('-d', '--debug', default=False, action='store_true', help='Show debug messages.')
-    parser.add_argument('-p', '--parallel', default=False, action='store_true', help='Use multiple workers (This feature is experimental and will fail if not used from Python script)')
+    parser.add_argument('-i', '--info', default=False, action='store_true',
+                        help='Output information about pak file')
+    parser.add_argument('-d', '--debug', default=False, action='store_true',
+                        help='Show debug messages.')
+    parser.add_argument('-p', '--parallel', default=False, action='store_true',
+                        help='Use multiple workers (This feature is experimental and will fail if not used from Python script)')
 
     args = parser.parse_args()
     infile = args.file
@@ -49,25 +52,26 @@ if __name__ == '__main__':
 
     if infile is not None and info is not False:
         info_filepath = os.path.abspath(infile)
-        print "Not implemented yet."
+        print("Not implemented yet.")
 
     elif infile is not None:
         extension = os.path.splitext(infile)[1][1:].strip()
         pak_filepath = os.path.abspath(infile)
 
-        print "Unpacking %s" % pak_filepath
+        print(("Unpacking %s" % pak_filepath))
 
         if extension == "pak":
             pak_file = PAK_file(filepath=pak_filepath, encrypted=False)
         elif extension == "crypt":
             pak_file = PAK_file(filepath=pak_filepath, encrypted=True)
         else:
-            print "File not pak or pak.crypt"
+            print("File not pak or pak.crypt")
+            sys.exit(-1)
 
         output_filepath = os.path.abspath('.')
         if outdir is not None:
             output_filepath = os.path.abspath(outdir)
         pak_file.dump(dest_filepath=output_filepath, verbose=debug, parallel=parallel)
     else:
-        print "Nothing happened"
+        print("Nothing happened")
         parser.print_help()
