@@ -1,3 +1,7 @@
+import yaml
+import codecs
+import os
+
 """
 Created on February 27, 2012
 
@@ -19,10 +23,6 @@ Created on February 27, 2012
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
-import yaml
-import codecs
-import os
 
 
 class JABIA_file(object):
@@ -48,7 +48,7 @@ class JABIA_file(object):
         if self.filepath is None:
             raise Exception("File path is empty. Open the file with a valid path.")
 
-        print "Creating %s" % self.filepath
+        print("Creating %s" % self.filepath)
 
         with open(self.filepath, "wb") as f:
             data = self.data.get_packed_data()
@@ -62,13 +62,13 @@ class JABIA_file(object):
         file_name = os.path.join(dest_filepath, os.path.splitext(os.path.basename(self.filepath))[0])
 
         full_path = file_name + self.yaml_extension
-        print "Creating %s" % full_path
-        yaml.add_representer(unicode, lambda dumper, value: dumper.represent_scalar(u'tag:yaml.org,2002:str', value))
+        print("Creating %s" % full_path)
+        yaml.add_representer(str, lambda dumper, value: dumper.represent_scalar(u'tag:yaml.org,2002:str', value))
         with codecs.open(full_path, "wb", "utf-16") as f:
-                yaml.dump(self.data, f, allow_unicode=True, encoding="utf-16")
+            yaml.dump(self.data, f, allow_unicode=True, encoding="utf-16")
 
     def yaml2bin(self, yaml_file):
         filepath = os.path.abspath(yaml_file)
         with codecs.open(filepath, "r", "utf-16") as f:
-            self.data = yaml.load(f)
+            self.data = yaml.load(f, Loader=yaml.Loader)
         self.pack()

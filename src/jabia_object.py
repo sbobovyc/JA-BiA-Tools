@@ -128,9 +128,9 @@ class Knife(Weapon):
 if __name__ == "__main__":
     # example of object reflection
     tex = type("Texture", (object,), dict(id=1, full_path="."))
-    print tex.id
+    print(tex.id)
     item = type("Item", (object,), dict(id=55))
-    print item.id
+    print(item.id)
     id = 57
     item = type("Item", (object,), dict(id=id))
-    print item.id
+    print(item.id)

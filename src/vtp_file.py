@@ -26,7 +26,7 @@ from jabia_file import JABIA_file
 
 class VTP_constant:
 
-    def __init__(self, name):
+    def __init__(self, name: str):
         self.name = name
         self.unknown3 = None
         self.unknown_params_list = None
@@ -43,7 +43,7 @@ class VTP_constant:
 
 class VTP_variable:
 
-    def __init__(self, name, unknown):
+    def __init__(self, name: str, unknown):
         self.name = name
         self.unknown = unknown
         self.path_list = []
@@ -66,7 +66,7 @@ class VTP_variable:
 
 class VTP_item:
 
-    def __init__(self, id, id_name):
+    def __init__(self, id: int, id_name: str):
         self.id = id
         self.unknown_const = 256
         self.id_name = id_name
@@ -123,10 +123,10 @@ class VTP_data:
         self.section, self.num_items = struct.unpack(
             "<BH", file_pointer.read(3))
         if verbose:
-            print "################################"
-        print "Section %s, number of items %s" % (self.section, self.num_items)
+            print("################################")
+        print("Section %s, number of items %s" % (self.section, self.num_items))
         if verbose:
-            print "################################"
+            print("################################")
         for i in range(0, self.num_items):
             id1, id2, length = struct.unpack("<IHI", file_pointer.read(10))
             # print
@@ -136,7 +136,7 @@ class VTP_data:
             num_types, = struct.unpack("<B", file_pointer.read(1))
             # print "\tItem name", varname
             # print "\tNumber of variables",num_types
-            item = VTP_item(id1, varname)
+            item = VTP_item(id1, varname.decode('ascii'))
             if num_types != 0:
                 for i in range(0, num_types):
                     length, = struct.unpack("<I", file_pointer.read(4))
@@ -147,13 +147,13 @@ class VTP_data:
                         "<BB", file_pointer.read(2))
                     # print "\tUnknown",unknown0
                     # print "\tNumber of objects",number_of_objects
-                    variable = VTP_variable(variable_name, unknown0)
+                    variable = VTP_variable(variable_name.decode('ascii'), unknown0)
                     for i in range(0, number_of_objects):
                         length, = struct.unpack("<I", file_pointer.read(4))
                         file_path, = struct.unpack(
                             "%ss" % length, file_pointer.read(length))
                         # print "\t\t",file_path
-                        variable.path_list.append(file_path)
+                        variable.path_list.append(file_path.decode('ascii'))
                     item.variable_list.append(variable)
             if self.section == 3:
                 unknown1, num_constants, unknown2 = struct.unpack(
@@ -173,7 +173,7 @@ class VTP_data:
                     # print "\tConstant", material_name,
                     prop = struct.unpack("<fffffffff", file_pointer.read(36))
                     # print prop
-                    const = VTP_constant(material_name)
+                    const = VTP_constant(material_name.decode('ascii'))
                     const.unknown3 = unknown3
                     const.unknown_params_list = prop
                     item.constant_list.append(const)
@@ -187,7 +187,7 @@ class VTP_data:
             list_pointer.append(item)
             if verbose:
                 print
-                print item
+                print(item)
         return
 
     def unpack(self, file_pointer, peek=False, verbose=False):

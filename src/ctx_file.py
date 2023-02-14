@@ -1,3 +1,10 @@
+import struct
+import os
+import sqlite3
+from collections import OrderedDict
+from jabia_file import JABIA_file
+
+
 """
 Created on February 6, 2012
 
@@ -20,17 +27,11 @@ Created on February 6, 2012
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import struct
-import os
-import sqlite3
-from collections import OrderedDict
-from jabia_file import JABIA_file
-
 
 class CTX_ID:
 
-    def __init__(self, id, id_name, path):
-        self.id = id
+    def __init__(self, ctx_id, id_name, path):
+        self.id = ctx_id
         self.id_name = id_name
         self.path = path
 
@@ -53,8 +54,8 @@ class CTX_language:
         self.data_offset = data_offset
         self.data_dictionary = OrderedDict()   # {text id : data} mapping
 
-    def add_data(self, id, text):
-        self.data_dictionary[id] = text
+    def add_data(self, ctx_id, text):
+        self.data_dictionary[ctx_id] = text
 
     def get_description(self):
         return self.description_string
@@ -76,13 +77,13 @@ class CTX_language:
         return len(self.description_string)
 
     def get_packed_data(self):
-        data_buffer = ""
+        data_buffer = b''
         for key, value in self.data_dictionary.items():
             encoded_value = value.encode('utf-16le')
             encoded_size = len(encoded_value)
-            data_packed = struct.pack("<II%is" % encoded_size, key, encoded_size / 2, encoded_value)
+            data_packed = struct.pack("<II%is" % encoded_size, key, encoded_size // 2, encoded_value)
 #            print binascii.hexlify(data_packed)
-            data_buffer = data_buffer + data_packed
+            data_buffer = b''.join([data_buffer, data_packed])
 #            print binascii.hexlify(data_buffer)
         return data_buffer
 
@@ -118,32 +119,32 @@ class CTX_data:
 
         for i in range(0, self.num_languages):
             desc_length, = struct.unpack("<I", file_pointer.read(4))
-            description_string = file_pointer.read(desc_length)
+            description_string = file_pointer.read(desc_length).decode('ascii')
             data_offset, = struct.unpack("<I", file_pointer.read(4))
             self.insert_language(CTX_language(description_string, data_offset))
 
         self.data_offset = file_pointer.tell()
 
         if peek or verbose:
-            print "Number of items: %s" % self.num_items
-            print "Last item id: %i" % self.last_item_id
-            print "Number of languages in file: %i" % self.num_languages
-            print "Data offset: %s" % hex(self.data_offset).rstrip('L')
+            print("Number of items: %s" % self.num_items)
+            print("Last item id: %i" % self.last_item_id)
+            print("Number of languages in file: %i" % self.num_languages)
+            print("Data offset: %s" % hex(self.data_offset).rstrip('L'))
             for each in self.language_list:
-                print each
+                print(each)
         if peek:
             return
 
         for language in self.language_list:
             file_pointer.seek(self.data_offset + language.data_offset)
             for i in range(0, self.num_items):
-                id, item_length = struct.unpack("<II", file_pointer.read(8))
+                ctx_id, item_length = struct.unpack("<II", file_pointer.read(8))
                 item_length = 2 * item_length               # multiply by two to compensate for the "\0"
                 item_raw_text = file_pointer.read(item_length)
-                item_text = unicode(item_raw_text, "utf-16le")
-                language.add_data(id, item_text)
+                item_text = item_raw_text.decode("utf-16le")
+                language.add_data(ctx_id, item_text)
                 if verbose:
-                    print id, item_text
+                    print(ctx_id, item_text)
 
     def language_list_check(self):
         for i in range(1, len(self.language_list)):
@@ -171,19 +172,19 @@ class CTX_data:
         3. pack each language into a byte string and create the data
         """
         header_buffer = struct.pack("<III", self.num_items, self.last_item_id, self.num_languages)
-        data_buffer = ""
+        data_buffer = b''
         previous_buffer_length = 0
         for language in self.language_list:
             length = language.get_description_length()
             description = language.get_description()
-            header_buffer = header_buffer + struct.pack("<I%isI" % length, length, description, previous_buffer_length)
+            header_buffer = header_buffer + struct.pack("<I%isI" % length, length, description.encode('ascii'), previous_buffer_length)
 #            print binascii.hexlify(header_buffer)
-            data_buffer = data_buffer + language.get_packed_data()
+            data_buffer = b''.join([data_buffer, language.get_packed_data()])
             previous_buffer_length = len(data_buffer)
         """
         4. concatenate the byte strings and return
         """
-        return (header_buffer + data_buffer)
+        return header_buffer + data_buffer
 
     def __repr__(self):
         return "%s(name=%r, languages=%r)" % (self.__class__.__name__, self.language_list)
@@ -193,6 +194,7 @@ class CTX_file(JABIA_file):
     def __init__(self, filepath=None):
         super(CTX_file, self).__init__(filepath=filepath)
         self.yaml_extension = ".ctx.txt"
+        self.sqlite_extension = ".sqlite"
 
     def open(self, filepath=None, peek=False):
         super(CTX_file, self).open(filepath=filepath, peek=peek)
@@ -200,9 +202,8 @@ class CTX_file(JABIA_file):
 
     def dump2sql(self, dest_filepath=os.getcwd()):
         file_name = os.path.join(dest_filepath, os.path.splitext(os.path.basename(self.filepath))[0])
-        self.sqlite_extension = ".sqlite"
         full_path = file_name + self.sqlite_extension
-        print "Creating %s" % full_path
+        print("Creating %s" % full_path)
         con = sqlite3.connect(full_path)
         with con:
             cur = con.cursor()
@@ -250,6 +251,7 @@ class CTX_file(JABIA_file):
                 self.pack()
             else:
                 raise Exception("Database is empty")
+
 
 if __name__ == "__main__":
     pass

@@ -46,7 +46,7 @@ debug = args.debug
 
 if infile is not None and os.path.splitext(infile)[1][1:].strip() == "vtp":
     vtp_filepath = os.path.abspath(infile)
-    print "Unpacking %s" % vtp_filepath
+    print("Unpacking %s" % vtp_filepath)
     vtp_file = VTP_file(filepath=vtp_filepath)
     vtp_file.open()
     vtp_file.unpack(peek=info, verbose=debug)
@@ -60,10 +60,10 @@ elif infile is not None and os.path.splitext(infile)[1][1:].strip() == "txt":
     vtp_file_name = os.path.basename(infile).split('.')[0] + ".vtp"
     vtp_filepath = os.path.join(os.path.abspath(outdir), vtp_file_name)
 
-    print "Packing %s" % yaml_vtp_filepath
+    print("Packing %s" % yaml_vtp_filepath)
     vtp_file = VTP_file(filepath=vtp_filepath)
     vtp_file.yaml2bin(yaml_vtp_filepath)
 
 else:
-    print "Nothing happened"
+    print("Nothing happened")
     parser.print_help()

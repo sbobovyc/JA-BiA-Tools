@@ -1,4 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+import argparse
+import os
+from ctx_file import CTX_file
+
 """
 Created on February 6, 2012
 
@@ -21,56 +25,53 @@ Created on February 6, 2012
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import argparse
-import os
-from ctx_file import CTX_file
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description='Tool that can unpack/pack Jagged Alliance: BiA compiled text (ctx) files.',
+        epilog='All languages must contain the same number of entries and the last ' +
+        'entry id has to be the same in all languages.')
 
-parser = argparse.ArgumentParser(
-    description='Tool that can unpack/pack Jagged Alliance: BiA compiled text (ctx) files.',
-    epilog='All languages must contain the same number of entries and the last ' +
-    'entry id has to be the same in all languages.')
+    parser.add_argument('file', nargs='?', help='Input file')
+    parser.add_argument('outdir', nargs='?', default=os.getcwd(), help='Output directory')
+    parser.add_argument('-i', '--info', default=False, action='store_true', help='Output information about ctx file')
+    parser.add_argument('-d', '--debug', default=False, action='store_true', help='Show debug messages.')
 
-parser.add_argument('file', nargs='?', help='Input file')
-parser.add_argument('outdir', nargs='?', default=os.getcwd(), help='Output directory')
-parser.add_argument('-i', '--info', default=False, action='store_true', help='Output information about ctx file')
-parser.add_argument('-d', '--debug', default=False, action='store_true', help='Show debug messages.')
+    args = parser.parse_args()
+    infile = args.file
+    outdir = args.outdir
+    info = args.info
+    debug = args.debug
 
-args = parser.parse_args()
-infile = args.file
-outdir = args.outdir
-info = args.info
-debug = args.debug
+    if infile is not None and os.path.splitext(infile)[1][1:].strip() == "ctx":
+        ctx_filepath = os.path.abspath(infile)
+        print("Unpacking %s" % ctx_filepath)
+        ctx_file = CTX_file(filepath=ctx_filepath)
+        ctx_file.open()
+        ctx_file.unpack(peek=info, verbose=debug)
 
-if infile is not None and os.path.splitext(infile)[1][1:].strip() == "ctx":
-    ctx_filepath = os.path.abspath(infile)
-    print "Unpacking %s" % ctx_filepath
-    ctx_file = CTX_file(filepath=ctx_filepath)
-    ctx_file.open()
-    ctx_file.unpack(peek=info, verbose=debug)
+        if not info:
+            output_filepath = os.path.abspath(outdir)
+            ctx_file.dump2yaml(outdir)
+            ctx_file.dump2sql(outdir)
 
-    if not info:
-        output_filepath = os.path.abspath(outdir)
-        ctx_file.dump2yaml(outdir)
-        ctx_file.dump2sql(outdir)
+    elif infile is not None and os.path.splitext(infile)[1][1:].strip() == "txt":
+        yaml_ctx_filepath = os.path.abspath(infile)
+        ctx_file_name = os.path.basename(infile).split('.')[0] + ".ctx"
+        ctx_filepath = os.path.join(os.path.abspath(outdir), ctx_file_name)
 
-elif infile is not None and os.path.splitext(infile)[1][1:].strip() == "txt":
-    yaml_ctx_filepath = os.path.abspath(infile)
-    ctx_file_name = os.path.basename(infile).split('.')[0] + ".ctx"
-    ctx_filepath = os.path.join(os.path.abspath(outdir), ctx_file_name)
+        print("Packing %s" % yaml_ctx_filepath)
+        ctx_file = CTX_file(filepath=ctx_filepath)
+        ctx_file.yaml2bin(yaml_ctx_filepath)
 
-    print "Packing %s" % yaml_ctx_filepath
-    ctx_file = CTX_file(filepath=ctx_filepath)
-    ctx_file.yaml2bin(yaml_ctx_filepath)
+    elif infile is not None and os.path.splitext(infile)[1][1:].strip() == "sqlite":
+        sql_ctx_filepath = os.path.abspath(infile)
+        ctx_file_name = os.path.basename(infile).split('.')[0] + ".ctx"
+        ctx_filepath = os.path.join(os.path.abspath(outdir), ctx_file_name)
 
-elif infile is not None and os.path.splitext(infile)[1][1:].strip() == "sqlite":
-    sql_ctx_filepath = os.path.abspath(infile)
-    ctx_file_name = os.path.basename(infile).split('.')[0] + ".ctx"
-    ctx_filepath = os.path.join(os.path.abspath(outdir), ctx_file_name)
+        print("Packing %s" % sql_ctx_filepath)
+        ctx_file = CTX_file(filepath=ctx_filepath)
+        ctx_file.sql2bin(sql_ctx_filepath)
 
-    print "Packing %s" % sql_ctx_filepath
-    ctx_file = CTX_file(filepath=ctx_filepath)
-    ctx_file.sql2bin(sql_ctx_filepath)
-
-else:
-    print "Nothing happened"
-    parser.print_help()
+    else:
+        print("Nothing happened")
+        parser.print_help()
